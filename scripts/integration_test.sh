@@ -67,22 +67,37 @@ presets: []
 YAML
 
 echo "Starting watcher (background)"
-# Use the dedicated 'watch' command to keep the process alive until signaled
-"$BIN" watch --config "$CFG" >/tmp/cursor-rules-watch.log 2>&1 &
-WATCH_PID=$!
-echo "Watcher PID=$WATCH_PID"
+# rotate watcher log if too big
+LOG=/tmp/cursor-rules-watch.log
+if [ -f "$LOG" ]; then
+  size=$(stat -c%s "$LOG" || echo 0)
+  max=$((5 * 1024 * 1024))
+  if [ "$size" -gt "$max" ]; then
+    mv "$LOG" "$LOG."$(date +%s)
+  fi
+fi
 
-sleep 1
+"$BIN" watch --config "$CFG" >"$LOG" 2>&1 &
+WATCH_PID=$!
+echo "Watcher PID=$WATCH_PID (logs -> $LOG)"
 
 echo "Touching preset to trigger watcher"
 echo "\n# touch" >> "$PRESET_FILE"
 
-sleep 2
+# wait up to 10s for watcher to apply the preset (poll)
+applied=0
+for i in $(seq 1 20); do
+  if [[ -f "$PROJECT_DIR/.cursor/rules/${PRESET}.mdc" ]]; then
+    applied=1
+    break
+  fi
+  sleep 0.5
+done
 
-if [[ -f "$PROJECT_DIR/.cursor/rules/${PRESET}.mdc" ]]; then
+if [ "$applied" -eq 1 ]; then
   echo "Watcher applied preset to project: OK"
 else
-  echo "ERROR: watcher did not apply preset"; cat /tmp/cursor-rules-watch.log; kill $WATCH_PID; exit 4
+  echo "ERROR: watcher did not apply preset"; echo "--- watcher log ---"; tail -n 200 "$LOG"; kill $WATCH_PID; exit 4
 fi
 
 echo "Cleaning up watcher"
