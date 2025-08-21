@@ -158,12 +158,10 @@
                 "addReleases": "bottom",
                 "assets": [
                     {
-                        "path": "extension/*.vsix",
-                        "label": "VSCode Extension Package"
+                        "path": "extension/*.vsix"
                     },
                     {
-                        "path": "dist/*",
-                        "label": "CLI Binaries"
+                        "path": "dist/*"
                     }
                 ]
             }
