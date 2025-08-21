@@ -8,7 +8,7 @@ build:
 
 .PHONY: run
 run:
-	go run ./cmd/cursor-rules $(args)
+	go ./cmd/cursor-rules $(args)
 
 .PHONY: test
 test:
@@ -21,17 +21,27 @@ fmt:
 .PHONY: ext-build
 ext-build:
 	# Build VSCode extension: compile TypeScript from extension/src to extension/out
-	cd extension && npm ci || true && npm run build
+	cd extension && pnpm ci || true && pnpm build
 
 .PHONY: ext-install
 ext-install:
 	# Package and install extension locally (user must have code CLI available)
-	cd extension && npm run build && npx @vscode/vsce package && code --install-extension *.vsix || true
+	cd extension && pnpm build && npx @vscode/vsce package && code --install-extension *.vsix || true
 
 .PHONY: ext-test
 ext-test:
-	cd extension && npm ci || true && npm run build && npm test
+	cd extension && pnpm ci || true && pnpm build && pnpm test
 
 .PHONY: help
 help:
-	@echo "Available targets: build run test fmt ext-build ext-install"
+	@echo "Available targets: build test fmt ext-build ext-install"
+
+.PHONY: all
+all: build ext-build ext-install
+
+.PHONY: clean
+clean:
+	rm -rf bin/
+	rm -rf extension/out/
+	rm -rf extension/node_modules/
+	rm -rf extension/package-lock.json
