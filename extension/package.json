@@ -1,0 +1,37 @@
+{
+  "name": "cursor-rules-manager",
+  "displayName": "Cursor Rules Manager",
+  "description": "Manage shared Cursor rules across projects (thin wrapper around cursor-rules CLI)",
+  "version": "0.0.1",
+  "publisher": "DaOfficialWizard",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "cursorRules.installPreset",
+        "title": "Cursor Rules: Install Preset"
+      },
+      {
+        "command": "cursorRules.sync",
+        "title": "Cursor Rules: Sync Shared Presets"
+      },
+      {
+        "command": "cursorRules.showEffective",
+        "title": "Cursor Rules: Show Effective Rules"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm build",
+    "build": "tsc -p ./",
+    "watch": "tsc -w -p ./"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.60.0"
+  }
+}
