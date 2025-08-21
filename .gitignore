@@ -1,2 +1,16 @@
+# Binaries
+/bin/
+
+# VSCode extension build output
+/extension/out/
+/extension/*.vsix
+
+# node modules
+/extension/node_modules/
+
+# Go specific
+*.exe
+*.test
+
 node_modules/
 bin/

@@ -25,4 +25,16 @@ jobs:
         run: go vet ./...
       - name: Build CLI
         run: make build
+      - name: Install golangci-lint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.59.0
+          export PATH="$(go env GOPATH)/bin:${PATH}"
+      - name: Run golangci-lint
+        run: golangci-lint run
+      - name: Build extension (optional)
+        run: |
+          cd extension || exit 0
+          if [ -f package.json ]; then
+            pnpm build || true
+          fi
 
