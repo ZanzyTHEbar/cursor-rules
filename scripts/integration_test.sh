@@ -67,7 +67,8 @@ presets: []
 YAML
 
 echo "Starting watcher (background)"
-"$BIN" --config "$CFG" >/tmp/cursor-rules-watch.log 2>&1 &
+# Use the dedicated 'watch' command to keep the process alive until signaled
+"$BIN" watch --config "$CFG" >/tmp/cursor-rules-watch.log 2>&1 &
 WATCH_PID=$!
 echo "Watcher PID=$WATCH_PID"
 

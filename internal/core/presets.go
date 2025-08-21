@@ -19,8 +19,17 @@ alwaysApply: true
 func InstallPreset(projectRoot, preset string) error {
 	sharedDir := DefaultSharedDir()
 	src := filepath.Join(sharedDir, preset+".mdc")
+	// If preset file not found, allow package-style layout when stow is enabled
 	if _, err := os.Stat(src); os.IsNotExist(err) {
-		return fmt.Errorf("preset not found: %s (expected %s)", preset, src)
+		if !(UseGNUStow() && func() bool {
+			d := filepath.Join(sharedDir, preset)
+			if info, err := os.Stat(d); err == nil && info.IsDir() {
+				return true
+			}
+			return false
+		}()) {
+			return fmt.Errorf("preset not found: %s (expected %s)", preset, src)
+		}
 	}
 
 	rulesDir := filepath.Join(projectRoot, ".cursor", "rules")
