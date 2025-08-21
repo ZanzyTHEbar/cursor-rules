@@ -11,6 +11,9 @@ import (
 
 var cfgFile string
 
+// Version is set at build time via -ldflags. Defaults to "dev".
+var Version = "dev"
+
 var rootCmd = &cobra.Command{
 	Use:   "cursor-rules",
 	Short: "Manage shared Cursor .mdc presets across projects",
@@ -26,6 +29,7 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
+	rootCmd.Version = Version
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cursor-rules/config.yaml)")
 	rootCmd.PersistentFlags().StringP("workdir", "w", "", "workspace root (defaults to current directory)")
 }

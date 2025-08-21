@@ -10,7 +10,7 @@ Guidelines
 Development
 
 -   Use `make build` to build the CLI binary.
--   Use `make ext-build` inside `extension/` to build the VSCode extension.
+-   Use `make ext-build` to build the VSCode extension.
 
 License
 

@@ -1,18 +1,104 @@
-# cursor-rules (MVP)
+# Cursor Rules Manager
 
-CLI to manage shared Cursor .mdc rule presets across projects.
+---
 
-## Build
+<p align="center">
+  <img src="extension/assets/icon.png" alt="Cursor Rules Manager" width="160" height="160" />
+  <br/>
+  <em>Manage shared Cursor rule presets from your editor</em>
+  <br/>
+</p>
 
-make build
+CLI & Cursor Extension to manage shared Cursor `.mdc` rule presets across projects.
 
-## Quick run (install preset into current project):
+#### Why
 
+While Cursor has a built-in feature to manage rules, it's not very flexible.
+
+- It's not possible to share rules with others
+- It's not possible to override rules for a specific project
+- Global rules are brittle, hard to maintain, not always applicable and constantly ignored by the Agent tooling
+- Global rules have a terrible UX
+
+I wanted a centralized way to manage rules that would be easy to maintain and share with others, while also being able to override rules for a specific project without all of the copy-pasting between projects.
+
+#### How
+
+CLI and VSCode extension that wraps the CLI.
+
+The CLI is a simple tool that allows you to install, uninstall, list presets and apply them to the current project (some advanced features are available).
+
+The Cursor extension, a VS Code extension, allows you to call the CLI from the command palette.
+
+## Build Everything & Install CLI
+
+> [!NOTE]
+> Cursor does not support installing extensions from the command line, so you need to install the extension manually.
+
+`make`
+
+## Quick run (install a preset into current project):
+
+```bash
 go run ./cmd/cursor-rules install frontend
+```
 
 ## List effective rules:
 
+```bash
 go run ./cmd/cursor-rules effective --workdir /path/to/project
+```
+
+## Quickstart
+
+```bash
+# Install the CLI (example)
+go install github.com/ZanzyTHEbar/cursor-rules/cmd/cursor-rules@latest
+
+# Sync shared presets from your source (git or local)
+cursor-rules sync
+
+# Install a preset into the current project
+cursor-rules install frontend
+
+# Show effective rules for the current workspace
+cursor-rules effective
+```
+
+## Common workflows
+
+### Bootstrap a new project
+
+```bash
+cursor-rules sync
+cursor-rules install backend
+cursor-rules effective > .cursor/effective.md
+```
+
+### Keep presets up to date
+
+```bash
+cursor-rules sync
+# optionally re-apply a preset if structure changed
+cursor-rules install shared
+```
+
+### Work with symlinks or GNU stow
+
+```bash
+# Use real symlinks instead of stub .mdc files
+export CURSOR_RULES_SYMLINK=1
+```
+
+> [!NOTE]
+> This requires gnustow to be installed
+
+```bash
+# Prefer GNU stow if available
+export CURSOR_RULES_USE_GNUSTOW=1
+
+cursor-rules install frontend
+```
 
 ## Config
 
@@ -21,12 +107,22 @@ Override with `$CURSOR_RULES_DIR`.
 
 ## Advanced usage
 
-## VSCode extension
+```bash
+# Apply multiple presets
+cursor-rules install frontend backend tooling
 
--   Build: `make ext-build`
--   Test: `make ext-test`
--   Package (.vsix): `cd extension && npx @vscode/vsce package`
--   Install locally: `make ext-install` or `code --install-extension extension/*.vsix`
+# Generate effective rules for a specific path
+cursor-rules effective --workdir /path/to/project
+
+# Watch shared directory and auto-apply to mapped projects
+cursor-rules watch
+```
+
+### Extension workflows
+
+- Cursor Rules: Sync Shared Presets — fetch updates then pick presets offered on first run
+- Cursor Rules: Show Effective Rules — opens a markdown preview of merged rules
+- Cursor Rules: Install Preset — prompts for a preset and installs into the current workspace
 
 Environment variables:
 

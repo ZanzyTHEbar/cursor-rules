@@ -35,6 +35,23 @@ async function detectLanguagesSample(uris: vscode.Uri[], concurrency = 8): Promi
 export function activate(context: vscode.ExtensionContext) {
     const output = vscode.window.createOutputChannel('Cursor Rules');
 
+    async function ensureCliAvailable(): Promise<boolean> {
+        try {
+            await runCmd('cursor-rules --version');
+            return true;
+        } catch (e) {
+            const choice = await vscode.window.showErrorMessage(
+                'cursor-rules CLI not found in PATH. Install the CLI to use this extension.',
+                'Open Repository',
+                'Dismiss'
+            );
+            if (choice === 'Open Repository') {
+                vscode.env.openExternal(vscode.Uri.parse('https://github.com/ZanzyTHEbar/cursor-rules'));
+            }
+            return false;
+        }
+    }
+
     async function detectAndOfferPresets() {
         const folders = vscode.workspace.workspaceFolders || [];
         if (folders.length === 0) return;
@@ -92,44 +109,58 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     context.subscriptions.push(vscode.commands.registerCommand('cursorRules.sync', async () => {
+        if (!(await ensureCliAvailable())) return;
         output.show(true);
-        output.appendLine('Running: cursor-rules sync');
-        try {
-            const res = await runCmd('cursor-rules sync');
-            output.appendLine(res);
-        } catch (e) {
-            vscode.window.showErrorMessage(String(e));
-        }
+        await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: 'Cursor Rules: Syncing presets...', cancellable: false }, async () => {
+            output.appendLine('Running: cursor-rules sync');
+            try {
+                const res = await runCmd('cursor-rules sync');
+                output.appendLine(res);
+                vscode.window.showInformationMessage('cursor-rules: sync completed');
+            } catch (e) {
+                vscode.window.showErrorMessage(String(e));
+            }
+        });
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('cursorRules.showEffective', async () => {
+        if (!(await ensureCliAvailable())) return;
         output.show(true);
-        output.appendLine('Running: cursor-rules effective');
-        try {
-            const res = await runCmd('cursor-rules effective');
-            const doc = await vscode.workspace.openTextDocument({ content: res, language: 'markdown' });
-            vscode.window.showTextDocument(doc);
-        } catch (e) {
-            vscode.window.showErrorMessage(String(e));
-        }
+        await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: 'Cursor Rules: Generating effective rules...', cancellable: false }, async () => {
+            output.appendLine('Running: cursor-rules effective');
+            try {
+                const res = await runCmd('cursor-rules effective');
+                const doc = await vscode.workspace.openTextDocument({ content: res, language: 'markdown' });
+                vscode.window.showTextDocument(doc);
+            } catch (e) {
+                vscode.window.showErrorMessage(String(e));
+            }
+        });
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand('cursorRules.installPreset', async () => {
+        if (!(await ensureCliAvailable())) return;
         const preset = await vscode.window.showInputBox({ prompt: 'Preset name to install' });
         if (!preset) return;
         output.show(true);
-        output.appendLine(`Running: cursor-rules install ${preset}`);
-        try {
-            const cwd = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri.fsPath;
-            const res = await runCmd(`cursor-rules install ${preset}`, cwd);
-            output.appendLine(res);
-            vscode.window.showInformationMessage(`Installed preset ${preset}`);
-        } catch (e) {
-            vscode.window.showErrorMessage(String(e));
-        }
+        await vscode.window.withProgress({ location: vscode.ProgressLocation.Notification, title: `Cursor Rules: Installing ${preset}...`, cancellable: false }, async () => {
+            output.appendLine(`Running: cursor-rules install ${preset}`);
+            try {
+                const cwd = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders[0].uri.fsPath;
+                const res = await runCmd(`cursor-rules install ${preset}`, cwd);
+                output.appendLine(res);
+                vscode.window.showInformationMessage(`Installed preset ${preset}`);
+            } catch (e) {
+                vscode.window.showErrorMessage(String(e));
+            }
+        });
     }));
 
-    detectAndOfferPresets().catch(err => output.appendLine('detect error: ' + String(err)));
+    ensureCliAvailable().then((ok) => {
+        if (ok) {
+            detectAndOfferPresets().catch(err => output.appendLine('detect error: ' + String(err)));
+        }
+    });
 }
 
 export function deactivate() { }

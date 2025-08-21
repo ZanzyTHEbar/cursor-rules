@@ -67,6 +67,12 @@ func CreateSymlink(src, dest string) error {
 // or by creating a symlink if the environment requests it. If GNU Stow is requested via
 // CURSOR_RULES_USE_GNUSTOW and stow is available, attempt to use it (best-effort).
 func ApplyPresetWithOptionalSymlink(projectRoot, preset, sharedDir string) error {
+	// Ensure target rules directory exists for all strategies (stow/symlink/stub)
+	rulesDir := filepath.Join(projectRoot, ".cursor", "rules")
+	if err := os.MkdirAll(rulesDir, 0o755); err != nil {
+		return err
+	}
+
 	src := filepath.Join(sharedDir, preset+".mdc")
 	dest := filepath.Join(projectRoot, ".cursor", "rules", preset+".mdc")
 
@@ -75,7 +81,7 @@ func ApplyPresetWithOptionalSymlink(projectRoot, preset, sharedDir string) error
 	// fallback to symlink creation.
 	if strings.ToLower(os.Getenv("CURSOR_RULES_USE_GNUSTOW")) == "1" && HasStow() {
 		// stow needs to be invoked from sharedDir parent; use the preset name as package
-		cmd := exec.Command("stow", "-v", "-d", sharedDir, "-t", filepath.Join(projectRoot, ".cursor", "rules"), preset)
+		cmd := exec.Command("stow", "-v", "-d", sharedDir, "-t", rulesDir, preset)
 		if output, err := cmd.CombinedOutput(); err != nil {
 			// do not consider stow fatal; fall back to symlink
 			_ = fmt.Errorf("stow failed: %v: %s", err, string(output))

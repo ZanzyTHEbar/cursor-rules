@@ -148,8 +148,8 @@
         [
             "@semantic-release/exec",
             {
-                "prepareCmd": "cd extension && (npm ci || npm install) && npm run build && npx @vscode/vsce package",
-                "publishCmd": "echo \"Prepared VSIX for ${nextRelease.version}\""
+                "prepareCmd": "node -e \"const fs=require('fs');const p=require('./extension/package.json');p.version='${nextRelease.version}';fs.writeFileSync('./extension/package.json',JSON.stringify(p,null,2)+'\n');\" && make build VERSION=${nextRelease.version} && make release-artifacts VERSION=${nextRelease.version}",
+                "publishCmd": "echo \"Prepared VSIX and CLI binaries for ${nextRelease.version}\""
             }
         ],
         [
@@ -160,6 +160,10 @@
                     {
                         "path": "extension/*.vsix",
                         "label": "VSCode Extension Package"
+                    },
+                    {
+                        "path": "dist/*",
+                        "label": "CLI Binaries"
                     }
                 ]
             }
@@ -169,7 +173,8 @@
             {
                 "assets": [
                     "LICENSE*",
-                    "CHANGELOG.md"
+                    "CHANGELOG.md",
+                    "extension/package.json"
                 ],
                 "message": "chore(${nextRelease.type}): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
             }

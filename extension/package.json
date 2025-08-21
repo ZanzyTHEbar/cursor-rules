@@ -1,49 +1,70 @@
 {
-  "name": "cursor-rules-manager",
-  "displayName": "Cursor Rules Manager",
-  "description": "Manage shared Cursor rules across projects (thin wrapper around cursor-rules CLI)",
-  "version": "0.0.2",
-  "publisher": "DaOfficialWizard",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/ZanzyTHEbar/cursor-rules"
-  },
-  "license": "MIT",
-  "engines": {
-    "vscode": "^1.75.0"
-  },
-  "main": "./out/extension.js",
-  "contributes": {
-    "commands": [
-      {
-        "command": "cursorRules.installPreset",
-        "title": "Cursor Rules: Install Preset"
-      },
-      {
-        "command": "cursorRules.sync",
-        "title": "Cursor Rules: Sync Shared Presets"
-      },
-      {
-        "command": "cursorRules.showEffective",
-        "title": "Cursor Rules: Show Effective Rules"
-      }
-    ]
-  },
-  "scripts": {
-    "vscode:prepublish": "npm run build",
-    "build": "tsc -p ./",
-    "watch": "tsc -w -p ./",
-    "package": "@vscode/vsce package",
-    "test": "node ./out/test/runTest.js"
-  },
-  "devDependencies": {
-    "typescript": "^5.0.0",
-    "@types/node": "^18.0.0",
-    "@types/vscode": "^1.60.0",
-    "@vscode/test-electron": "^2.3.7",
-    "mocha": "^10.0.0",
-    "@types/mocha": "^10.0.10",
-    "@types/glob": "^8.1.0",
-    "@vscode/vsce": "^2.30.0"
-  }
+    "name": "cursor-rules-manager",
+    "displayName": "Cursor Rules Manager",
+    "description": "Manage shared Cursor rules across projects (thin wrapper around cursor-rules CLI)",
+    "version": "0.0.2",
+    "publisher": "DaOfficialWizard",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ZanzyTHEbar/cursor-rules"
+    },
+    "license": "MIT",
+    "engines": {
+        "vscode": "^1.75.0"
+    },
+    "main": "./out/extension.js",
+    "categories": [
+        "Other"
+    ],
+    "keywords": [
+        "cursor",
+        "rules",
+        "mdc",
+        "presets",
+        "sync",
+        "cursor-rules",
+        "cursor-rules-manager",
+        "cursor-rules-manager-extension",
+        "golang",
+        "go"
+    ],
+    "icon": "assets/icon.png",
+    "galleryBanner": {
+        "color": "#2E2A5A",
+        "theme": "dark"
+    },
+    "contributes": {
+        "commands": [
+            {
+                "command": "cursorRules.installPreset",
+                "title": "Cursor Rules: Install Preset"
+            },
+            {
+                "command": "cursorRules.sync",
+                "title": "Cursor Rules: Sync Shared Presets"
+            },
+            {
+                "command": "cursorRules.showEffective",
+                "title": "Cursor Rules: Show Effective Rules"
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "pnpm build",
+        "build": "tsc -p ./",
+        "watch": "tsc -w -p ./",
+        "package": "@vscode/vsce package",
+        "test": "node ./out/test/runTest.js"
+    },
+    "devDependencies": {
+        "@types/glob": "^9.0.0",
+        "typescript": "^5.9.2",
+        "@types/node": "^24.3.0",
+        "@types/vscode": "^1.75.0",
+        "@vscode/test-electron": "^2.5.2",
+        "mocha": "^11.7.1",
+        "@types/mocha": "^10.0.10",
+        "@vscode/vsce": "^3.6.0",
+        "glob": "^11.0.3"
+    }
 }
