@@ -28,6 +28,11 @@ func InstallPreset(projectRoot, preset string) error {
 		return err
 	}
 
+	// If symlink/stow behavior requested, prefer that path
+	if UseSymlink() || UseGNUStow() {
+		return ApplyPresetWithOptionalSymlink(projectRoot, preset, sharedDir)
+	}
+
 	dest := filepath.Join(rulesDir, preset+".mdc")
 	f, err := os.Create(dest)
 	if err != nil {

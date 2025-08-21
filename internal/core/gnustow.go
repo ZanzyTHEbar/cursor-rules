@@ -23,6 +23,11 @@ func HasStow() bool {
 	return false
 }
 
+// UseGNUStow reports whether GNU stow should be used (env requests and stow present).
+func UseGNUStow() bool {
+	return strings.ToLower(os.Getenv("CURSOR_RULES_USE_GNUSTOW")) == "1" && HasStow()
+}
+
 // CreateSymlink attempts to create a symlink from src -> dest. It will create parent
 // directories if necessary and will be idempotent if dest already exists and points
 // to the same target.
