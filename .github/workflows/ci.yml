@@ -197,43 +197,5 @@ jobs:
           name: cursor-rules-manager-vsix
           path: extension/*.vsix
 
-name: CI
-
-on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version: '1.20'
-      - name: Install pnpm
-        run: |
-          curl -fsSL https://get.pnpm.io/install.sh | sh -
-          export PATH="$$HOME/.local/share/pnpm:${PATH}"
-      - name: Run go test
-        run: go test ./...
-      - name: Run go vet
-        run: go vet ./...
-      - name: Build CLI
-        run: make build
-      - name: Install golangci-lint
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.59.0
-          export PATH="$(go env GOPATH)/bin:${PATH}"
-      - name: Run golangci-lint
-        run: golangci-lint run
-      - name: Build extension (optional)
-        run: |
-          cd extension || exit 0
-          if [ -f package.json ]; then
-            pnpm build || true
-          fi
+ 
 
