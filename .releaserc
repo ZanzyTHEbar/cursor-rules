@@ -148,14 +148,20 @@
         [
             "@semantic-release/exec",
             {
-                "prepareCmd": "echo \"Preparing release ${nextRelease.version}\"",
-                "publishCmd": "echo \"Publishing release ${nextRelease.version}\""
+                "prepareCmd": "cd extension && (npm ci || npm install) && npm run build && npx @vscode/vsce package",
+                "publishCmd": "echo \"Prepared VSIX for ${nextRelease.version}\""
             }
         ],
         [
             "@semantic-release/github",
             {
-                "addReleases": "bottom"
+                "addReleases": "bottom",
+                "assets": [
+                    {
+                        "path": "extension/*.vsix",
+                        "label": "VSCode Extension Package"
+                    }
+                ]
             }
         ],
         [
