@@ -1,3 +1,44 @@
+name: Release
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  semantic-release:
+    name: Semantic Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install vsce dependencies for packaging
+        run: |
+          cd extension
+          npm ci || npm install
+
+      - name: Run semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npx -y \
+            semantic-release \
+            -p @semantic-release/commit-analyzer \
+               @semantic-release/release-notes-generator \
+               @semantic-release/changelog \
+               @semantic-release/exec \
+               @semantic-release/github \
+               @semantic-release/git
+
 name: Release (semantic-release + Docker)
 
 on:
