@@ -12,11 +12,6 @@
   "engines": {
     "vscode": "^1.75.0"
   },
-  "activationEvents": [
-    "onCommand:cursorRules.sync",
-    "onCommand:cursorRules.showEffective",
-    "onCommand:cursorRules.installPreset"
-  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
