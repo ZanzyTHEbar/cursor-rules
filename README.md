@@ -20,6 +20,13 @@ Shared presets live in `~/.cursor-rules/`.
 Override with `$CURSOR_RULES_DIR`.
 
 ## Advanced usage
+## VSCode extension
+
+- Build: `make ext-build`
+- Test: `make ext-test`
+- Package (.vsix): `cd extension && npx @vscode/vsce package`
+- Install locally: `make ext-install` or `code --install-extension extension/*.vsix`
+
 
 Environment variables:
 

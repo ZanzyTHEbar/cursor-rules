@@ -4,6 +4,11 @@
   "description": "Manage shared Cursor rules across projects (thin wrapper around cursor-rules CLI)",
   "version": "0.0.2",
   "publisher": "DaOfficialWizard",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ZanzyTHEbar/cursor-rules"
+  },
+  "license": "MIT",
   "engines": {
     "vscode": "^1.75.0"
   },
