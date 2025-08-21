@@ -21,12 +21,16 @@ fmt:
 .PHONY: ext-build
 ext-build:
 	# Build VSCode extension: compile TypeScript from extension/src to extension/out
-	cd extension && pnpm build
+	cd extension && npm ci || true && npm run build
 
 .PHONY: ext-install
 ext-install:
 	# Package and install extension locally (user must have code CLI available)
-	cd extension && pnpm build && vsce package && code --install-extension *.vsix || true
+	cd extension && npm run build && npx @vscode/vsce package && code --install-extension *.vsix || true
+
+.PHONY: ext-test
+ext-test:
+	cd extension && npm ci || true && npm run build && npm test
 
 .PHONY: help
 help:

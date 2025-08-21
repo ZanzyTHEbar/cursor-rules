@@ -1,0 +1,13 @@
+node_modules/**
+.vscode/**
+**/*.map
+**/*.ts
+.git/**
+README.md
+**/.DS_Store
+**/test/**
+**/.eslint*
+**/.prettier*
+**/.gitignore
+**/.editorconfig
+
