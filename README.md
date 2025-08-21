@@ -19,14 +19,13 @@ go run ./cmd/cursor-rules effective --workdir /path/to/project
 Shared presets live in `~/.cursor-rules/`.
 Override with `$CURSOR_RULES_DIR`.
 
-
 ## Advanced usage
 
 Environment variables:
 
-- `CURSOR_RULES_DIR`: override the default shared presets directory (default: `~/.cursor-rules`).
-- `CURSOR_RULES_SYMLINK=1`: when set, `install`/`apply` operations will create real filesystem symlinks instead of writing stub `.mdc` files. Use with caution.
-- `CURSOR_RULES_USE_GNUSTOW=1`: when set and GNU `stow` is available in PATH, the tool will attempt to use `stow` to manage symlinks from the shared directory into project targets. This is best-effort and will fall back to symlinks or stubs if stow fails.
+-   `CURSOR_RULES_DIR`: override the default shared presets directory (default: `~/.cursor-rules`).
+-   `CURSOR_RULES_SYMLINK=1`: when set, `install`/`apply` operations will create real filesystem symlinks instead of writing stub `.mdc` files. Use with caution.
+-   `CURSOR_RULES_USE_GNUSTOW=1`: when set and GNU `stow` is available in PATH, the tool will attempt to use `stow` to manage symlinks from the shared directory into project targets. This is best-effort and will fall back to symlinks or stubs if stow fails.
 
 Watcher mapping (auto-apply):
 
@@ -34,13 +33,11 @@ If you run the CLI with `watch` enabled and `autoApply=true` in your config, the
 
 ```yaml
 presets:
-  frontend:
-    - /abs/path/to/project1
-    - ../relative/path/to/project2
-  backend:
-    - /abs/path/to/backend
+    frontend:
+        - /abs/path/to/project1
+        - ../relative/path/to/project2
+    backend:
+        - /abs/path/to/backend
 ```
 
 Relative project paths are resolved relative to the shared directory. The watcher will only auto-apply presets that appear in this mapping to avoid accidental writes.
-
-

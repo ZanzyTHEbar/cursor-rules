@@ -1,0 +1,46 @@
+{
+    "folders": [
+        {
+            "name": "Repo Root",
+            "path": "."
+        }
+    ],
+    "settings": {
+        "files.autoSave": "afterDelay",
+        "files.exclude": {
+            "**/.git": false,
+            "**/.env": false,
+            "**/.file4you": false
+        },
+        "editor.foldingStrategy": "indentation",
+        "editor.formatOnSave": true,
+        "editor.quickSuggestions": {
+            "strings": true
+        },
+        "editor.codeActionsOnSave": {
+            "source.fixAll.eslint": "explicit"
+        },
+        "[jsonc]": {
+            "editor.defaultFormatter": "esbenp.prettier-vscode"
+        },
+        "[toml]": {
+            "editor.defaultFormatter": "tamasfe.even-better-toml"
+        },
+        "[shellscript]": {
+            "editor.defaultFormatter": "mkhl.shfmt"
+        },
+        "go.useLanguageServer": true,
+        "[go]": {
+            "editor.defaultFormatter": "golang.go"
+        },
+        "makefile.configureOnOpen": false
+    },
+    "extensions": {
+        "recommendations": [
+            "golang.go",
+            "esbenp.prettier-vscode",
+            "tamasfe.even-better-toml",
+            "vscode.makefile-tools"
+        ]
+    }
+}

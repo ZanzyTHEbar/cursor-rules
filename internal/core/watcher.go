@@ -34,15 +34,25 @@ func StartWatcher(sharedDir string, autoApply bool) error {
 							fmt.Printf("watcher: list presets err: %v\n", err)
 							continue
 						}
+						mapping, _ := LoadWatcherMapping(sharedDir)
 						for _, p := range presets {
 							name := p[:len(p)-len(filepath.Ext(p))]
-							// noop if ApplyPresetToProject not given project context;
 							fmt.Printf("watcher sees preset: %s (autoApply=%v)\n", name, autoApply)
-							// auto-apply requires a mapping from shared presets to project paths.
-							// Currently we do not have project context here, so skip applying
-							// to avoid accidental writes. This prevents the previous incorrect
-							// invocation that passed swapped arguments to ApplyPresetToProject.
-							fmt.Printf("watcher: autoApply not configured, skipping apply for preset %s\n", name)
+							if mapping != nil {
+								if projects, ok := mapping[name]; ok {
+									for _, proj := range projects {
+										if err := ApplyPresetToProject(proj, name, sharedDir); err != nil {
+											fmt.Printf("watcher: failed to apply %s -> %s: %v\n", name, proj, err)
+										} else {
+											fmt.Printf("watcher: applied %s -> %s\n", name, proj)
+										}
+									}
+								} else {
+									fmt.Printf("watcher: no mapping for preset %s, skipping\n", name)
+								}
+							} else {
+								fmt.Printf("watcher: mapping not provided, skipping auto-apply for %s\n", name)
+							}
 						}
 					}
 				}
