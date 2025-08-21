@@ -21,6 +21,10 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install release dependencies (repo root)
+        run: |
+          npm ci || npm install
+
       - name: Install vsce dependencies for packaging
         run: |
           cd extension
@@ -30,11 +34,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npx -y \
-            semantic-release \
-            -p @semantic-release/commit-analyzer \
-               @semantic-release/release-notes-generator \
-               @semantic-release/changelog \
-               @semantic-release/exec \
-               @semantic-release/github \
-               @semantic-release/git
+          npx semantic-release
