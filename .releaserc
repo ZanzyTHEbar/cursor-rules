@@ -148,7 +148,7 @@
         [
             "@semantic-release/exec",
             {
-                "prepareCmd": "node -e \"const fs=require('fs');const p=require('./extension/package.json');p.version='${nextRelease.version}';fs.writeFileSync('./extension/package.json',JSON.stringify(p,null,2)+'\n');\" && make build VERSION=${nextRelease.version} && make release-artifacts VERSION=${nextRelease.version}",
+                "prepareCmd": "jq '.version=\"${nextRelease.version}\"' extension/package.json > extension/package.json.tmp && mv extension/package.json.tmp extension/package.json && make build VERSION=${nextRelease.version} && make release-artifacts VERSION=${nextRelease.version}",
                 "publishCmd": "echo \"Prepared VSIX and CLI binaries for ${nextRelease.version}\""
             }
         ],
