@@ -3,6 +3,12 @@
 [![semantic versioning](https://img.shields.io/badge/semantic%20versioning-2.0.0-green.svg)](https://semver.org)
 > All notable changes to this project will be documented in this file
 
+## [0.1.1](https://github.com/ZanzyTHEbar/cursor-rules/compare/v0.1.0...v0.1.1) (2025-08-21)
+
+### 🐛 Bug Fixes
+
+* normalize release asset naming ([22d00bb](https://github.com/ZanzyTHEbar/cursor-rules/commit/22d00bbcf41849f46ed9d9bf7e8991b3947eb4e8))
+
 ## [0.1.0](https://github.com/ZanzyTHEbar/cursor-rules/compare/v0.0.0...v0.1.0) (2025-08-21)
 
 ### 🍕 Features
