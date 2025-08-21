@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,22 +10,50 @@ import (
 // DetectProjectType inspects common files and returns a simple project type hint.
 // FIXME: This heuristic is not good enough, we need something more sophisticated.
 func DetectProjectType(root string) (string, error) {
-	checks := []struct {
-		file string
-		typ  string
-	}{
-		{"package.json", "node"},
-		{"go.mod", "go"},
-		{"pyproject.toml", "python"},
-		{"requirements.txt", "python"},
-		{"Cargo.toml", "rust"},
+	// Fast helper to check for file existence
+	exists := func(p string) bool {
+		_, err := os.Stat(filepath.Join(root, p))
+		return err == nil
 	}
 
-	for _, c := range checks {
-		if _, err := os.Stat(filepath.Join(root, c.file)); err == nil {
-			return c.typ, nil
-		}
+	// Monorepo / workspace indicators (prefer more specific detection)
+	if exists("lerna.json") || exists("pnpm-workspace.yaml") || exists("pnpm-workspace.yml") || exists("turbo.json") {
+		return "node-monorepo", nil
 	}
+
+	// Language-specific checks (ordered by clarity)
+	if exists("go.mod") {
+		return "go", nil
+	}
+
+	if exists("pyproject.toml") || exists("requirements.txt") {
+		return "python", nil
+	}
+
+	if exists("Cargo.toml") {
+		return "rust", nil
+	}
+
+	// Node ecosystem - look for package.json or lockfiles
+	if exists("package.json") || exists("package-lock.json") || exists("yarn.lock") || exists("pnpm-lock.yaml") || exists("pnpm-lock.yml") {
+		// Distinguish workspace (package.json with workspaces) if possible
+		pkgPath := filepath.Join(root, "package.json")
+		if _, err := os.Stat(pkgPath); err == nil {
+			data, err := os.ReadFile(pkgPath)
+			if err == nil {
+				if bytes.Contains(data, []byte("\"workspaces\"")) || bytes.Contains(data, []byte("\"packages\"")) {
+					return "node-monorepo", nil
+				}
+			}
+		}
+		return "node", nil
+	}
+
+	// Fallback: look for generic build files
+	if exists("Makefile") {
+		return "make", nil
+	}
+
 	return "unknown", nil
 }
 

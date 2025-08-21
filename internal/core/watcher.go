@@ -38,8 +38,11 @@ func StartWatcher(sharedDir string, autoApply bool) error {
 							name := p[:len(p)-len(filepath.Ext(p))]
 							// noop if ApplyPresetToProject not given project context;
 							fmt.Printf("watcher sees preset: %s (autoApply=%v)\n", name, autoApply)
-							ApplyPresetToProject(name, "test", "test")
-							// FIXME: real auto-apply would require mapping
+							// auto-apply requires a mapping from shared presets to project paths.
+							// Currently we do not have project context here, so skip applying
+							// to avoid accidental writes. This prevents the previous incorrect
+							// invocation that passed swapped arguments to ApplyPresetToProject.
+							fmt.Printf("watcher: autoApply not configured, skipping apply for preset %s\n", name)
 						}
 					}
 				}

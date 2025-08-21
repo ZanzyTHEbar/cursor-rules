@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // ApplyPresetToProject copies a shared preset file into the project's .cursor/rules as a stub (@file).
@@ -23,6 +24,10 @@ func ApplyPresetToProject(projectRoot, preset, sharedDir string) error {
 	if _, err := os.Stat(dest); err == nil {
 		// already exists -> idempotent
 		return nil
+	}
+	// If symlinking or stow support requested, prefer ApplyPresetWithOptionalSymlink
+	if UseSymlink() || strings.ToLower(os.Getenv("CURSOR_RULES_USE_GNUSTOW")) == "1" {
+		return ApplyPresetWithOptionalSymlink(projectRoot, preset, sharedDir)
 	}
 	// create stub file that references shared path
 	f, err := os.Create(dest)

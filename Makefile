@@ -18,6 +18,16 @@ test:
 fmt:
 	go fmt ./...
 
-# TODO: add a target to build the extension, and a target to install it in editor
+.PHONY: ext-build
+ext-build:
+	# Build VSCode extension: compile TypeScript from extension/src to extension/out
+	cd extension && pnpm build
 
-# TODO: add help target
+.PHONY: ext-install
+ext-install:
+	# Package and install extension locally (user must have code CLI available)
+	cd extension && pnpm build && vsce package && code --install-extension *.vsix || true
+
+.PHONY: help
+help:
+	@echo "Available targets: build run test fmt ext-build ext-install"

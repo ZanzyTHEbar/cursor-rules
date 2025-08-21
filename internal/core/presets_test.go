@@ -81,3 +81,60 @@ func TestApplyRemoveListInstall(t *testing.T) {
 		t.Fatalf("expected stub removed, but still exists or different error: %v", err)
 	}
 }
+
+func TestApplyWithSymlinkPreference(t *testing.T) {
+	// create temp shared dir
+	sharedDir, err := os.MkdirTemp("", "shared-")
+	if err != nil {
+		t.Fatalf("failed to create shared dir: %v", err)
+	}
+	defer os.RemoveAll(sharedDir)
+
+	// create a sample preset file
+	presetName := "frontend"
+	presetFile := filepath.Join(sharedDir, presetName+".mdc")
+	if err := os.WriteFile(presetFile, []byte("# sample preset"), 0o644); err != nil {
+		t.Fatalf("failed to write preset: %v", err)
+	}
+
+	// create temp project dir
+	projectDir, err := os.MkdirTemp("", "project-")
+	if err != nil {
+		t.Fatalf("failed to create project dir: %v", err)
+	}
+	defer os.RemoveAll(projectDir)
+
+	// set env override so DefaultSharedDir uses our temp sharedDir
+	old := os.Getenv("CURSOR_RULES_DIR")
+	os.Setenv("CURSOR_RULES_DIR", sharedDir)
+	defer os.Setenv("CURSOR_RULES_DIR", old)
+
+	// request symlink behavior
+	oldSymlink := os.Getenv("CURSOR_RULES_SYMLINK")
+	os.Setenv("CURSOR_RULES_SYMLINK", "1")
+	defer os.Setenv("CURSOR_RULES_SYMLINK", oldSymlink)
+
+	// Apply preset
+	if err := ApplyPresetToProject(projectDir, presetName, sharedDir); err != nil {
+		t.Fatalf("ApplyPresetToProject with symlink failed: %v", err)
+	}
+
+	// verify symlink exists
+	stub := filepath.Join(projectDir, ".cursor", "rules", presetName+".mdc")
+	info, err := os.Lstat(stub)
+	if err != nil {
+		t.Fatalf("expected symlink at %s, err: %v", stub, err)
+	}
+	if info.Mode()&os.ModeSymlink == 0 {
+		t.Fatalf("expected symlink, but file is not a symlink: %s", stub)
+	}
+
+	// verify symlink target
+	target, err := os.Readlink(stub)
+	if err != nil {
+		t.Fatalf("failed to read symlink: %v", err)
+	}
+	if target != presetFile {
+		t.Fatalf("symlink target mismatch: got %s want %s", target, presetFile)
+	}
+}
