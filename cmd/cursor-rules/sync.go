@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	cfgpkg "github.com/ZanzyTHEbar/cursor-rules/internal/config"
@@ -17,7 +18,17 @@ var syncCmd = &cobra.Command{
 	Short: "Sync shared presets and optionally apply to a project",
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// Load config to honor configured sharedDir when env override is not set
+		cfg, _ := cfgpkg.LoadConfig("")
+
+		// Determine shared directory with precedence:
+		// 1) CURSOR_RULES_DIR env (handled by DefaultSharedDir)
+		// 2) config.sharedDir (if set and env not set)
+		// 3) default (~/.cursor-rules)
 		shared := core.DefaultSharedDir()
+		if os.Getenv("CURSOR_RULES_DIR") == "" && cfg != nil && cfg.SharedDir != "" {
+			shared = cfg.SharedDir
+		}
 		// attempt git pull if repo
 		if err := core.SyncSharedRepo(shared); err != nil {
 			return fmt.Errorf("failed to sync shared repo: %w", err)
@@ -34,8 +45,7 @@ var syncCmd = &cobra.Command{
 		// optional apply to project via --apply flag (policy-driven)
 		wd, _ := rootCmd.Flags().GetString("workdir")
 		if applyFlag && wd != "" {
-			// load config to see if presets are specified
-			cfg, _ := cfgpkg.LoadConfig("")
+			// use config (if present) to see if presets are specified
 			var toApply []string
 			if cfg != nil && len(cfg.Presets) > 0 {
 				toApply = cfg.Presets
