@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/ZanzyTHEbar/cursor-rules/internal/config"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/core"
+	gblogger "github.com/ZanzyTHEbar/go-basetools/logger"
 	"github.com/spf13/cobra"
 )
 
@@ -35,17 +38,20 @@ func init() {
 }
 
 func initConfig() {
+	// Initialize logger (defaults); can be made configurable later
+	gblogger.InitLogger(&gblogger.Config{Logger: gblogger.Logger{Style: "text", Level: "info"}})
 	// Load config and optionally start watcher
 	cfg, err := config.LoadConfig(cfgFile)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "warning: failed to load config: %v\n", err)
+		slog.Warn("failed to load config", "error", err)
 		return
 	}
 	if cfg.Watch {
-		if err := core.StartWatcher(cfg.SharedDir, cfg.AutoApply); err != nil {
-			fmt.Fprintf(os.Stderr, "warning: failed to start watcher: %v\n", err)
+		ctx := context.Background()
+		if err := core.StartWatcher(ctx, cfg.SharedDir, cfg.AutoApply); err != nil {
+			slog.Warn("failed to start watcher", "error", err)
 		} else {
-			fmt.Fprintf(os.Stderr, "watching shared dir: %s\n", cfg.SharedDir)
+			slog.Info("watching shared dir", "dir", cfg.SharedDir)
 		}
 	}
 }

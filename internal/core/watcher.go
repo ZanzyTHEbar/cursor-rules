@@ -1,17 +1,26 @@
 package core
 
 import (
-	"fmt"
+	"context"
+	"log/slog"
+	"os"
 	"path/filepath"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
 )
 
-// StartWatcher watches sharedDir for changes and optionally auto-applies presets to projects.
-func StartWatcher(sharedDir string, autoApply bool) error {
+// StartWatcher watches sharedDir recursively for changes and optionally auto-applies presets to projects.
+// It runs until ctx is cancelled.
+func StartWatcher(ctx context.Context, sharedDir string, autoApply bool) error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
+		return err
+	}
+
+	// add root and subdirectories
+	if err := addRecursive(watcher, sharedDir); err != nil {
+		watcher.Close()
 		return err
 	}
 
@@ -20,7 +29,7 @@ func StartWatcher(sharedDir string, autoApply bool) error {
 		defer watcher.Close()
 		defer func() {
 			if r := recover(); r != nil {
-				fmt.Printf("watcher panic recovered: %v\n", r)
+				slog.Warn("watcher panic recovered", "panic", r)
 			}
 		}()
 
@@ -30,69 +39,111 @@ func StartWatcher(sharedDir string, autoApply bool) error {
 
 		for {
 			select {
+			case <-ctx.Done():
+				slog.Info("watcher context cancelled; shutting down")
+				return
 			case ev, ok := <-watcher.Events:
 				if !ok {
-					fmt.Printf("watcher: events channel closed\n")
+					slog.Warn("watcher events channel closed")
 					return
 				}
 				// on write/create, log
 				if ev.Op&fsnotify.Write == fsnotify.Write || ev.Op&fsnotify.Create == fsnotify.Create {
-					fmt.Printf("detected change: %s\n", ev.Name)
+					slog.Info("detected change", "path", ev.Name)
 					if !autoApply {
 						continue
 					}
 
 					// debounce by filename: ignore rapid repeated events within debounce window
 					now := time.Now()
-					key := filepath.Base(ev.Name)
+					key := ev.Name
 					if t, ok := lastEvent[key]; ok && now.Sub(t) < debounce {
 						// skip noisy duplicate
 						continue
 					}
 					lastEvent[key] = now
 
-					// small delay to allow file writers to finish
-					time.Sleep(200 * time.Millisecond)
+					// when new directories are created, add them recursively
+					if info, statErr := os.Stat(ev.Name); statErr == nil && info.IsDir() && ev.Op&fsnotify.Create == fsnotify.Create {
+						_ = addRecursive(watcher, ev.Name)
+						continue
+					}
+
+					// Wait for file to stabilize to avoid reading partially written files
+					if stable := waitForStability(ev.Name, 3, 100*time.Millisecond); !stable {
+						slog.Debug("file did not stabilize in time", "path", ev.Name)
+						continue
+					}
 
 					presets, err := ListSharedPresets(sharedDir)
 					if err != nil {
-						fmt.Printf("watcher: list presets err: %v\n", err)
+						slog.Warn("watcher list presets error", "error", err)
 						continue
 					}
 					mapping, _ := LoadWatcherMapping(sharedDir)
 					for _, p := range presets {
 						name := p[:len(p)-len(filepath.Ext(p))]
-						fmt.Printf("watcher sees preset: %s (autoApply=%v)\n", name, autoApply)
+						slog.Debug("watcher sees preset", "preset", name, "autoApply", autoApply)
 						if mapping != nil {
 							if projects, ok := mapping[name]; ok {
 								for _, proj := range projects {
 									if err := ApplyPresetToProject(proj, name, sharedDir); err != nil {
-										fmt.Printf("watcher: failed to apply %s -> %s: %v\n", name, proj, err)
+										slog.Warn("watcher failed to apply preset", "preset", name, "project", proj, "error", err)
 									} else {
-										fmt.Printf("watcher: applied %s -> %s\n", name, proj)
+										slog.Info("watcher applied preset", "preset", name, "project", proj)
 									}
 								}
 							} else {
-								fmt.Printf("watcher: no mapping for preset %s, skipping\n", name)
+								slog.Debug("watcher skipping preset without mapping", "preset", name)
 							}
 						} else {
-							fmt.Printf("watcher: mapping not provided, skipping auto-apply for %s\n", name)
+							slog.Debug("watcher mapping not provided; skipping auto-apply", "preset", name)
 						}
 					}
 				}
 			case err, ok := <-watcher.Errors:
 				if !ok {
-					fmt.Printf("watcher: errors channel closed\n")
+					slog.Warn("watcher errors channel closed")
 					return
 				}
-				fmt.Printf("watcher error: %v\n", err)
+				slog.Error("watcher error", "error", err)
 			}
 		}
 	}()
 
-	// watch the directory
-	if err := watcher.Add(sharedDir); err != nil {
-		return err
-	}
 	return nil
+}
+
+// addRecursive walks root and adds watches for all directories.
+func addRecursive(w *fsnotify.Watcher, root string) error {
+	return filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			if err := w.Add(path); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+// waitForStability checks the file size timestamp over a handful of intervals and
+// returns true if it remains unchanged across checks.
+func waitForStability(path string, checks int, interval time.Duration) bool {
+	var lastSize int64 = -1
+	for i := 0; i < checks; i++ {
+		fi, err := os.Stat(path)
+		if err != nil {
+			return false
+		}
+		size := fi.Size()
+		if lastSize == size {
+			return true
+		}
+		lastSize = size
+		time.Sleep(interval)
+	}
+	return false
 }

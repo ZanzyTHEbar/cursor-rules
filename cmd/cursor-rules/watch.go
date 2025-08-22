@@ -28,12 +28,11 @@ var watchCmd = &cobra.Command{
 			cfg.SharedDir = core.DefaultSharedDir()
 		}
 
-		if err := core.StartWatcher(cfg.SharedDir, cfg.AutoApply); err != nil {
-			return fmt.Errorf("failed to start watcher: %w", err)
-		}
-		// wait for termination signal
 		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 		defer stop()
+		if err := core.StartWatcher(ctx, cfg.SharedDir, cfg.AutoApply); err != nil {
+			return fmt.Errorf("failed to start watcher: %w", err)
+		}
 		<-ctx.Done()
 		fmt.Fprintln(os.Stderr, "watcher: shutting down")
 		return nil

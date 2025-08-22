@@ -43,20 +43,33 @@ func InstallPreset(projectRoot, preset string) error {
 	}
 
 	dest := filepath.Join(rulesDir, preset+".mdc")
-	f, err := os.Create(dest)
+	tmp, err := os.CreateTemp(rulesDir, ".stub-*.tmp")
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	tmpPath := tmp.Name()
+	defer func() { _ = os.Remove(tmpPath) }()
 
 	t := template.Must(template.New("stub").Parse(stubTmpl))
 	data := map[string]string{
 		"Preset":     preset,
 		"SourcePath": src,
 	}
-	if err := t.Execute(f, data); err != nil {
+	if err := t.Execute(tmp, data); err != nil {
+		tmp.Close()
 		return err
 	}
+	if err := tmp.Sync(); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	if err := os.Rename(tmpPath, dest); err != nil {
+		return err
+	}
+	_ = os.Chmod(dest, 0o644)
 	return nil
 }
 
@@ -65,6 +78,15 @@ func DefaultSharedDir() string {
 	if v := os.Getenv("CURSOR_RULES_DIR"); v != "" {
 		return v
 	}
-	home, _ := os.UserHomeDir()
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" {
+		if env := os.Getenv("HOME"); env != "" {
+			return filepath.Join(env, ".cursor-rules")
+		}
+		if cwd, cwdErr := os.Getwd(); cwdErr == nil && cwd != "" {
+			return filepath.Join(cwd, ".cursor-rules")
+		}
+		return ".cursor-rules"
+	}
 	return filepath.Join(home, ".cursor-rules")
 }

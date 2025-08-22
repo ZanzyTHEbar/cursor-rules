@@ -80,14 +80,11 @@ func ApplyPresetWithOptionalSymlink(projectRoot, preset, sharedDir string) error
 	// sharedDir to be structured for stow (package directories). If stow fails,
 	// fallback to symlink creation.
 	if strings.ToLower(os.Getenv("CURSOR_RULES_USE_GNUSTOW")) == "1" && HasStow() {
-		// stow needs to be invoked from sharedDir parent; use the preset name as package
 		cmd := exec.Command("stow", "-v", "-d", sharedDir, "-t", rulesDir, preset)
-		if output, err := cmd.CombinedOutput(); err != nil {
-			// do not consider stow fatal; fall back to symlink
-			_ = fmt.Errorf("stow failed: %v: %s", err, string(output))
-		} else {
+		if _, err := cmd.CombinedOutput(); err == nil {
 			return nil
 		}
+		// else: fall through
 	}
 
 	// If user requested symlink behavior, create a symlink
@@ -98,14 +95,25 @@ func ApplyPresetWithOptionalSymlink(projectRoot, preset, sharedDir string) error
 		return nil
 	}
 
-	// Default behavior: write stub file as before
-	f, err := os.Create(dest)
+	// Default behavior: write stub file atomically
+	tmp, err := os.CreateTemp(rulesDir, ".stub-*.tmp")
 	if err != nil {
 		return err
 	}
-	defer f.Close()
-	_, err = f.WriteString("---\n@file " + src + "\n")
-	if err != nil {
+	tmpPath := tmp.Name()
+	defer func() { _ = os.Remove(tmpPath) }()
+	if _, err := tmp.WriteString("---\n@file " + src + "\n"); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Sync(); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	if err := os.Rename(tmpPath, dest); err != nil {
 		return err
 	}
 	return nil
