@@ -3,6 +3,12 @@
 [![semantic versioning](https://img.shields.io/badge/semantic%20versioning-2.0.0-green.svg)](https://semver.org)
 > All notable changes to this project will be documented in this file
 
+## [0.2.0](https://github.com/ZanzyTHEbar/cursor-rules/compare/v0.1.1...v0.2.0) (2025-08-22)
+
+### 🍕 Features
+
+* **sync:** enhance shared directory handling in sync command ([633e94c](https://github.com/ZanzyTHEbar/cursor-rules/commit/633e94c0882d7d8a30f09fd16420633134545d6b))
+
 ## [0.1.1](https://github.com/ZanzyTHEbar/cursor-rules/compare/v0.1.0...v0.1.1) (2025-08-21)
 
 ### 🐛 Bug Fixes
