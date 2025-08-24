@@ -69,7 +69,9 @@ ext-package: ext-prepare ext-build
 	@cd extension && VSIX_FILE=$$(ls -1t *.vsix | head -n1); \
 	BASE_NAME=$$(node -e 'console.log(require("./package.json").name)'); \
 	cp "$$VSIX_FILE" "$$BASE_NAME.vsix"; \
-	echo "Also created versionless VSIX at: $$(pwd)/$$BASE_NAME.vsix"
+	# Remove the versioned VSIX to keep only the versionless file
+	rm -f "$$VSIX_FILE"; \
+	echo "Created versionless VSIX at: $$(pwd)/$$BASE_NAME.vsix"
 
 .PHONY: build-all
 build-all:
