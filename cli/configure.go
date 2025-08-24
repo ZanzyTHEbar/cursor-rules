@@ -41,7 +41,7 @@ func ConfigureRoot(root *cobra.Command, ctx *AppContext, postInit func(*viper.Vi
 		if postInit != nil {
 			if err := postInit(ctx.Viper); err != nil {
 				// log and return error
-				log.Printf("postInit error: %v", err)
+				ctx.Logger.Printf("postInit error: %v", err)
 				return err
 			}
 		}
