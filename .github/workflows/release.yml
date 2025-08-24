@@ -1,0 +1,52 @@
+name: Release VSIX
+
+on:
+  release:
+    types: ["published"]
+
+jobs:
+  attach-vsix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Enable pnpm via corepack
+        run: corepack enable && corepack prepare pnpm@latest --activate
+
+      - name: Install deps & build
+        run: |
+          cd extension
+          pnpm install --no-frozen-lockfile
+          pnpm build
+
+      - name: Package VSIX
+        run: |
+          cd extension
+          npx @vscode/vsce package --no-dependencies
+
+      - id: create-versionless
+        name: Create versionless VSIX
+        run: |
+          cd extension
+          VSIX_FILE=$(ls -1t *.vsix | head -n1)
+          BASE_NAME=$(node -e "console.log(require('./package.json').name)")
+          cp "$VSIX_FILE" "$BASE_NAME.vsix"
+          echo "basename=$BASE_NAME.vsix" >> $GITHUB_OUTPUT
+
+      - name: Upload VSIX to Release
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: extension/${{ steps.create-versionless.outputs.basename }}
+          asset_name: ${{ steps.create-versionless.outputs.basename }}
+          asset_content_type: application/octet-stream
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+

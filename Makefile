@@ -53,8 +53,8 @@ ext-install:
 	@make ext-package
 	@cd extension && VSIX_FILE=$$(ls -1t *.vsix | head -n1) && \
 	BASE_NAME=$$(node -e 'console.log(require("./package.json").name)') && \
-	echo "VSIX packaged at: $$(pwd)/$$VSIX_FILE" && \
-	echo "Versionless VSIX available at: $$(pwd)/$$BASE_NAME.vsix" && \
+	echo "VSIX packaged at: extension/$$VSIX_FILE" && \
+	echo "Versionless VSIX available at: extension/$$BASE_NAME.vsix" && \
 	echo "Cursor CLI does not support silent VSIX install. Install manually:" && \
 	echo "In Cursor: Command Palette → Extensions: Install from VSIX... → select the VSIX above or use $$BASE_NAME.vsix."
     
