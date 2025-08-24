@@ -64,6 +64,6 @@ cursor-rules sync
 ### Development
 
 - Build, Package, install CLI: `make`
-- Install VSIX (Cursor): Command Palette → “Extensions: Install from VSIX…”
+- Install VSIX (Cursor): Command Palette → “Extensions: Install from VSIX…” or use the versionless file created by the packaging step: `extension/$(node -e "console.log(require('./package.json').name)").vsix`
 
 

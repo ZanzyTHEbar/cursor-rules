@@ -49,18 +49,27 @@ ext-install:
 	@echo "Installing the cursor-rules cli binary in $(GOPATH)/bin"
 	@make install
 	@echo "Cursor-rules binary: $$(ls -1 $(GOPATH)/bin/cursor-rules)"
+	@# Ensure the extension is packaged (creates .vsix)
+	@make ext-package
 	@cd extension && VSIX_FILE=$$(ls -1t *.vsix | head -n1) && \
+	BASE_NAME=$$(node -e 'console.log(require("./package.json").name)') && \
 	echo "VSIX packaged at: $$(pwd)/$$VSIX_FILE" && \
+	echo "Versionless VSIX available at: $$(pwd)/$$BASE_NAME.vsix" && \
 	echo "Cursor CLI does not support silent VSIX install. Install manually:" && \
-	echo "In Cursor: Command Palette → Extensions: Install from VSIX... → select the VSIX above."
+	echo "In Cursor: Command Palette → Extensions: Install from VSIX... → select the VSIX above or use $$BASE_NAME.vsix."
     
 .PHONY: ext-test
 ext-test:
 	@cd extension && pnpm install --no-frozen-lockfile && pnpm build && pnpm test
 
 .PHONY: ext-package
+.PHONY: ext-package
 ext-package: ext-prepare ext-build
 	@cd extension && npx @vscode/vsce package --no-dependencies
+	@cd extension && VSIX_FILE=$$(ls -1t *.vsix | head -n1); \
+	BASE_NAME=$$(node -e 'console.log(require("./package.json").name)'); \
+	cp "$$VSIX_FILE" "$$BASE_NAME.vsix"; \
+	echo "Also created versionless VSIX at: $$(pwd)/$$BASE_NAME.vsix"
 
 .PHONY: build-all
 build-all:
