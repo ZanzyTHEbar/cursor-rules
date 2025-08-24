@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/ZanzyTHEbar/cursor-rules/cli"
+	"github.com/ZanzyTHEbar/cursor-rules/cmd/cursor-rules/commands"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/config"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/core"
 	gblogger "github.com/ZanzyTHEbar/go-basetools/logger"
@@ -17,8 +18,8 @@ import (
 // Version is set at build time via -ldflags. Defaults to "dev".
 var Version = "dev"
 
-// FIXME: this needs to be implemented
-var cfgFile string
+// cfgFile is intentionally omitted here; configuration is wired by
+// `cli.ConfigureRoot` which defines and manages the `--config` flag.
 
 var rootCmd = &cobra.Command{
 	Use:   "cursor-rules",
@@ -59,4 +60,21 @@ func init() {
 		return nil
 	}
 	cli.ConfigureRoot(rootCmd, ctx, postInit)
+
+	// register all command factories into the global palette
+	cli.Register(
+		commands.NewInstallCmd,
+		commands.NewRemoveCmd,
+		commands.NewSyncCmd,
+		commands.NewWatchCmd,
+		commands.NewListCmd,
+		commands.NewEffectiveCmd,
+		commands.NewPolicyCmd,
+		commands.NewInitCmd,
+	)
+
+	// Add commands registered into the global CLI palette (registered in
+	// cmd/cursor-rules/init.go). ConfigureRoot only wires config/flags; we
+	// still need to attach the concrete subcommands from the global palette.
+	rootCmd.AddCommand(cli.DefaultPalette.Commands(ctx)...)
 }

@@ -3,7 +3,7 @@
 ---
 
 <p align="center">
-  <img src="extension/assets/icon.png" alt="Cursor Rules Manager" width="160" height="160" />
+  <img src="extension/assets/icon.webp" alt="Cursor Rules Manager" width="160" height="160" />
   <br/>
   <em>Manage shared Cursor rule presets from your editor</em>
   <br/>
@@ -130,6 +130,28 @@ Migration tips:
 
 - Prefer `ctx.Viper.GetString("workdir")` over `rootCmd.Flags().GetString("workdir")`, falling back to the flag if unset.
 - For incremental migration, wrap existing `*cobra.Command` values with `cli.FromCommand(cmd)` and register the resulting factory.
+
+Logger integration:
+
+- We use a minimal `cli.Logger` interface (Printf) so you can plug any logger easily.
+- By default `AppContext` uses the standard library logger. To use `go-basetools` create
+  a logger adapter and pass it to `cli.NewAppContext`.
+
+Example (main.go):
+
+```go
+import (
+  gblogger "github.com/ZanzyTHEbar/go-basetools/logger"
+)
+
+// configure go-basetools logger
+gblogger.InitLogger(&gblogger.Config{Logger: gblogger.Logger{Style: "text", Level: "info"}})
+
+// adapt to cli.Logger
+ctx := cli.NewAppContext(nil, cli.NewGoBasetoolsAdapter())
+root := cli.NewRoot(ctx, cli.DefaultPalette)
+```
+
 
 ### Extension workflows
 

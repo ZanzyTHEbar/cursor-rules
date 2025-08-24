@@ -1,7 +1,9 @@
 package cli
 
 import (
+	"fmt"
 	"log"
+	"log/slog"
 	"reflect"
 )
 
@@ -40,4 +42,19 @@ func NewStdLoggerAdapter(l *log.Logger) Logger {
 		return log.Default()
 	}
 	return l
+}
+
+// slogAdapter adapts the global slog logger to the minimal Logger interface.
+type slogAdapter struct{}
+
+func (s *slogAdapter) Printf(format string, vv ...interface{}) {
+	msg := fmt.Sprintf(format, vv...)
+	slog.Info(msg)
+}
+
+// NewGoBasetoolsAdapter returns a Logger that routes to the go-basetools
+// configured slog default logger. It is safe to call even before InitLogger;
+// slog will use the standard library logger by default.
+func NewGoBasetoolsAdapter() Logger {
+	return &slogAdapter{}
 }
