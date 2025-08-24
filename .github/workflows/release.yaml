@@ -15,8 +15,6 @@ concurrency:
     cancel-in-progress: true
 
 env:
-    REGISTRY: ghcr.io
-    IMAGE_NAME: ${{ github.repository }}
     GO_VERSION: "1.24.x"
 
 jobs:
