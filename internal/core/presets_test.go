@@ -225,13 +225,15 @@ func TestInstallNestedPackage(t *testing.T) {
 	// First, let's see what files were actually created
 	rulesDir := filepath.Join(proj, ".cursor", "rules")
 	var createdFiles []string
-	filepath.Walk(rulesDir, func(path string, info os.FileInfo, err error) error {
+	if err := filepath.Walk(rulesDir, func(path string, info os.FileInfo, err error) error {
 		if err == nil && !info.IsDir() {
 			rel, _ := filepath.Rel(rulesDir, path)
 			createdFiles = append(createdFiles, rel)
 		}
 		return nil
-	})
+	}); err != nil {
+		t.Fatalf("Failed to walk rules directory: %v", err)
+	}
 	t.Logf("Created files: %v", createdFiles)
 	
 	// Verify files are flattened to rules root (nested packages should always flatten)
