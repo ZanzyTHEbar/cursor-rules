@@ -1,7 +1,10 @@
 name: Release (semantic-release)
 
 on:
-    push:
+    workflow_run:
+        workflows: ["CI"]
+        types:
+            - completed
         branches: [main]
 
 permissions:
@@ -14,13 +17,11 @@ concurrency:
     group: ${{ github.workflow }}-${{ github.ref }}
     cancel-in-progress: true
 
-env:
-    GO_VERSION: "1.24.x"
-
 jobs:
     release:
         name: semantic-release
         runs-on: ubuntu-latest
+        if: ${{ github.event.workflow_run.conclusion == 'success' }}
         steps:
             - name: Checkout
               uses: actions/checkout@v4
@@ -37,12 +38,6 @@ jobs:
               with:
                   version: 10
                   run_install: false
-
-            - name: Set up Go
-              uses: actions/setup-go@v5
-              with:
-                  go-version: ${{ env.GO_VERSION }}
-                  cache: true
 
             - name: Install semantic-release toolchain
               run: |
