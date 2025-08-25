@@ -158,8 +158,9 @@ func InstallPackage(projectRoot, packageName string, excludes []string, flatten 
 		}
 
 		// Destination path preserves package name as prefix to avoid collisions
+		// For nested packages (containing "/"), always flatten to avoid deep directory structures
 		var dest string
-		if flatten {
+		if flatten || strings.Contains(packageName, "/") {
 			dest = filepath.Join(rulesDir, filepath.Base(rel))
 		} else {
 			destName := filepath.Join(packageName, rel)

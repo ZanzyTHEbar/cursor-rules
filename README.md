@@ -185,11 +185,39 @@ Relative project paths are resolved relative to the shared directory. The watche
 You can organize shared presets as packages under your shared dir (default: `~/.cursor-rules`).
 Each package is a directory (for example `frontend/` or `git/`) containing one or more `.mdc` files.
 
+### Nested Package Support
+
+Packages can be organized in nested directory structures of arbitrary depth:
+
+```
+~/.cursor-rules/
+├── frontend/
+│   ├── react/
+│   │   ├── hooks.mdc
+│   │   └── components.mdc
+│   └── vue/
+│       └── composition.mdc
+└── backend/
+    └── nodejs/
+        └── express/
+            ├── middleware.mdc
+            └── routes.mdc
+```
+
 Install a package into a project:
 
 ```bash
+# Install a simple package
 cursor-rules install frontend
+
+# Install a nested package
+cursor-rules install frontend/react
+
+# Install a deeply nested package
+cursor-rules install backend/nodejs/express
 ```
+
+**Note**: Nested packages (containing `/` in the name) are automatically flattened when installed. This means files from `frontend/react/` will be placed directly in `.cursor/rules/` rather than `.cursor/rules/frontend/react/`.
 
 Package installs support exclusions via the `--exclude` flag and a `.cursor-rules-ignore` file placed in the package root.
 The `--exclude` flag accepts repeated patterns which are merged with the `.cursor-rules-ignore` patterns.
@@ -200,7 +228,7 @@ Example:
 cursor-rules install frontend --exclude "templates/*" --exclude "legacy.mdc"
 ```
 
-You can also flatten package files into the project's `.cursor/rules/` root by passing `--flatten`:
+You can also flatten regular package files into the project's `.cursor/rules/` root by passing `--flatten`:
 
 ```bash
 cursor-rules install frontend --flatten
