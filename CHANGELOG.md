@@ -3,6 +3,20 @@
 [![semantic versioning](https://img.shields.io/badge/semantic%20versioning-2.0.0-green.svg)](https://semver.org)
 > All notable changes to this project will be documented in this file
 
+## [0.3.0](https://github.com/ZanzyTHEbar/cursor-rules/compare/v0.2.0...v0.3.0) (2025-08-25)
+
+### 🍕 Features
+
+* **logger:** add go-basetools slog adapter and README notes ([ad1f558](https://github.com/ZanzyTHEbar/cursor-rules/commit/ad1f5588e1ab34a4380822904dc669f8e1b6bde2))
+
+### 🧑‍💻 Code Refactoring
+
+* palette architecture, AppContext, commands, tests, CI, logger improvements ([000e6d9](https://github.com/ZanzyTHEbar/cursor-rules/commit/000e6d9da57562284611353d6692f72460d51ff4))
+
+### 🔁 Continuous Integration
+
+* add GitHub Actions workflow for go test and golangci-lint ([d4f4cf4](https://github.com/ZanzyTHEbar/cursor-rules/commit/d4f4cf4de895e0e6fc7205b96a921c2963d7f279))
+
 ## [0.2.0](https://github.com/ZanzyTHEbar/cursor-rules/compare/v0.1.1...v0.2.0) (2025-08-22)
 
 ### 🍕 Features
