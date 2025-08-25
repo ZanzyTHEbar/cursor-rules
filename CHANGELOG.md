@@ -3,6 +3,17 @@
 [![semantic versioning](https://img.shields.io/badge/semantic%20versioning-2.0.0-green.svg)](https://semver.org)
 > All notable changes to this project will be documented in this file
 
+## [0.4.1](https://github.com/ZanzyTHEbar/cursor-rules/compare/v0.4.0...v0.4.1) (2025-08-25)
+
+### 🐛 Bug Fixes
+
+* address workflow duplication and Go linting errors ([e72b5f1](https://github.com/ZanzyTHEbar/cursor-rules/commit/e72b5f1395d6d326e22fe5fe691e78fccca8f1cc))
+
+### 🔁 Continuous Integration
+
+* fix duplicated YAML logic and create functional CI workflow ([1984b31](https://github.com/ZanzyTHEbar/cursor-rules/commit/1984b313beb91eb91cb1e65ec7ab07597d5ed0c1))
+* fix workflow duplication, dependencies, and Go linting errors ([9c13ad9](https://github.com/ZanzyTHEbar/cursor-rules/commit/9c13ad987b1110115ddca5085a15f53c0171df7a)), closes [#7](https://github.com/ZanzyTHEbar/cursor-rules/issues/7)
+
 ## [0.4.0](https://github.com/ZanzyTHEbar/cursor-rules/compare/v0.3.0...v0.4.0) (2025-08-25)
 
 ### 🍕 Features
