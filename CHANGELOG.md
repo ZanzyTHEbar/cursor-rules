@@ -3,6 +3,12 @@
 [![semantic versioning](https://img.shields.io/badge/semantic%20versioning-2.0.0-green.svg)](https://semver.org)
 > All notable changes to this project will be documented in this file
 
+## [0.4.0](https://github.com/ZanzyTHEbar/cursor-rules/compare/v0.3.0...v0.4.0) (2025-08-25)
+
+### 🍕 Features
+
+* Add nested package support with flattening as default behavior ([be42397](https://github.com/ZanzyTHEbar/cursor-rules/commit/be4239701b7c8fa14ae16628480bdf1b74cd763f)), closes [#5](https://github.com/ZanzyTHEbar/cursor-rules/issues/5)
+
 ## [0.3.0](https://github.com/ZanzyTHEbar/cursor-rules/compare/v0.2.0...v0.3.0) (2025-08-25)
 
 ### 🍕 Features
