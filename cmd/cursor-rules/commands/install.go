@@ -13,7 +13,7 @@ import (
 // NewInstallCmd returns the install command. Accepts AppContext for future use.
 func NewInstallCmd(ctx *cli.AppContext) *cobra.Command {
 	var excludeFlag []string
-	var flattenFlag bool
+	var noFlattenFlag bool
 	cmd := &cobra.Command{
 		Use:   "install <preset|package>",
 		Short: "Install a preset or package into the current project (.cursor/rules/)",
@@ -41,7 +41,7 @@ func NewInstallCmd(ctx *cli.AppContext) *cobra.Command {
 			pkgPath := filepath.Join(shared, target)
 			if info, err := os.Stat(pkgPath); err == nil && info.IsDir() {
 				// treat as package install
-				if err := core.InstallPackage(wd, target, excludeFlag, flattenFlag); err != nil {
+				if err := core.InstallPackage(wd, target, excludeFlag, noFlattenFlag); err != nil {
 					return fmt.Errorf("package install failed: %w", err)
 				}
 				fmt.Printf("Installed package %q into %s/.cursor/rules/\n", target, wd)
@@ -57,6 +57,6 @@ func NewInstallCmd(ctx *cli.AppContext) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringArrayVar(&excludeFlag, "exclude", []string{}, "patterns to exclude when installing a package (can be repeated)")
-	cmd.Flags().BoolVar(&flattenFlag, "flatten", false, "flatten package files into .cursor/rules/ instead of preserving package subpaths")
+	cmd.Flags().BoolVarP(&noFlattenFlag, "no-flatten", "n", false, "preserve package directory structure instead of flattening files into .cursor/rules/")
 	return cmd
 }

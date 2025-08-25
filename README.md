@@ -217,7 +217,7 @@ cursor-rules install frontend/react
 cursor-rules install backend/nodejs/express
 ```
 
-**Note**: Nested packages (containing `/` in the name) are automatically flattened when installed. This means files from `frontend/react/` will be placed directly in `.cursor/rules/` rather than `.cursor/rules/frontend/react/`.
+**Note**: All packages are flattened by default when installed. This means files from packages will be placed directly in `.cursor/rules/` rather than preserving the package directory structure. Nested packages (containing `/` in the name) are always flattened regardless of flags.
 
 Package installs support exclusions via the `--exclude` flag and a `.cursor-rules-ignore` file placed in the package root.
 The `--exclude` flag accepts repeated patterns which are merged with the `.cursor-rules-ignore` patterns.
@@ -228,10 +228,11 @@ Example:
 cursor-rules install frontend --exclude "templates/*" --exclude "legacy.mdc"
 ```
 
-You can also flatten regular package files into the project's `.cursor/rules/` root by passing `--flatten`:
+You can preserve the package directory structure by passing `--no-flatten` (or `-n`):
 
 ```bash
-cursor-rules install frontend --flatten
+cursor-rules install frontend --no-flatten
+cursor-rules install frontend -n
 ```
 
 Patterns in `.cursor-rules-ignore` follow simple glob semantics (see `filepath.Match`). Lines starting with `#` are comments.

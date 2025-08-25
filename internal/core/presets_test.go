@@ -168,8 +168,8 @@ func TestInstallPackageWithIgnoreAndFlatten(t *testing.T) {
 
 	// target project
 	proj := t.TempDir()
-	// run install package with flatten=true
-	if err := InstallPackage(proj, "pkg", nil, true); err != nil {
+	// run install package with noFlatten=false (default flattening behavior)
+	if err := InstallPackage(proj, "pkg", nil, false); err != nil {
 		t.Fatalf("InstallPackage failed: %v", err)
 	}
 
@@ -319,8 +319,8 @@ func TestInstallPackageRegularVsNested(t *testing.T) {
 	// target project
 	proj := t.TempDir()
 	
-	// Test installing regular package WITHOUT flatten - should preserve structure
-	if err := InstallPackage(proj, "frontend", nil, false); err != nil {
+	// Test installing regular package WITH noFlatten=true - should preserve structure
+	if err := InstallPackage(proj, "frontend", nil, true); err != nil {
 		t.Fatalf("InstallPackage regular failed: %v", err)
 	}
 	

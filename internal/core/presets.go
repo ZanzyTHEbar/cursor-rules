@@ -97,7 +97,8 @@ func DefaultSharedDir() string {
 // .cursor/rules. The package is a directory under sharedDir (e.g. "frontend" or "git").
 // It supports excluding specific files via the excludes slice and respects a
 // .cursor-rules-ignore file placed inside the package which lists patterns to skip.
-func InstallPackage(projectRoot, packageName string, excludes []string, flatten bool) error {
+// By default, packages are flattened into .cursor/rules/. Use noFlatten=true to preserve structure.
+func InstallPackage(projectRoot, packageName string, excludes []string, noFlatten bool) error {
 	sharedDir := DefaultSharedDir()
 	pkgDir := filepath.Join(sharedDir, packageName)
 	info, err := os.Stat(pkgDir)
@@ -159,8 +160,9 @@ func InstallPackage(projectRoot, packageName string, excludes []string, flatten 
 
 		// Destination path preserves package name as prefix to avoid collisions
 		// For nested packages (containing "/"), always flatten to avoid deep directory structures
+		// By default, all packages are flattened unless noFlatten is explicitly set
 		var dest string
-		if flatten || strings.Contains(packageName, "/") {
+		if !noFlatten || strings.Contains(packageName, "/") {
 			dest = filepath.Join(rulesDir, filepath.Base(rel))
 		} else {
 			destName := filepath.Join(packageName, rel)
