@@ -3,7 +3,7 @@
 ---
 
 <p align="center">
-  <img src="extension/assets/icon.png" alt="Cursor Rules Manager" width="160" height="160" />
+  <img src="extension/assets/icon.webp" alt="Cursor Rules Manager" width="160" height="160" />
   <br/>
   <em>Manage shared Cursor rule presets from your editor</em>
   <br/>
@@ -118,6 +118,41 @@ cursor-rules effective --workdir /path/to/project
 cursor-rules watch
 ```
 
+## Command palette architecture (developer notes)
+
+- The CLI uses a composable "palette" architecture implemented in `cli`.
+- `cli.AppContext` contains shared dependencies: `Viper` (config) and `Logger`.
+- Commands are authored as factories: `func(*cli.AppContext) *cobra.Command` so they can read configuration from `ctx.Viper` instead of global flags.
+- Register all command factories in `cmd/cursor-rules/registry.go` using `cli.Register(...)`.
+- Build the root command with `cli.BuildRoot(ctx)` or `cli.NewRoot(ctx, cli.DefaultPalette)` in `main`.
+
+Migration tips:
+
+- Prefer `ctx.Viper.GetString("workdir")` over `rootCmd.Flags().GetString("workdir")`, falling back to the flag if unset.
+- For incremental migration, wrap existing `*cobra.Command` values with `cli.FromCommand(cmd)` and register the resulting factory.
+
+Logger integration:
+
+- We use a minimal `cli.Logger` interface (Printf) so you can plug any logger easily.
+- By default `AppContext` uses the standard library logger. To use `go-basetools` create
+  a logger adapter and pass it to `cli.NewAppContext`.
+
+Example (main.go):
+
+```go
+import (
+  gblogger "github.com/ZanzyTHEbar/go-basetools/logger"
+)
+
+// configure go-basetools logger
+gblogger.InitLogger(&gblogger.Config{Logger: gblogger.Logger{Style: "text", Level: "info"}})
+
+// adapt to cli.Logger
+ctx := cli.NewAppContext(nil, cli.NewGoBasetoolsAdapter())
+root := cli.NewRoot(ctx, cli.DefaultPalette)
+```
+
+
 ### Extension workflows
 
 - Cursor Rules: Sync Shared Presets — fetch updates then pick presets offered on first run
@@ -144,3 +179,31 @@ presets:
 ```
 
 Relative project paths are resolved relative to the shared directory. The watcher will only auto-apply presets that appear in this mapping to avoid accidental writes.
+
+## Packages
+
+You can organize shared presets as packages under your shared dir (default: `~/.cursor-rules`).
+Each package is a directory (for example `frontend/` or `git/`) containing one or more `.mdc` files.
+
+Install a package into a project:
+
+```bash
+cursor-rules install frontend
+```
+
+Package installs support exclusions via the `--exclude` flag and a `.cursor-rules-ignore` file placed in the package root.
+The `--exclude` flag accepts repeated patterns which are merged with the `.cursor-rules-ignore` patterns.
+
+Example:
+
+```bash
+cursor-rules install frontend --exclude "templates/*" --exclude "legacy.mdc"
+```
+
+You can also flatten package files into the project's `.cursor/rules/` root by passing `--flatten`:
+
+```bash
+cursor-rules install frontend --flatten
+```
+
+Patterns in `.cursor-rules-ignore` follow simple glob semantics (see `filepath.Match`). Lines starting with `#` are comments.

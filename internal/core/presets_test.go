@@ -138,3 +138,47 @@ func TestApplyWithSymlinkPreference(t *testing.T) {
 		t.Fatalf("symlink target mismatch: got %s want %s", target, presetFile)
 	}
 }
+
+func TestInstallPackageWithIgnoreAndFlatten(t *testing.T) {
+	// Setup temp shared dir
+	sharedDir := t.TempDir()
+	// create package dir
+	pkg := filepath.Join(sharedDir, "pkg")
+	if err := os.MkdirAll(pkg, 0o755); err != nil {
+		t.Fatalf("mkdir pkg failed: %v", err)
+	}
+	// create files
+	if err := os.WriteFile(filepath.Join(pkg, "a.mdc"), []byte("a"), 0o644); err != nil {
+		t.Fatalf("write a.mdc: %v", err)
+	}
+	if err := os.MkdirAll(filepath.Join(pkg, "templates"), 0o755); err != nil {
+		t.Fatalf("mkdir templates: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(pkg, "templates", "t.mdc"), []byte("t"), 0o644); err != nil {
+		t.Fatalf("write t.mdc: %v", err)
+	}
+	// write ignore file to skip templates/*
+	if err := os.WriteFile(filepath.Join(pkg, ".cursor-rules-ignore"), []byte("templates/*\n"), 0o644); err != nil {
+		t.Fatalf("write ignore: %v", err)
+	}
+
+	// override DefaultSharedDir via env
+	os.Setenv("CURSOR_RULES_DIR", sharedDir)
+	defer os.Unsetenv("CURSOR_RULES_DIR")
+
+	// target project
+	proj := t.TempDir()
+	// run install package with flatten=true
+	if err := InstallPackage(proj, "pkg", nil, true); err != nil {
+		t.Fatalf("InstallPackage failed: %v", err)
+	}
+
+	// verify a.mdc exists at rules root
+	if _, err := os.Stat(filepath.Join(proj, ".cursor", "rules", "a.mdc")); err != nil {
+		t.Fatalf("expected a.mdc in rules root: %v", err)
+	}
+	// verify templates/t.mdc NOT copied
+	if _, err := os.Stat(filepath.Join(proj, ".cursor", "rules", "t.mdc")); err == nil {
+		t.Fatalf("expected templates t.mdc to be ignored when flattened")
+	}
+}

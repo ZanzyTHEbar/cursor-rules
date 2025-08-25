@@ -2,8 +2,10 @@ package core
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 )
 
@@ -89,4 +91,110 @@ func DefaultSharedDir() string {
 		return ".cursor-rules"
 	}
 	return filepath.Join(home, ".cursor-rules")
+}
+
+// InstallPackage installs an entire package directory from sharedDir into the project's
+// .cursor/rules. The package is a directory under sharedDir (e.g. "frontend" or "git").
+// It supports excluding specific files via the excludes slice and respects a
+// .cursor-rules-ignore file placed inside the package which lists patterns to skip.
+func InstallPackage(projectRoot, packageName string, excludes []string, flatten bool) error {
+	sharedDir := DefaultSharedDir()
+	pkgDir := filepath.Join(sharedDir, packageName)
+	info, err := os.Stat(pkgDir)
+	if err != nil || !info.IsDir() {
+		return fmt.Errorf("package not found: %s", pkgDir)
+	}
+
+	// Read .cursor-rules-ignore if present in package dir
+	ignorePath := filepath.Join(pkgDir, ".cursor-rules-ignore")
+	var ignorePatterns []string
+	if b, err := os.ReadFile(ignorePath); err == nil {
+		lines := strings.Split(string(b), "\n")
+		for _, l := range lines {
+			l = strings.TrimSpace(l)
+			if l == "" || strings.HasPrefix(l, "#") {
+				continue
+			}
+			ignorePatterns = append(ignorePatterns, l)
+		}
+	}
+
+	// Merge excludes param into ignorePatterns
+	for _, ex := range excludes {
+		ex = strings.TrimSpace(ex)
+		if ex != "" {
+			ignorePatterns = append(ignorePatterns, ex)
+		}
+	}
+
+	// Walk package dir and install each .mdc file unless excluded
+	rulesDir := filepath.Join(projectRoot, ".cursor", "rules")
+	if err := os.MkdirAll(rulesDir, 0o755); err != nil {
+		return err
+	}
+
+	err = filepath.Walk(pkgDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		if filepath.Ext(path) != ".mdc" && filepath.Ext(path) != ".md" {
+			return nil
+		}
+
+		rel, err := filepath.Rel(pkgDir, path)
+		if err != nil {
+			return err
+		}
+
+		// Check ignore patterns (simple glob match)
+		for _, pat := range ignorePatterns {
+			matched, _ := filepath.Match(pat, rel)
+			if matched {
+				return nil
+			}
+		}
+
+		// Destination path preserves package name as prefix to avoid collisions
+		var dest string
+		if flatten {
+			dest = filepath.Join(rulesDir, filepath.Base(rel))
+		} else {
+			destName := filepath.Join(packageName, rel)
+			dest = filepath.Join(rulesDir, destName)
+		}
+		if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
+			return err
+		}
+
+		// If symlink/stow requested, attempt to use ApplyPresetWithOptionalSymlink semantics
+		// For package installs, prefer creating a symlink to the source file when available.
+		if UseSymlink() {
+			if err := CreateSymlink(path, dest); err == nil {
+				return nil
+			}
+			// else fallthrough to copy
+		}
+
+		in, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer in.Close()
+		out, err := os.Create(dest)
+		if err != nil {
+			return err
+		}
+		defer out.Close()
+		if _, err := io.Copy(out, in); err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }

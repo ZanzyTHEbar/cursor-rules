@@ -17,9 +17,26 @@ func ListSharedPresets(sharedDir string) ([]string, error) {
 	}
 	for _, e := range entries {
 		if e.IsDir() {
+			// skip directories here; packages are handled via ListSharedPackages
 			continue
 		}
 		if filepath.Ext(e.Name()) == ".mdc" {
+			out = append(out, e.Name())
+		}
+	}
+	return out, nil
+}
+
+// ListSharedPackages returns directories directly under sharedDir which can be
+// treated as packages (e.g., "frontend", "git").
+func ListSharedPackages(sharedDir string) ([]string, error) {
+	var out []string
+	entries, err := fs.ReadDir(os.DirFS(sharedDir), ".")
+	if err != nil {
+		return nil, err
+	}
+	for _, e := range entries {
+		if e.IsDir() {
 			out = append(out, e.Name())
 		}
 	}

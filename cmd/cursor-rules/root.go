@@ -6,16 +6,20 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/ZanzyTHEbar/cursor-rules/cli"
+	"github.com/ZanzyTHEbar/cursor-rules/cmd/cursor-rules/commands"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/config"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/core"
 	gblogger "github.com/ZanzyTHEbar/go-basetools/logger"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
-
-var cfgFile string
 
 // Version is set at build time via -ldflags. Defaults to "dev".
 var Version = "dev"
+
+// cfgFile is intentionally omitted here; configuration is wired by
+// `cli.ConfigureRoot` which defines and manages the `--config` flag.
 
 var rootCmd = &cobra.Command{
 	Use:   "cursor-rules",
@@ -31,27 +35,46 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
 	rootCmd.Version = Version
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cursor-rules/config.yaml)")
 	rootCmd.PersistentFlags().StringP("workdir", "w", "", "workspace root (defaults to current directory)")
-}
 
-func initConfig() {
-	// Initialize logger (defaults); can be made configurable later
-	gblogger.InitLogger(&gblogger.Config{Logger: gblogger.Logger{Style: "text", Level: "info"}})
-	// Load config and optionally start watcher
-	cfg, err := config.LoadConfig(cfgFile)
-	if err != nil {
-		slog.Warn("failed to load config", "error", err)
-		return
-	}
-	if cfg.Watch {
-		ctx := context.Background()
-		if err := core.StartWatcher(ctx, cfg.SharedDir, cfg.AutoApply); err != nil {
-			slog.Warn("failed to start watcher", "error", err)
-		} else {
-			slog.Info("watching shared dir", "dir", cfg.SharedDir)
+	ctx := cli.NewAppContext(nil, nil)
+	// postInit loads config into the application and may start background services
+	postInit := func(v *viper.Viper) error {
+		// Initialize logger (defaults); can be made configurable later
+		gblogger.InitLogger(&gblogger.Config{Logger: gblogger.Logger{Style: "text", Level: "info"}})
+		// Load config and optionally start watcher
+		cfg, err := config.LoadConfig(v.ConfigFileUsed())
+		if err != nil {
+			slog.Warn("failed to load config", "error", err)
+			return nil
 		}
+		if cfg.Watch {
+			ctxBG := context.Background()
+			if err := core.StartWatcher(ctxBG, cfg.SharedDir, cfg.AutoApply); err != nil {
+				slog.Warn("failed to start watcher", "error", err)
+			} else {
+				slog.Info("watching shared dir", "dir", cfg.SharedDir)
+			}
+		}
+		return nil
 	}
+	cli.ConfigureRoot(rootCmd, ctx, postInit)
+
+	// register all command factories into the global palette
+	cli.Register(
+		commands.NewInstallCmd,
+		commands.NewRemoveCmd,
+		commands.NewSyncCmd,
+		commands.NewWatchCmd,
+		commands.NewListCmd,
+		commands.NewEffectiveCmd,
+		commands.NewPolicyCmd,
+		commands.NewInitCmd,
+	)
+
+	// Add commands registered into the global CLI palette (registered in
+	// cmd/cursor-rules/init.go). ConfigureRoot only wires config/flags; we
+	// still need to attach the concrete subcommands from the global palette.
+	rootCmd.AddCommand(cli.DefaultPalette.Commands(ctx)...)
 }

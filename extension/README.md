@@ -3,7 +3,7 @@
 ---
 
 <p align="center">
-  <img src="assets/icon.png" alt="Cursor Rules Manager" width="160" height="160" />
+  <img src="assets/icon.webp" alt="Cursor Rules Manager" width="160" height="160" />
   <br/>
   <em>Manage shared Cursor rule presets from your editor</em>
   <br/>
@@ -64,6 +64,6 @@ cursor-rules sync
 ### Development
 
 - Build, Package, install CLI: `make`
-- Install VSIX (Cursor): Command Palette → “Extensions: Install from VSIX…”
+- Install VSIX (Cursor): Command Palette → “Extensions: Install from VSIX…” or use the versionless file created by the packaging step: `extension/$(node -e "console.log(require('./package.json').name)").vsix`
 
 

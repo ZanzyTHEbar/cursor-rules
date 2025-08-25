@@ -49,10 +49,12 @@ ext-install:
 	@echo "Installing the cursor-rules cli binary in $(GOPATH)/bin"
 	@make install
 	@echo "Cursor-rules binary: $$(ls -1 $(GOPATH)/bin/cursor-rules)"
+	@# Ensure the extension is packaged (creates .vsix)
+	@make ext-package
 	@cd extension && VSIX_FILE=$$(ls -1t *.vsix | head -n1) && \
-	echo "VSIX packaged at: $$(pwd)/$$VSIX_FILE" && \
-	echo "Cursor CLI does not support silent VSIX install. Install manually:" && \
-	echo "In Cursor: Command Palette → Extensions: Install from VSIX... → select the VSIX above."
+	echo "VSIX packaged at: extension/$$VSIX_FILE" && \
+	echo "Install the VSIX manually with: code --install-extension extension/$$VSIX_FILE" && \
+	echo "Or in Cursor: Command Palette → Extensions: Install from VSIX... → select the VSIX above."
     
 .PHONY: ext-test
 ext-test:
@@ -61,6 +63,8 @@ ext-test:
 .PHONY: ext-package
 ext-package: ext-prepare ext-build
 	@cd extension && npx @vscode/vsce package --no-dependencies
+	@cd extension && VSIX_FILE=$$(ls -1t *.vsix | head -n1); \
+	echo "Created VSIX at: $$(pwd)/$$VSIX_FILE"
 
 .PHONY: build-all
 build-all:
