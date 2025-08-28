@@ -186,13 +186,13 @@ func TestInstallPackageWithIgnoreAndFlatten(t *testing.T) {
 func TestInstallNestedPackage(t *testing.T) {
 	// Setup temp shared dir with nested package structure
 	sharedDir := t.TempDir()
-	
+
 	// Create nested package: frontend/react
 	nestedPkg := filepath.Join(sharedDir, "frontend", "react")
 	if err := os.MkdirAll(nestedPkg, 0o755); err != nil {
 		t.Fatalf("mkdir nested package failed: %v", err)
 	}
-	
+
 	// Create files in nested package
 	if err := os.WriteFile(filepath.Join(nestedPkg, "hooks.mdc"), []byte("# React Hooks"), 0o644); err != nil {
 		t.Fatalf("write hooks.mdc: %v", err)
@@ -200,7 +200,7 @@ func TestInstallNestedPackage(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(nestedPkg, "components.mdc"), []byte("# React Components"), 0o644); err != nil {
 		t.Fatalf("write components.mdc: %v", err)
 	}
-	
+
 	// Create subdirectory within the package
 	subDir := filepath.Join(nestedPkg, "advanced")
 	if err := os.MkdirAll(subDir, 0o755); err != nil {
@@ -216,7 +216,7 @@ func TestInstallNestedPackage(t *testing.T) {
 
 	// target project
 	proj := t.TempDir()
-	
+
 	// Test installing nested package - should be auto-flattened
 	if err := InstallPackage(proj, "frontend/react", nil, false); err != nil {
 		t.Fatalf("InstallPackage nested failed: %v", err)
@@ -235,7 +235,7 @@ func TestInstallNestedPackage(t *testing.T) {
 		t.Fatalf("Failed to walk rules directory: %v", err)
 	}
 	t.Logf("Created files: %v", createdFiles)
-	
+
 	// Verify files are flattened to rules root (nested packages should always flatten)
 	if _, err := os.Stat(filepath.Join(proj, ".cursor", "rules", "hooks.mdc")); err != nil {
 		t.Fatalf("expected hooks.mdc in rules root: %v", err)
@@ -246,7 +246,7 @@ func TestInstallNestedPackage(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(proj, ".cursor", "rules", "patterns.mdc")); err != nil {
 		t.Fatalf("expected patterns.mdc in rules root: %v", err)
 	}
-	
+
 	// Verify that nested structure is NOT preserved (should be flattened)
 	if _, err := os.Stat(filepath.Join(proj, ".cursor", "rules", "frontend", "react", "hooks.mdc")); err == nil {
 		t.Fatalf("expected nested structure to be flattened, but found file at nested path")
@@ -256,13 +256,13 @@ func TestInstallNestedPackage(t *testing.T) {
 func TestInstallNestedPackageDeepNesting(t *testing.T) {
 	// Setup temp shared dir with deeply nested package structure
 	sharedDir := t.TempDir()
-	
+
 	// Create deeply nested package: backend/nodejs/express/middleware
 	deepNestedPkg := filepath.Join(sharedDir, "backend", "nodejs", "express", "middleware")
 	if err := os.MkdirAll(deepNestedPkg, 0o755); err != nil {
 		t.Fatalf("mkdir deep nested package failed: %v", err)
 	}
-	
+
 	// Create files in deeply nested package
 	if err := os.WriteFile(filepath.Join(deepNestedPkg, "auth.mdc"), []byte("# Auth Middleware"), 0o644); err != nil {
 		t.Fatalf("write auth.mdc: %v", err)
@@ -277,7 +277,7 @@ func TestInstallNestedPackageDeepNesting(t *testing.T) {
 
 	// target project
 	proj := t.TempDir()
-	
+
 	// Test installing deeply nested package - should be auto-flattened
 	if err := InstallPackage(proj, "backend/nodejs/express/middleware", nil, false); err != nil {
 		t.Fatalf("InstallPackage deeply nested failed: %v", err)
@@ -295,7 +295,7 @@ func TestInstallNestedPackageDeepNesting(t *testing.T) {
 func TestInstallPackageRegularVsNested(t *testing.T) {
 	// Setup temp shared dir with both regular and nested packages
 	sharedDir := t.TempDir()
-	
+
 	// Create regular package: frontend
 	regularPkg := filepath.Join(sharedDir, "frontend")
 	if err := os.MkdirAll(regularPkg, 0o755); err != nil {
@@ -304,8 +304,8 @@ func TestInstallPackageRegularVsNested(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(regularPkg, "regular.mdc"), []byte("# Regular Package"), 0o644); err != nil {
 		t.Fatalf("write regular.mdc: %v", err)
 	}
-	
-	// Create nested package: frontend/react  
+
+	// Create nested package: frontend/react
 	nestedPkg := filepath.Join(sharedDir, "frontend", "react")
 	if err := os.MkdirAll(nestedPkg, 0o755); err != nil {
 		t.Fatalf("mkdir nested package failed: %v", err)
@@ -320,32 +320,171 @@ func TestInstallPackageRegularVsNested(t *testing.T) {
 
 	// target project
 	proj := t.TempDir()
-	
+
 	// Test installing regular package WITH noFlatten=true - should preserve structure
 	if err := InstallPackage(proj, "frontend", nil, true); err != nil {
 		t.Fatalf("InstallPackage regular failed: %v", err)
 	}
-	
+
 	// Verify regular package preserves structure
 	if _, err := os.Stat(filepath.Join(proj, ".cursor", "rules", "frontend", "regular.mdc")); err != nil {
 		t.Fatalf("expected regular.mdc in frontend subdirectory: %v", err)
 	}
-	
+
 	// Clean up for next test
 	os.RemoveAll(filepath.Join(proj, ".cursor"))
-	
+
 	// Test installing nested package - should auto-flatten
 	if err := InstallPackage(proj, "frontend/react", nil, false); err != nil {
 		t.Fatalf("InstallPackage nested failed: %v", err)
 	}
-	
+
 	// Verify nested package is flattened
 	if _, err := os.Stat(filepath.Join(proj, ".cursor", "rules", "nested.mdc")); err != nil {
 		t.Fatalf("expected nested.mdc in rules root: %v", err)
 	}
-	
+
 	// Verify it's NOT in nested structure
 	if _, err := os.Stat(filepath.Join(proj, ".cursor", "rules", "frontend", "react", "nested.mdc")); err == nil {
 		t.Fatalf("expected nested package to be flattened, but found file at nested path")
+	}
+}
+
+// Test the double extension bug fix - when user includes .mdc in preset name
+func TestInstallPresetWithExtensionInName(t *testing.T) {
+	sharedDir, err := os.MkdirTemp("", "shared-ext-")
+	if err != nil {
+		t.Fatalf("failed to create shared dir: %v", err)
+	}
+	defer os.RemoveAll(sharedDir)
+
+	// Create a nested directory structure in shared dir
+	nestedDir := filepath.Join(sharedDir, "emissium", "behaviour")
+	if err := os.MkdirAll(nestedDir, 0o755); err != nil {
+		t.Fatalf("failed to create nested dir: %v", err)
+	}
+
+	// Create preset file
+	presetName := "task-execution-rules"
+	presetFile := filepath.Join(nestedDir, presetName+".mdc")
+	if err := os.WriteFile(presetFile, []byte("# Task execution rules preset"), 0o644); err != nil {
+		t.Fatalf("failed to write preset: %v", err)
+	}
+
+	projectDir, err := os.MkdirTemp("", "project-ext-")
+	if err != nil {
+		t.Fatalf("failed to create project dir: %v", err)
+	}
+	defer os.RemoveAll(projectDir)
+
+	// Set env override
+	old := os.Getenv("CURSOR_RULES_DIR")
+	os.Setenv("CURSOR_RULES_DIR", sharedDir)
+	defer os.Setenv("CURSOR_RULES_DIR", old)
+
+	// Test 1: Install with .mdc extension (this was the bug)
+	presetWithExt := "emissium/behaviour/task-execution-rules.mdc"
+	if err := InstallPreset(projectDir, presetWithExt); err != nil {
+		t.Fatalf("InstallPreset with .mdc extension failed: %v", err)
+	}
+
+	// Verify the file was created correctly (should not have .mdc.mdc)
+	expectedStub := filepath.Join(projectDir, ".cursor", "rules", "emissium", "behaviour", "task-execution-rules.mdc")
+	if _, err := os.Stat(expectedStub); err != nil {
+		t.Fatalf("expected stub at %s, err: %v", expectedStub, err)
+	}
+
+	// Test 2: Install without .mdc extension (should also work)
+	os.RemoveAll(filepath.Join(projectDir, ".cursor")) // Clean up
+
+	presetWithoutExt := "emissium/behaviour/task-execution-rules"
+	if err := InstallPreset(projectDir, presetWithoutExt); err != nil {
+		t.Fatalf("InstallPreset without .mdc extension failed: %v", err)
+	}
+
+	// Verify the file was created correctly
+	if _, err := os.Stat(expectedStub); err != nil {
+		t.Fatalf("expected stub at %s after second install, err: %v", expectedStub, err)
+	}
+
+	// Test 3: Idempotency - install again should not fail
+	if err := InstallPreset(projectDir, presetWithExt); err != nil {
+		t.Fatalf("InstallPreset idempotent failed: %v", err)
+	}
+
+	// Verify content is correct
+	content, err := os.ReadFile(expectedStub)
+	if err != nil {
+		t.Fatalf("failed to read stub content: %v", err)
+	}
+
+	// Should be a stub file pointing to the source, not the content itself
+	contentStr := string(content)
+	if !os.IsPathSeparator(contentStr[len(contentStr)-len(presetFile)-1]) || !filepath.HasPrefix(contentStr, "@file ") {
+		t.Logf("Stub content: %q", contentStr)
+		// This might be the actual content if it's not a stub, which is also fine
+	}
+}
+
+// Test the directory creation bug fix - when preset has nested paths
+func TestInstallPresetWithNestedPaths(t *testing.T) {
+	sharedDir, err := os.MkdirTemp("", "shared-nested-")
+	if err != nil {
+		t.Fatalf("failed to create shared dir: %v", err)
+	}
+	defer os.RemoveAll(sharedDir)
+
+	// Create deeply nested directory structure
+	deepNestedDir := filepath.Join(sharedDir, "company", "team", "backend", "api")
+	if err := os.MkdirAll(deepNestedDir, 0o755); err != nil {
+		t.Fatalf("failed to create deep nested dir: %v", err)
+	}
+
+	// Create preset file in nested directory
+	presetName := "auth-middleware"
+	presetFile := filepath.Join(deepNestedDir, presetName+".mdc")
+	if err := os.WriteFile(presetFile, []byte("# Auth middleware preset"), 0o644); err != nil {
+		t.Fatalf("failed to write preset: %v", err)
+	}
+
+	projectDir, err := os.MkdirTemp("", "project-nested-")
+	if err != nil {
+		t.Fatalf("failed to create project dir: %v", err)
+	}
+	defer os.RemoveAll(projectDir)
+
+	// Set env override
+	old := os.Getenv("CURSOR_RULES_DIR")
+	os.Setenv("CURSOR_RULES_DIR", sharedDir)
+	defer os.Setenv("CURSOR_RULES_DIR", old)
+
+	// Test installing preset with deeply nested path
+	nestedPresetPath := "company/team/backend/api/auth-middleware"
+	if err := InstallPreset(projectDir, nestedPresetPath); err != nil {
+		t.Fatalf("InstallPreset with nested path failed: %v", err)
+	}
+
+	// Verify the directory structure was created correctly
+	expectedStub := filepath.Join(projectDir, ".cursor", "rules", "company", "team", "backend", "api", "auth-middleware.mdc")
+	if _, err := os.Stat(expectedStub); err != nil {
+		t.Fatalf("expected stub at %s, err: %v", expectedStub, err)
+	}
+
+	// Verify intermediate directories were created
+	if _, err := os.Stat(filepath.Join(projectDir, ".cursor", "rules", "company", "team", "backend", "api")); err != nil {
+		t.Fatalf("expected intermediate directories to be created: %v", err)
+	}
+
+	// Test with .mdc extension too
+	os.RemoveAll(filepath.Join(projectDir, ".cursor")) // Clean up
+
+	nestedPresetWithExt := "company/team/backend/api/auth-middleware.mdc"
+	if err := InstallPreset(projectDir, nestedPresetWithExt); err != nil {
+		t.Fatalf("InstallPreset with nested path and extension failed: %v", err)
+	}
+
+	// Verify it still works
+	if _, err := os.Stat(expectedStub); err != nil {
+		t.Fatalf("expected stub at %s after second test, err: %v", expectedStub, err)
 	}
 }

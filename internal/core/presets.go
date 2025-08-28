@@ -20,11 +20,15 @@ alwaysApply: true
 // pointing to the shared preset under sharedDir (default: ~/.cursor-rules).
 func InstallPreset(projectRoot, preset string) error {
 	sharedDir := DefaultSharedDir()
-	src := filepath.Join(sharedDir, preset+".mdc")
+
+	// Normalize preset name: remove .mdc extension if present
+	normalizedPreset := strings.TrimSuffix(preset, ".mdc")
+	src := filepath.Join(sharedDir, normalizedPreset+".mdc")
+
 	// If preset file not found, allow package-style layout when stow is enabled
 	if _, err := os.Stat(src); os.IsNotExist(err) {
 		if !(UseGNUStow() && func() bool {
-			d := filepath.Join(sharedDir, preset)
+			d := filepath.Join(sharedDir, normalizedPreset)
 			if info, err := os.Stat(d); err == nil && info.IsDir() {
 				return true
 			}
@@ -41,11 +45,18 @@ func InstallPreset(projectRoot, preset string) error {
 
 	// If symlink/stow behavior requested, prefer that path
 	if UseSymlink() || UseGNUStow() {
-		return ApplyPresetWithOptionalSymlink(projectRoot, preset, sharedDir)
+		return ApplyPresetWithOptionalSymlink(projectRoot, normalizedPreset, sharedDir)
 	}
 
-	dest := filepath.Join(rulesDir, preset+".mdc")
-	tmp, err := os.CreateTemp(rulesDir, ".stub-*.tmp")
+	dest := filepath.Join(rulesDir, normalizedPreset+".mdc")
+
+	// Ensure destination directory exists (handles nested paths like emissium/behaviour/)
+	destDir := filepath.Dir(dest)
+	if err := os.MkdirAll(destDir, 0o755); err != nil {
+		return err
+	}
+
+	tmp, err := os.CreateTemp(destDir, ".stub-*.tmp")
 	if err != nil {
 		return err
 	}
@@ -54,7 +65,7 @@ func InstallPreset(projectRoot, preset string) error {
 
 	t := template.Must(template.New("stub").Parse(stubTmpl))
 	data := map[string]string{
-		"Preset":     preset,
+		"Preset":     normalizedPreset,
 		"SourcePath": src,
 	}
 	if err := t.Execute(tmp, data); err != nil {
