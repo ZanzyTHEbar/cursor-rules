@@ -40,6 +40,15 @@ func NewSyncCmd(_ *cli.AppContext) *cobra.Command {
 				fmt.Println("-", p)
 			}
 
+			// list shared commands too
+			commands, err := core.ListSharedCommands(shared)
+			if err == nil && len(commands) > 0 {
+				fmt.Println("commands in shared dir:")
+				for _, c := range commands {
+					fmt.Println("-", c)
+				}
+			}
+
 			wd, _ := cmd.Root().Flags().GetString("workdir")
 			if applyFlag && wd != "" {
 				var toApply []string

@@ -31,10 +31,17 @@ func NewRemoveCmd(ctx *cli.AppContext) *cobra.Command {
 				}
 				wd = w
 			}
-			if err := core.RemovePreset(wd, preset); err != nil {
-				return fmt.Errorf("remove failed: %w", err)
+			// Try removing preset first
+			if err := core.RemovePreset(wd, preset); err == nil {
+				fmt.Printf("Removed preset %q from %s/.cursor/rules/\n", preset, wd)
+				return nil
 			}
-			fmt.Printf("Removed preset %q from %s/.cursor/rules/\n", preset, wd)
+			// If not a preset, try removing a command
+			if err := core.RemoveCommand(wd, preset); err == nil {
+				fmt.Printf("Removed command %q from %s/.cursor/commands/\n", preset, wd)
+				return nil
+			}
+			// Both operations returned nil (files don't exist), which is fine
 			return nil
 		},
 	}

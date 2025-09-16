@@ -32,6 +32,17 @@ func NewListCmd(ctx *cli.AppContext) *cobra.Command {
 			for _, p := range presets {
 				fmt.Println(p)
 			}
+
+			// Also list custom commands if present
+			cmds, err := core.ListProjectCommands(wd)
+			if err == nil {
+				if len(cmds) > 0 {
+					fmt.Println("\ncommands:")
+					for _, c := range cmds {
+						fmt.Println(c)
+					}
+				}
+			}
 			return nil
 		},
 	}

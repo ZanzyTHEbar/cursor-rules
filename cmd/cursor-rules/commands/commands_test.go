@@ -101,67 +101,48 @@ func TestInstallCommandErrors(t *testing.T) {
 func TestTransformCommandErrors(t *testing.T) {
 	tests := []struct {
 		name        string
-		setup       func(t *testing.T) string // Returns workdir
-		from        string
-		to          string
+		setup       func(t *testing.T) (string, string) // Returns sharedDir, presetName
+		target      string
 		wantErr     bool
 		errContains string
 	}{
 		{
-			name: "invalid from target",
-			setup: func(t *testing.T) string {
-				return t.TempDir()
+			name: "invalid target",
+			setup: func(t *testing.T) (string, string) {
+				shared := t.TempDir()
+				testutil.CreateTestPreset(t, shared, "test", testutil.ValidPresetWithFrontmatter())
+				return shared, "test"
 			},
-			from:        "invalid",
-			to:          "copilot-instr",
+			target:      "invalid",
 			wantErr:     true,
 			errContains: "unknown",
 		},
 		{
-			name: "invalid to target",
-			setup: func(t *testing.T) string {
-				return t.TempDir()
+			name: "missing preset",
+			setup: func(t *testing.T) (string, string) {
+				shared := t.TempDir()
+				return shared, "nonexistent"
 			},
-			from:        "cursor",
-			to:          "invalid",
+			target:      "copilot-instr",
 			wantErr:     true,
-			errContains: "unknown",
-		},
-		{
-			name: "same from and to",
-			setup: func(t *testing.T) string {
-				return t.TempDir()
-			},
-			from:        "cursor",
-			to:          "cursor",
-			wantErr:     true,
-			errContains: "same",
-		},
-		{
-			name: "missing source directory",
-			setup: func(t *testing.T) string {
-				dir := t.TempDir()
-				// Don't create .cursor/rules directory
-				return dir
-			},
-			from:    "cursor",
-			to:      "copilot-instr",
-			wantErr: false, // Should handle gracefully (no files to transform)
+			errContains: "not found",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			workdir := tt.setup(t)
+			shared, presetName := tt.setup(t)
+			
+			// Set environment
+			os.Setenv("CURSOR_RULES_DIR", shared)
+			defer os.Unsetenv("CURSOR_RULES_DIR")
 			
 			// Create context
-			v := viper.New()
-			v.Set("workdir", workdir)
-			ctx := cli.NewAppContext(v, nil)
+			ctx := cli.NewAppContext(nil, nil)
 			
 			// Create command
 			cmd := NewTransformCmd(ctx)
-			cmd.SetArgs([]string{"--from", tt.from, "--to", tt.to})
+			cmd.SetArgs([]string{presetName, "--target", tt.target})
 			
 			// Execute
 			err := cmd.Execute()

@@ -4,12 +4,6 @@
 run:
   timeout: 5m
   tests: true
-  skip-dirs:
-    - node_modules
-    - vendor
-    - testdata
-  skip-files:
-    - ".*\\.pb\\.go$"
 
 linters:
   enable:
@@ -50,7 +44,6 @@ linters-settings:
       - (io.Closer).Close
   
   govet:
-    check-shadowing: true
     enable-all: true
   
   gofmt:
@@ -155,8 +148,6 @@ issues:
   fix: false
 
 output:
-  format: colored-line-number
   print-issued-lines: true
   print-linter-name: true
-  uniq-by-line: true
   sort-results: true

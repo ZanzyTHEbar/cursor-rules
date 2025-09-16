@@ -2,7 +2,6 @@ package core
 
 import (
 	"bytes"
-	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
@@ -69,7 +68,7 @@ func DetectProjectType(root string) (string, error) {
 func EffectiveRules(projectRoot string) (string, error) {
 	rulesDir := filepath.Join(projectRoot, ".cursor", "rules")
 	if _, err := os.Stat(rulesDir); os.IsNotExist(err) {
-		return "", fmt.Errorf("no .cursor/rules directory found in project")
+		return "", nil // Return empty string when directory doesn't exist
 	}
 	var files []string
 	err := filepath.Walk(rulesDir, func(path string, info os.FileInfo, err error) error {
