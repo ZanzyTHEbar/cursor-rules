@@ -3,6 +3,12 @@
 [![semantic versioning](https://img.shields.io/badge/semantic%20versioning-2.0.0-green.svg)](https://semver.org)
 > All notable changes to this project will be documented in this file
 
+## [0.4.2](https://github.com/ZanzyTHEbar/cursor-rules/compare/v0.4.1...v0.4.2) (2025-10-11)
+
+### 🐛 Bug Fixes
+
+* CI/CD linter failure: Replace deprecated filepath.HasPrefix with strings.HasPrefix ([b34d8f2](https://github.com/ZanzyTHEbar/cursor-rules/commit/b34d8f2f2ce9563523f4f7b15e2d3eba72840a60)), closes [#9](https://github.com/ZanzyTHEbar/cursor-rules/issues/9)
+
 ## [0.4.1](https://github.com/ZanzyTHEbar/cursor-rules/compare/v0.4.0...v0.4.1) (2025-08-25)
 
 ### 🐛 Bug Fixes
