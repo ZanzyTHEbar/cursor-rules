@@ -16,7 +16,13 @@ func TestInstallCommandCreatesStub(t *testing.T) {
 	shared := t.TempDir()
 	presetName := "example"
 	presetFile := filepath.Join(shared, presetName+".mdc")
-	if err := os.WriteFile(presetFile, []byte("---\n@file /dev/null\n"), 0o644); err != nil {
+	presetContent := `---
+description: "Example preset"
+apply_to: "**/*.ts"
+---
+@file /dev/null
+`
+	if err := os.WriteFile(presetFile, []byte(presetContent), 0o644); err != nil {
 		t.Fatalf("write preset: %v", err)
 	}
 	// set env so core.DefaultSharedDir() will pick this up

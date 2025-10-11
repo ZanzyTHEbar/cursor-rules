@@ -1,0 +1,21 @@
+version: "1.0"
+targets:
+  - cursor
+  - copilot-instr
+  - copilot-prompt
+
+overrides:
+  copilot-prompt:
+    defaultMode: "agent"
+    defaultTools:
+      - "githubRepo"
+      - "tflint"
+  copilot-instr:
+    includeRefs:
+      - "src/utils.ts"
+      - "src/types.ts"
+
+exclude:
+  - "templates/*"
+  - "*.draft.mdc"
+  - "legacy/**"

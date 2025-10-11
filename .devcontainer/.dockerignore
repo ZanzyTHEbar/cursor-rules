@@ -1,0 +1,26 @@
+# Build artifacts (will be built inside container)
+bin/
+dist/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Node modules (will be installed inside container)
+node_modules/
+extension/node_modules/
+extension/out/
+
+# Temporary files
+*.tmp
+*.log
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git directory (not needed in image)
+.git/

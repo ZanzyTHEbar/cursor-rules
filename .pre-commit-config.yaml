@@ -1,0 +1,86 @@
+# Pre-commit hooks for cursor-rules
+# See https://pre-commit.com for more information
+# Install: pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  # Go formatting
+  - repo: local
+    hooks:
+      - id: go-fmt
+        name: go fmt
+        entry: gofmt
+        args: [-w, -s]
+        language: system
+        files: \.go$
+        pass_filenames: true
+      
+      - id: go-imports
+        name: go imports
+        entry: bash -c 'goimports -w "$@" || true' --
+        language: system
+        files: \.go$
+        pass_filenames: true
+      
+      - id: go-vet
+        name: go vet
+        entry: go vet
+        language: system
+        files: \.go$
+        pass_filenames: false
+        args: [./...]
+      
+      - id: go-test-quick
+        name: go test (quick)
+        entry: go test
+        language: system
+        files: \.go$
+        pass_filenames: false
+        args: [-short, ./...]
+      
+      - id: go-mod-tidy
+        name: go mod tidy
+        entry: go mod tidy
+        language: system
+        files: ^go\.(mod|sum)$
+        pass_filenames: false
+
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: \.(md|txt)$
+      - id: end-of-file-fixer
+        exclude: \.(md|txt)$
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  # Markdown
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.39.0
+    hooks:
+      - id: markdownlint
+        args: [--fix]
+        exclude: ^(CHANGELOG\.md|node_modules/)
+
+  # YAML
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        args: [-c=.yamllint.yml]
+
+# Configuration for specific hooks
+default_language_version:
+  python: python3
+
+# Skip these hooks in CI (they're slow)
+ci:
+  skip: [go-test-quick]

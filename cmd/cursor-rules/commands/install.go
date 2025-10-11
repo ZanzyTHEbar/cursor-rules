@@ -1,26 +1,49 @@
 package commands
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ZanzyTHEbar/cursor-rules/cli"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/core"
+	"github.com/ZanzyTHEbar/cursor-rules/internal/manifest"
+	"github.com/ZanzyTHEbar/cursor-rules/internal/transform"
 	"github.com/spf13/cobra"
 )
 
-// NewInstallCmd returns the install command. Accepts AppContext for future use.
+// NewInstallCmd returns the install command with transformer support.
 func NewInstallCmd(ctx *cli.AppContext) *cobra.Command {
 	var excludeFlag []string
 	var noFlattenFlag bool
+	var targetFlag string
+	var allTargetsFlag bool
+
 	cmd := &cobra.Command{
 		Use:   "install <preset|package>",
-		Short: "Install a preset or package into the current project (.cursor/rules/)",
-		Args:  cobra.ExactArgs(1),
+		Short: "Install a preset or package into the current project",
+		Long: `Install a preset or package into .cursor/rules/ (default) or 
+.github/instructions/ or .github/prompts/ depending on --target flag.
+
+Examples:
+  # Install to Cursor (default)
+  cursor-rules install frontend
+  
+  # Install to Copilot Instructions
+  cursor-rules install frontend --target copilot-instr
+  
+  # Install to Copilot Prompts
+  cursor-rules install frontend --target copilot-prompt
+  
+  # Install to all targets defined in manifest
+  cursor-rules install frontend --all-targets`,
+		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			target := args[0]
-			// prefer workdir from AppContext.Viper, fallback to flag
+			presetName := args[0]
+
+			// Get workdir
 			var wd string
 			if ctx != nil && ctx.Viper != nil {
 				wd = ctx.Viper.GetString("workdir")
@@ -36,27 +59,197 @@ func NewInstallCmd(ctx *cli.AppContext) *cobra.Command {
 				wd = w
 			}
 
-			// Check if target is a package directory in shared dir
+			// Get shared directory
 			shared := core.DefaultSharedDir()
-			pkgPath := filepath.Join(shared, target)
-			if info, err := os.Stat(pkgPath); err == nil && info.IsDir() {
-				// treat as package install
-				if err := core.InstallPackage(wd, target, excludeFlag, noFlattenFlag); err != nil {
-					return fmt.Errorf("package install failed: %w", err)
-				}
-				fmt.Printf("Installed package %q into %s/.cursor/rules/\n", target, wd)
-				return nil
+			pkgPath := filepath.Join(shared, presetName)
+
+			// Check if it's a directory (package) or single file
+			info, err := os.Stat(pkgPath)
+			isPackage := err == nil && info.IsDir()
+
+			// Load manifest if exists
+			var m *manifest.Manifest
+			if isPackage {
+				m, _ = manifest.Load(pkgPath)
 			}
 
-			// fallback to single preset install
-			if err := core.InstallPreset(wd, target); err != nil {
-				return fmt.Errorf("install failed: %w", err)
+			// Determine targets
+			var targets []string
+			if allTargetsFlag && m != nil && len(m.Targets) > 0 {
+				targets = m.Targets
+			} else {
+				targets = []string{targetFlag}
 			}
-			fmt.Printf("Installed preset %q into %s/.cursor/rules/\n", target, wd)
+
+			// Install to each target
+			for _, tgt := range targets {
+				transformer, err := ctx.Transformer(tgt)
+				if err != nil {
+					return err
+				}
+
+				if isPackage {
+					if err := installPackageWithTransformer(wd, pkgPath, presetName, transformer, excludeFlag, noFlattenFlag, m); err != nil {
+						return fmt.Errorf("install to %s failed: %w", tgt, err)
+					}
+				} else {
+					// Single file install
+					if err := installPresetWithTransformer(wd, pkgPath, presetName, transformer); err != nil {
+						return fmt.Errorf("install to %s failed: %w", tgt, err)
+					}
+				}
+
+				ctx.Logger.Printf("✅ Installed %q to %s\n", presetName, transformer.OutputDir())
+			}
+
 			return nil
 		},
 	}
+
 	cmd.Flags().StringArrayVar(&excludeFlag, "exclude", []string{}, "patterns to exclude when installing a package (can be repeated)")
-	cmd.Flags().BoolVarP(&noFlattenFlag, "no-flatten", "n", false, "preserve package directory structure instead of flattening files into .cursor/rules/")
+	cmd.Flags().BoolVarP(&noFlattenFlag, "no-flatten", "n", false, "preserve package directory structure")
+	cmd.Flags().StringVar(&targetFlag, "target", "cursor", "output target: cursor|copilot-instr|copilot-prompt")
+	cmd.Flags().BoolVar(&allTargetsFlag, "all-targets", false, "install to all targets in manifest")
+
 	return cmd
+}
+
+// installPackageWithTransformer installs a package directory using the specified transformer.
+func installPackageWithTransformer(
+	workDir, pkgPath, presetName string,
+	transformer transform.Transformer,
+	excludes []string,
+	noFlatten bool,
+	m *manifest.Manifest,
+) error {
+	// Merge exclusions from manifest
+	if m != nil && len(m.Exclude) > 0 {
+		excludes = append(excludes, m.Exclude...)
+	}
+
+	// Create output directory
+	outDir := filepath.Join(workDir, transformer.OutputDir())
+	if err := os.MkdirAll(outDir, 0755); err != nil {
+		return fmt.Errorf("create output dir for package %q: %w", presetName, err)
+	}
+
+	// Walk package directory
+	return filepath.Walk(pkgPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return fmt.Errorf("walk package %q: %w", presetName, err)
+		}
+
+		if info.IsDir() || !strings.HasSuffix(info.Name(), ".mdc") {
+			return nil
+		}
+
+		// Check exclusions
+		relPath, _ := filepath.Rel(pkgPath, path)
+		if shouldExclude(relPath, excludes) {
+			return nil
+		}
+
+		if err := transformAndWriteFile(path, relPath, outDir, transformer, noFlatten); err != nil {
+			return fmt.Errorf("install file from package %q: %w", presetName, err)
+		}
+		return nil
+	})
+}
+
+// installPresetWithTransformer installs a single preset file using the specified transformer.
+func installPresetWithTransformer(
+	workDir, presetPath, presetName string,
+	transformer transform.Transformer,
+) error {
+	// Ensure .mdc extension
+	if !strings.HasSuffix(presetPath, ".mdc") {
+		presetPath += ".mdc"
+	}
+
+	// Check if file exists
+	if _, err := os.Stat(presetPath); os.IsNotExist(err) {
+		return fmt.Errorf("preset %q not found: %s", presetName, presetPath)
+	}
+
+	// Create output directory
+	outDir := filepath.Join(workDir, transformer.OutputDir())
+	if err := os.MkdirAll(outDir, 0755); err != nil {
+		return fmt.Errorf("create output dir for preset %q: %w", presetName, err)
+	}
+
+	if err := transformAndWriteFile(presetPath, filepath.Base(presetPath), outDir, transformer, false); err != nil {
+		return fmt.Errorf("install preset %q: %w", presetName, err)
+	}
+	return nil
+}
+
+// transformAndWriteFile reads, transforms, and writes a single file.
+func transformAndWriteFile(
+	srcPath, relPath, outDir string,
+	transformer transform.Transformer,
+	noFlatten bool,
+) error {
+	// Read file
+	data, err := os.ReadFile(srcPath)
+	if err != nil {
+		return fmt.Errorf("read %s: %w", srcPath, err)
+	}
+
+	// Split frontmatter and body
+	frontmatter, body, err := transform.SplitFrontmatter(data)
+	if err != nil {
+		return fmt.Errorf("parse %s: %w", srcPath, err)
+	}
+
+	// Transform
+	transformedFM, transformedBody, err := transformer.Transform(frontmatter, body)
+	if err != nil {
+		return fmt.Errorf("transform %s: %w", srcPath, err)
+	}
+
+	// Validate
+	if err := transformer.Validate(transformedFM); err != nil {
+		return fmt.Errorf("validate %s: %w", srcPath, err)
+	}
+
+	// Determine output path
+	var outPath string
+	if noFlatten {
+		outPath = filepath.Join(outDir, relPath)
+	} else {
+		outPath = filepath.Join(outDir, filepath.Base(relPath))
+	}
+	outPath = strings.TrimSuffix(outPath, ".mdc") + transformer.Extension()
+
+	// Marshal back to file
+	output, err := transform.MarshalMarkdown(transformedFM, transformedBody)
+	if err != nil {
+		return fmt.Errorf("marshal %s: %w", srcPath, err)
+	}
+
+	// Idempotent write (hash check)
+	if existing, _ := os.ReadFile(outPath); bytes.Equal(existing, output) {
+		return nil // Skip unchanged
+	}
+
+	// Ensure parent dir exists
+	if err := os.MkdirAll(filepath.Dir(outPath), 0755); err != nil {
+		return err
+	}
+
+	return os.WriteFile(outPath, output, 0644)
+}
+
+// shouldExclude checks if a path matches any exclusion pattern.
+func shouldExclude(relPath string, patterns []string) bool {
+	for _, pattern := range patterns {
+		if matched, _ := filepath.Match(pattern, relPath); matched {
+			return true
+		}
+		// Also check if pattern matches any parent directory
+		if matched, _ := filepath.Match(pattern, filepath.Dir(relPath)); matched {
+			return true
+		}
+	}
+	return false
 }

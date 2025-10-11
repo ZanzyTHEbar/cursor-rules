@@ -9,7 +9,7 @@
   <br/>
 </p>
 
-CLI & Cursor Extension to manage shared Cursor `.mdc` rule presets across projects.
+CLI & Cursor Extension to manage shared Cursor `.mdc` rule presets across projects, with support for GitHub Copilot instructions and prompts.
 
 #### Why
 
@@ -21,6 +21,8 @@ While Cursor has a built-in feature to manage rules, it's not very flexible.
 - Global rules have a terrible UX
 
 I wanted a centralized way to manage rules that would be easy to maintain and share with others, while also being able to override rules for a specific project without all of the copy-pasting between projects.
+
+**New:** Now supports installing rules as GitHub Copilot instructions (`.github/instructions/`) and prompts (`.github/prompts/`) for seamless multi-tool workflows.
 
 #### How
 
@@ -35,7 +37,28 @@ The Cursor extension, a VS Code extension, allows you to call the CLI from the c
 > [!NOTE]
 > Cursor does not support installing extensions from the command line, so you need to install the extension manually.
 
-`make`
+### Prerequisites
+
+- Go 1.25.2+ (required)
+- Node.js and pnpm (for extension development)
+- Docker (optional, for Dev Container)
+
+### Local Build
+
+```bash
+make
+```
+
+### Dev Container (VS Code/Cursor)
+
+For a consistent development environment:
+
+1. Open project in VS Code or Cursor
+2. Install "Dev Containers" extension
+3. Press `F1` → "Dev Containers: Reopen in Container"
+4. Container includes Go 1.25.2 and all development tools
+
+See [.devcontainer/BUILD_INSTRUCTIONS.md](.devcontainer/BUILD_INSTRUCTIONS.md) for detailed instructions.
 
 ## Quick run (install a preset into current project):
 
@@ -58,11 +81,20 @@ go install github.com/ZanzyTHEbar/cursor-rules/cmd/cursor-rules@latest
 # Sync shared presets from your source (git or local)
 cursor-rules sync
 
-# Install a preset into the current project
+# Install a preset into the current project (Cursor)
 cursor-rules install frontend
+
+# Install a preset as GitHub Copilot instructions
+cursor-rules install frontend --target copilot-instr
+
+# Install a preset as GitHub Copilot prompts
+cursor-rules install frontend --target copilot-prompt
 
 # Show effective rules for the current workspace
 cursor-rules effective
+
+# Show effective Copilot instructions
+cursor-rules effective --target copilot-instr
 ```
 
 ## Common workflows
@@ -75,12 +107,30 @@ cursor-rules install backend
 cursor-rules effective > .cursor/effective.md
 ```
 
+### Bootstrap with GitHub Copilot support
+
+```bash
+cursor-rules sync
+# Install to both Cursor and Copilot
+cursor-rules install frontend --target cursor
+cursor-rules install frontend --target copilot-instr
+# Or use manifest to install to all targets at once
+cursor-rules install frontend --all-targets
+```
+
 ### Keep presets up to date
 
 ```bash
 cursor-rules sync
 # optionally re-apply a preset if structure changed
 cursor-rules install shared
+```
+
+### Preview transformations before installing
+
+```bash
+# See how Cursor rules will be transformed to Copilot format
+cursor-rules transform frontend --target copilot-instr
 ```
 
 ### Work with symlinks or GNU stow
@@ -179,6 +229,145 @@ presets:
 ```
 
 Relative project paths are resolved relative to the shared directory. The watcher will only auto-apply presets that appear in this mapping to avoid accidental writes.
+
+## GitHub Copilot Integration
+
+Cursor Rules Manager now supports installing your Cursor rules as GitHub Copilot instructions and prompts, enabling seamless multi-tool workflows.
+
+### What's the difference?
+
+- **Cursor Rules (`.mdc`)**: Project-scoped AI guidance for Cursor IDE, auto-included based on relevance
+- **Copilot Instructions (`.instructions.md`)**: Ambient behavioral rules for GitHub Copilot, auto-merged into all Chat/agent interactions
+- **Copilot Prompts (`.prompt.md`)**: Reusable task templates for GitHub Copilot, invoked via slash commands
+
+### Installation targets
+
+```bash
+# Install to Cursor (default)
+cursor-rules install frontend
+
+# Install to Copilot Instructions (.github/instructions/)
+cursor-rules install frontend --target copilot-instr
+
+# Install to Copilot Prompts (.github/prompts/)
+cursor-rules install frontend --target copilot-prompt
+
+# Install to all targets defined in package manifest
+cursor-rules install frontend --all-targets
+```
+
+### Frontmatter transformation
+
+Cursor rules are automatically transformed to Copilot-compatible formats:
+
+**Cursor `.mdc`:**
+```yaml
+---
+description: "React best practices"
+apply_to: "**/*.tsx,**/*.jsx"
+priority: 1
+alwaysApply: true
+---
+```
+
+**Copilot `.instructions.md`:**
+```yaml
+---
+description: "React best practices"
+applyTo: "**/*.tsx,**/*.jsx"
+---
+```
+
+**Copilot `.prompt.md`:**
+```yaml
+---
+description: "React best practices"
+mode: "chat"
+---
+```
+
+Key transformations:
+- `apply_to` → `applyTo` (renamed)
+- `priority`, `alwaysApply` → removed (Copilot doesn't support)
+- `mode`, `tools` → added for prompts
+- Array globs → comma-separated strings
+
+### Package manifests
+
+Create a `cursor-rules-manifest.yaml` in your package root to define multi-target support:
+
+```yaml
+version: "1.0"
+targets:
+  - cursor
+  - copilot-instr
+  - copilot-prompt
+
+# Optional: target-specific overrides
+overrides:
+  copilot-prompt:
+    defaultMode: "agent"
+    defaultTools: ["githubRepo"]
+
+# Optional: exclusions
+exclude:
+  - "templates/*"
+  - "legacy.mdc"
+```
+
+Then install to all targets at once:
+
+```bash
+cursor-rules install frontend --all-targets
+```
+
+### Preview transformations
+
+Before installing, preview how your rules will be transformed:
+
+```bash
+cursor-rules transform frontend --target copilot-instr
+```
+
+### View effective rules
+
+See merged rules for any target:
+
+```bash
+# Cursor rules
+cursor-rules effective
+
+# Copilot instructions
+cursor-rules effective --target copilot-instr
+
+# Copilot prompts
+cursor-rules effective --target copilot-prompt
+```
+
+### Migration workflow
+
+1. **Sync existing Cursor rules:**
+   ```bash
+   cursor-rules sync
+   ```
+
+2. **Preview transformation:**
+   ```bash
+   cursor-rules transform frontend --target copilot-instr
+   ```
+
+3. **Install to Copilot (non-destructive):**
+   ```bash
+   cursor-rules install frontend --target copilot-instr
+   ```
+
+4. **Verify in VS Code:**
+   - Open Command Palette → "Copilot: Show Custom Instructions"
+
+5. **Test with Copilot Chat:**
+   - Ask: "Generate a React component" (should follow instructions)
+
+For detailed examples and best practices, see [docs/copilot-integration.md](docs/copilot-integration.md).
 
 ## Packages
 

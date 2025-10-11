@@ -1,0 +1,162 @@
+# golangci-lint configuration for cursor-rules
+# See https://golangci-lint.run/usage/configuration/
+
+run:
+  timeout: 5m
+  tests: true
+  skip-dirs:
+    - node_modules
+    - vendor
+    - testdata
+  skip-files:
+    - ".*\\.pb\\.go$"
+
+linters:
+  enable:
+    # Default linters
+    - errcheck      # Check for unchecked errors
+    - gosimple      # Simplify code
+    - govet         # Vet examines Go source code
+    - ineffassign   # Detect ineffectual assignments
+    - staticcheck   # Static analysis
+    - unused        # Check for unused code
+    
+    # Additional recommended linters
+    - gofmt         # Check code formatting
+    - goimports     # Check import formatting
+    - misspell      # Check for misspelled words
+    - revive        # Fast, configurable, extensible linter
+    - gosec         # Security-focused linter
+    - gocritic      # Opinionated linter
+    - gocyclo       # Cyclomatic complexity
+    - dupl          # Code clone detection
+    - unconvert     # Remove unnecessary type conversions
+    - prealloc      # Find slice declarations that could be preallocated
+    - exportloopref # Check for pointers to loop variables
+    - nolintlint    # Ensure nolint directives are used correctly
+    
+  disable:
+    - typecheck     # Disabled because it can be slow
+    - deadcode      # Deprecated, replaced by unused
+    - varcheck      # Deprecated, replaced by unused
+    - structcheck   # Deprecated, replaced by unused
+
+linters-settings:
+  errcheck:
+    check-blank: true
+    check-type-assertions: true
+    exclude-functions:
+      - (*os.File).Close
+      - (io.Closer).Close
+  
+  govet:
+    check-shadowing: true
+    enable-all: true
+  
+  gofmt:
+    simplify: true
+  
+  goimports:
+    local-prefixes: github.com/ZanzyTHEbar/cursor-rules
+  
+  revive:
+    confidence: 0.8
+    rules:
+      - name: blank-imports
+      - name: context-as-argument
+      - name: context-keys-type
+      - name: dot-imports
+      - name: error-return
+      - name: error-strings
+      - name: error-naming
+      - name: exported
+      - name: if-return
+      - name: increment-decrement
+      - name: var-naming
+      - name: var-declaration
+      - name: package-comments
+      - name: range
+      - name: receiver-naming
+      - name: time-naming
+      - name: unexported-return
+      - name: indent-error-flow
+      - name: errorf
+      - name: empty-block
+      - name: superfluous-else
+      - name: unused-parameter
+      - name: unreachable-code
+      - name: redefines-builtin-id
+  
+  gosec:
+    severity: medium
+    confidence: medium
+    excludes:
+      - G104  # Audit errors not checked (covered by errcheck)
+      - G304  # File path provided as taint input (we need this for file operations)
+  
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - style
+      - performance
+    disabled-checks:
+      - commentedOutCode
+      - whyNoLint
+  
+  gocyclo:
+    min-complexity: 15
+  
+  dupl:
+    threshold: 100
+  
+  misspell:
+    locale: US
+    ignore-words:
+      - cursor
+      - copilot
+      - mdc
+
+issues:
+  exclude-rules:
+    # Exclude some linters from running on tests files
+    - path: _test\.go
+      linters:
+        - gocyclo
+        - errcheck
+        - dupl
+        - gosec
+        - gocritic
+    
+    # Exclude known issues in generated code
+    - path: ".*\\.pb\\.go"
+      linters:
+        - all
+    
+    # Exclude some staticcheck messages
+    - linters:
+        - staticcheck
+      text: "SA9003:"
+    
+    # Exclude lll issues for long lines with go:generate
+    - linters:
+        - lll
+      source: "^//go:generate "
+  
+  # Maximum issues count per one linter
+  max-issues-per-linter: 50
+  
+  # Maximum count of issues with the same text
+  max-same-issues: 3
+  
+  # Show only new issues
+  new: false
+  
+  # Fix found issues (if supported by the linter)
+  fix: false
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
+  uniq-by-line: true
+  sort-results: true

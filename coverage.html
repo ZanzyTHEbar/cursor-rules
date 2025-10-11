@@ -1,0 +1,2944 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>cli: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">github.com/ZanzyTHEbar/cursor-rules/cli/appcontext.go (55.6%)</option>
+				
+				<option value="file1">github.com/ZanzyTHEbar/cursor-rules/cli/configure.go (0.0%)</option>
+				
+				<option value="file2">github.com/ZanzyTHEbar/cursor-rules/cli/execute.go (75.0%)</option>
+				
+				<option value="file3">github.com/ZanzyTHEbar/cursor-rules/cli/logger_adapter.go (0.0%)</option>
+				
+				<option value="file4">github.com/ZanzyTHEbar/cursor-rules/cli/palette.go (90.9%)</option>
+				
+				<option value="file5">github.com/ZanzyTHEbar/cursor-rules/cli/registry.go (0.0%)</option>
+				
+				<option value="file6">github.com/ZanzyTHEbar/cursor-rules/cli/root.go (65.0%)</option>
+				
+				<option value="file7">github.com/ZanzyTHEbar/cursor-rules/cmd/cursor-rules/commands/effective.go (0.0%)</option>
+				
+				<option value="file8">github.com/ZanzyTHEbar/cursor-rules/cmd/cursor-rules/commands/init.go (0.0%)</option>
+				
+				<option value="file9">github.com/ZanzyTHEbar/cursor-rules/cmd/cursor-rules/commands/install.go (0.0%)</option>
+				
+				<option value="file10">github.com/ZanzyTHEbar/cursor-rules/cmd/cursor-rules/commands/list.go (0.0%)</option>
+				
+				<option value="file11">github.com/ZanzyTHEbar/cursor-rules/cmd/cursor-rules/commands/policy.go (0.0%)</option>
+				
+				<option value="file12">github.com/ZanzyTHEbar/cursor-rules/cmd/cursor-rules/commands/remove.go (0.0%)</option>
+				
+				<option value="file13">github.com/ZanzyTHEbar/cursor-rules/cmd/cursor-rules/commands/sync.go (0.0%)</option>
+				
+				<option value="file14">github.com/ZanzyTHEbar/cursor-rules/cmd/cursor-rules/commands/transform.go (0.0%)</option>
+				
+				<option value="file15">github.com/ZanzyTHEbar/cursor-rules/cmd/cursor-rules/commands/watch.go (0.0%)</option>
+				
+				<option value="file16">github.com/ZanzyTHEbar/cursor-rules/cmd/cursor-rules/main.go (0.0%)</option>
+				
+				<option value="file17">github.com/ZanzyTHEbar/cursor-rules/cmd/cursor-rules/root.go (33.3%)</option>
+				
+				<option value="file18">github.com/ZanzyTHEbar/cursor-rules/internal/config/config.go (0.0%)</option>
+				
+				<option value="file19">github.com/ZanzyTHEbar/cursor-rules/internal/core/apply.go (78.3%)</option>
+				
+				<option value="file20">github.com/ZanzyTHEbar/cursor-rules/internal/core/gnustow.go (32.0%)</option>
+				
+				<option value="file21">github.com/ZanzyTHEbar/cursor-rules/internal/core/mapping.go (72.2%)</option>
+				
+				<option value="file22">github.com/ZanzyTHEbar/cursor-rules/internal/core/presets.go (64.8%)</option>
+				
+				<option value="file23">github.com/ZanzyTHEbar/cursor-rules/internal/core/project.go (38.0%)</option>
+				
+				<option value="file24">github.com/ZanzyTHEbar/cursor-rules/internal/core/remove.go (71.4%)</option>
+				
+				<option value="file25">github.com/ZanzyTHEbar/cursor-rules/internal/core/sync.go (30.8%)</option>
+				
+				<option value="file26">github.com/ZanzyTHEbar/cursor-rules/internal/core/util.go (0.0%)</option>
+				
+				<option value="file27">github.com/ZanzyTHEbar/cursor-rules/internal/core/watcher.go (66.2%)</option>
+				
+				<option value="file28">github.com/ZanzyTHEbar/cursor-rules/internal/manifest/manifest.go (95.2%)</option>
+				
+				<option value="file29">github.com/ZanzyTHEbar/cursor-rules/internal/testutil/fixtures.go (0.0%)</option>
+				
+				<option value="file30">github.com/ZanzyTHEbar/cursor-rules/internal/testutil/helpers.go (0.0%)</option>
+				
+				<option value="file31">github.com/ZanzyTHEbar/cursor-rules/internal/transform/copilot_instructions.go (88.0%)</option>
+				
+				<option value="file32">github.com/ZanzyTHEbar/cursor-rules/internal/transform/copilot_prompts.go (74.2%)</option>
+				
+				<option value="file33">github.com/ZanzyTHEbar/cursor-rules/internal/transform/cursor.go (88.9%)</option>
+				
+				<option value="file34">github.com/ZanzyTHEbar/cursor-rules/internal/transform/util.go (88.2%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">no coverage</span>
+				<span class="cov1">low coverage</span>
+				<span class="cov2">*</span>
+				<span class="cov3">*</span>
+				<span class="cov4">*</span>
+				<span class="cov5">*</span>
+				<span class="cov6">*</span>
+				<span class="cov7">*</span>
+				<span class="cov8">*</span>
+				<span class="cov9">*</span>
+				<span class="cov10">high coverage</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package cli
+
+import (
+        "fmt"
+        "log"
+
+        "github.com/ZanzyTHEbar/cursor-rules/internal/transform"
+        "github.com/spf13/viper"
+)
+
+// Logger is a minimal logging interface used by AppContext.
+type Logger interface {
+        Printf(format string, v ...interface{})
+}
+
+// AppContext carries shared dependencies for command factories.
+type AppContext struct {
+        Viper        *viper.Viper
+        Logger       Logger
+        transformers map[string]transform.Transformer
+}
+
+// NewAppContext creates a default AppContext with provided logger and viper instance.
+// Passing nil for the logger uses the standard library default logger.
+func NewAppContext(v *viper.Viper, l Logger) *AppContext <span class="cov6" title="4">{
+        if v == nil </span><span class="cov6" title="4">{
+                v = viper.New()
+        }</span>
+        <span class="cov6" title="4">if l == nil </span><span class="cov6" title="4">{
+                l = log.Default()
+        }</span>
+
+        <span class="cov6" title="4">ctx := &amp;AppContext{
+                Viper:        v,
+                Logger:       l,
+                transformers: make(map[string]transform.Transformer),
+        }
+
+        // Register default transformers
+        ctx.RegisterTransformer("cursor", transform.NewCursorTransformer())
+        ctx.RegisterTransformer("copilot-instr", transform.NewCopilotInstructionsTransformer())
+        ctx.RegisterTransformer("copilot-prompt", transform.NewCopilotPromptsTransformer())
+
+        return ctx</span>
+}
+
+// RegisterTransformer adds a transformer to the context.
+func (ctx *AppContext) RegisterTransformer(name string, t transform.Transformer) <span class="cov10" title="12">{
+        ctx.transformers[name] = t
+}</span>
+
+// Transformer retrieves a transformer by name.
+func (ctx *AppContext) Transformer(target string) (transform.Transformer, error) <span class="cov0" title="0">{
+        t, ok := ctx.transformers[target]
+        if !ok </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("unknown target: %s (available: cursor, copilot-instr, copilot-prompt)", target)
+        }</span>
+        <span class="cov0" title="0">return t, nil</span>
+}
+
+// AvailableTargets returns a list of registered transformer names.
+func (ctx *AppContext) AvailableTargets() []string <span class="cov0" title="0">{
+        targets := make([]string, 0, len(ctx.transformers))
+        for k := range ctx.transformers </span><span class="cov0" title="0">{
+                targets = append(targets, k)
+        }</span>
+        <span class="cov0" title="0">return targets</span>
+}
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package cli
+
+import (
+        "fmt"
+
+        "github.com/spf13/cobra"
+        "github.com/spf13/viper"
+)
+
+// ConfigureRoot attaches common flags and a PersistentPreRunE to an existing
+// root command to initialize the provided AppContext.Viper instance. If
+// postInit is non-nil it will be invoked after the config has been read.
+func ConfigureRoot(root *cobra.Command, ctx *AppContext, postInit func(*viper.Viper) error) <span class="cov0" title="0">{
+        if root == nil </span><span class="cov0" title="0">{
+                return
+        }</span>
+        <span class="cov0" title="0">if ctx == nil </span><span class="cov0" title="0">{
+                ctx = NewAppContext(nil, nil)
+        }</span>
+
+        <span class="cov0" title="0">var cfgFile string
+        root.PersistentFlags().StringVar(&amp;cfgFile, "config", "", "config file path (optional)")
+
+        root.PersistentPreRunE = func(cmd *cobra.Command, args []string) error </span><span class="cov0" title="0">{
+                if ctx.Viper == nil </span><span class="cov0" title="0">{
+                        ctx.Viper = viper.New()
+                }</span>
+                <span class="cov0" title="0">if cfgFile != "" </span><span class="cov0" title="0">{
+                        ctx.Viper.SetConfigFile(cfgFile)
+                }</span>
+                <span class="cov0" title="0">ctx.Viper.AutomaticEnv()
+                if err := ctx.Viper.ReadInConfig(); err != nil </span><span class="cov0" title="0">{
+                        if _, ok := err.(viper.ConfigFileNotFoundError); ok </span>{<span class="cov0" title="0">
+                                // no config is fine
+                        }</span> else<span class="cov0" title="0"> {
+                                return fmt.Errorf("reading config: %w", err)
+                        }</span>
+                }
+                <span class="cov0" title="0">ctx.Logger.Printf("Using config file: %s", ctx.Viper.ConfigFileUsed())
+                if postInit != nil </span><span class="cov0" title="0">{
+                        if err := postInit(ctx.Viper); err != nil </span><span class="cov0" title="0">{
+                                // log and return error
+                                ctx.Logger.Printf("postInit error: %v", err)
+                                return err
+                        }</span>
+                }
+                <span class="cov0" title="0">return nil</span>
+        }
+}
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package cli
+
+import (
+        "bytes"
+
+        "github.com/spf13/cobra"
+)
+
+// Execute runs the provided root command with args and returns captured stdout/stderr.
+func Execute(root *cobra.Command, args ...string) (string, error) <span class="cov0" title="0">{
+        _, out, err := ExecuteC(root, args...)
+        return out, err
+}</span>
+
+// ExecuteC returns the executed command plus captured combined output.
+func ExecuteC(root *cobra.Command, args ...string) (*cobra.Command, string, error) <span class="cov8" title="1">{
+        buf := new(bytes.Buffer)
+        root.SetOut(buf)
+        root.SetErr(buf)
+        root.SetArgs(args)
+        c, err := root.ExecuteC()
+        return c, buf.String(), err
+}</span>
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">package cli
+
+import (
+        "fmt"
+        "log"
+        "log/slog"
+        "reflect"
+)
+
+// reflectLoggerAdapter calls Printf on the underlying value if available.
+type reflectLoggerAdapter struct {
+        v reflect.Value
+}
+
+func (r *reflectLoggerAdapter) Printf(format string, vv ...interface{}) <span class="cov0" title="0">{
+        if !r.v.IsValid() </span><span class="cov0" title="0">{
+                log.Printf(format, vv...)
+                return
+        }</span>
+        <span class="cov0" title="0">m := r.v.MethodByName("Printf")
+        if m.IsValid() </span><span class="cov0" title="0">{
+                m.Call([]reflect.Value{reflect.ValueOf(format), reflect.ValueOf(vv)})
+                return
+        }</span>
+        // fallback to standard logger
+        <span class="cov0" title="0">log.Printf(format, vv...)</span>
+}
+
+// NewReflectLoggerAdapter returns a Logger that will call Printf on the provided
+// logger value (useful to adapt third-party loggers). If l is nil, the
+// standard library logger is used.
+func NewReflectLoggerAdapter(l interface{}) Logger <span class="cov0" title="0">{
+        if l == nil </span><span class="cov0" title="0">{
+                return log.Default()
+        }</span>
+        <span class="cov0" title="0">return &amp;reflectLoggerAdapter{v: reflect.ValueOf(l)}</span>
+}
+
+// NewStdLoggerAdapter wraps the standard library logger as a Logger.
+func NewStdLoggerAdapter(l *log.Logger) Logger <span class="cov0" title="0">{
+        if l == nil </span><span class="cov0" title="0">{
+                return log.Default()
+        }</span>
+        <span class="cov0" title="0">return l</span>
+}
+
+// slogAdapter adapts the global slog logger to the minimal Logger interface.
+type slogAdapter struct{}
+
+func (s *slogAdapter) Printf(format string, vv ...interface{}) <span class="cov0" title="0">{
+        msg := fmt.Sprintf(format, vv...)
+        slog.Info(msg)
+}</span>
+
+// NewGoBasetoolsAdapter returns a Logger that routes to the go-basetools
+// configured slog default logger. It is safe to call even before InitLogger;
+// slog will use the standard library logger by default.
+func NewGoBasetoolsAdapter() Logger <span class="cov0" title="0">{
+        return &amp;slogAdapter{}
+}</span>
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package cli
+
+import "github.com/spf13/cobra"
+
+// CommandFactory builds a cobra command using the provided AppContext.
+type CommandFactory func(*AppContext) *cobra.Command
+
+// Palette is an ordered collection of CommandFactory instances that can be
+// composed into a root command.
+type Palette []CommandFactory
+
+// Register adds factories to the palette.
+func (p *Palette) Register(factories ...CommandFactory) <span class="cov7" title="3">{
+        *p = append(*p, factories...)
+}</span>
+
+// Commands builds concrete *cobra.Command slice using the provided context.
+func (p Palette) Commands(ctx *AppContext) []*cobra.Command <span class="cov10" title="5">{
+        cmds := make([]*cobra.Command, 0, len(p))
+        for _, f := range p </span><span class="cov8" title="4">{
+                if f == nil </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+                <span class="cov8" title="4">cmd := f(ctx)
+                if cmd != nil </span><span class="cov8" title="4">{
+                        cmds = append(cmds, cmd)
+                }</span>
+        }
+        <span class="cov10" title="5">return cmds</span>
+}
+
+// FromCommand wraps an existing *cobra.Command as a CommandFactory.
+func FromCommand(c *cobra.Command) CommandFactory <span class="cov1" title="1">{
+        return func(_ *AppContext) *cobra.Command </span><span class="cov1" title="1">{ return c }</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package cli
+
+import "github.com/spf13/cobra"
+
+// Simple global palette registry for incremental migration.
+var DefaultPalette Palette
+
+// Register registers command factories into the global palette.
+func Register(factories ...CommandFactory) <span class="cov0" title="0">{
+        DefaultPalette.Register(factories...)
+}</span>
+
+// BuildRoot builds a root command using the global palette and provided context.
+func BuildRoot(ctx *AppContext) *cobra.Command <span class="cov0" title="0">{
+        return NewRoot(ctx, DefaultPalette)
+}</span>
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package cli
+
+import (
+        "fmt"
+
+        "github.com/spf13/cobra"
+        "github.com/spf13/viper"
+)
+
+// NewRoot constructs the root command and composes the provided palette using
+// the given AppContext. Config initialization is performed in
+// PersistentPreRunE so construction is side-effect free and testable.
+func NewRoot(ctx *AppContext, p Palette) *cobra.Command <span class="cov10" title="3">{
+        if ctx == nil </span><span class="cov0" title="0">{
+                ctx = NewAppContext(nil, nil)
+        }</span>
+        <span class="cov10" title="3">if p == nil </span><span class="cov0" title="0">{
+                p = Palette{}
+        }</span>
+
+        <span class="cov10" title="3">var cfgFile string
+
+        root := &amp;cobra.Command{
+                Use:   "alpha-engine",
+                Short: "Alpha Engine CLI",
+                PersistentPreRunE: func(cmd *cobra.Command, args []string) error </span><span class="cov1" title="1">{
+                        if ctx.Viper == nil </span><span class="cov0" title="0">{
+                                ctx.Viper = viper.New()
+                        }</span>
+                        <span class="cov1" title="1">if cfgFile != "" </span><span class="cov0" title="0">{
+                                ctx.Viper.SetConfigFile(cfgFile)
+                        }</span>
+                        <span class="cov1" title="1">ctx.Viper.AutomaticEnv()
+                        if err := ctx.Viper.ReadInConfig(); err != nil </span><span class="cov1" title="1">{
+                                if _, ok := err.(viper.ConfigFileNotFoundError); ok </span><span class="cov1" title="1">{
+                                        // no config is fine
+                                        return nil
+                                }</span>
+                                <span class="cov0" title="0">return fmt.Errorf("reading config: %w", err)</span>
+                        }
+                        <span class="cov0" title="0">ctx.Logger.Printf("Using config file: %s", ctx.Viper.ConfigFileUsed())
+                        return nil</span>
+                },
+        }
+
+        <span class="cov10" title="3">root.PersistentFlags().StringVar(&amp;cfgFile, "config", "", "Config file path (optional)")
+
+        // compose commands from palette
+        root.AddCommand(p.Commands(ctx)...)
+        return root</span>
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package commands
+
+import (
+        "fmt"
+        "os"
+        "path/filepath"
+        "sort"
+        "strings"
+
+        "github.com/ZanzyTHEbar/cursor-rules/cli"
+        "github.com/ZanzyTHEbar/cursor-rules/internal/core"
+        "github.com/spf13/cobra"
+)
+
+// NewEffectiveCmd returns the effective command with multi-target support.
+func NewEffectiveCmd(ctx *cli.AppContext) *cobra.Command <span class="cov0" title="0">{
+        var targetFlag string
+
+        cmd := &amp;cobra.Command{
+                Use:   "effective",
+                Short: "Show effective merged rules for current workspace",
+                Long: `Display the merged rules that would be active in the current workspace.
+For Copilot targets, simulates the non-deterministic merge order.
+
+Examples:
+  # Show Cursor rules
+  cursor-rules effective
+  
+  # Show Copilot instructions
+  cursor-rules effective --target copilot-instr`,
+                Args: cobra.NoArgs,
+                RunE: func(cmd *cobra.Command, args []string) error </span><span class="cov0" title="0">{
+                        // Get workdir
+                        var wd string
+                        if ctx != nil &amp;&amp; ctx.Viper != nil </span><span class="cov0" title="0">{
+                                wd = ctx.Viper.GetString("workdir")
+                        }</span>
+                        <span class="cov0" title="0">if wd == "" </span><span class="cov0" title="0">{
+                                w, _ := cmd.Root().Flags().GetString("workdir")
+                                if w == "" </span><span class="cov0" title="0">{
+                                        w, _ = filepath.Abs(".")
+                                }</span>
+                                <span class="cov0" title="0">wd = w</span>
+                        }
+
+                        // For cursor target, use existing implementation
+                        <span class="cov0" title="0">if targetFlag == "cursor" </span><span class="cov0" title="0">{
+                                out, err := core.EffectiveRules(wd)
+                                if err != nil </span><span class="cov0" title="0">{
+                                        return err
+                                }</span>
+                                <span class="cov0" title="0">fmt.Println(out)
+                                return nil</span>
+                        }
+
+                        // For Copilot targets, show merged files
+                        <span class="cov0" title="0">transformer, err := ctx.Transformer(targetFlag)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return err
+                        }</span>
+
+                        <span class="cov0" title="0">rulesDir := filepath.Join(wd, transformer.OutputDir())
+
+                        fmt.Printf("# Effective Rules (%s)\n\n", transformer.Target())
+                        fmt.Printf("Source: %s\n\n", rulesDir)
+
+                        // Check if directory exists
+                        if _, err := os.Stat(rulesDir); os.IsNotExist(err) </span><span class="cov0" title="0">{
+                                fmt.Printf("No rules found in %s\n", rulesDir)
+                                return nil
+                        }</span>
+
+                        // Collect all rule files
+                        <span class="cov0" title="0">var files []string
+                        filepath.Walk(rulesDir, func(path string, info os.FileInfo, err error) error </span><span class="cov0" title="0">{
+                                if err == nil &amp;&amp; !info.IsDir() &amp;&amp; strings.HasSuffix(path, transformer.Extension()) </span><span class="cov0" title="0">{
+                                        files = append(files, path)
+                                }</span>
+                                <span class="cov0" title="0">return nil</span>
+                        })
+
+                        <span class="cov0" title="0">if len(files) == 0 </span><span class="cov0" title="0">{
+                                fmt.Printf("No %s files found in %s\n", transformer.Extension(), rulesDir)
+                                return nil
+                        }</span>
+
+                        // For Copilot, simulate merge order (alphabetical for determinism in preview)
+                        <span class="cov0" title="0">sort.Strings(files)
+
+                        for _, file := range files </span><span class="cov0" title="0">{
+                                data, err := os.ReadFile(file)
+                                if err != nil </span><span class="cov0" title="0">{
+                                        continue</span>
+                                }
+                                <span class="cov0" title="0">fmt.Printf("## %s\n\n", filepath.Base(file))
+                                fmt.Println(string(data))
+                                fmt.Println("\n---")</span>
+                        }
+
+                        <span class="cov0" title="0">return nil</span>
+                },
+        }
+
+        <span class="cov0" title="0">cmd.Flags().StringVar(&amp;targetFlag, "target", "cursor", "target format to show: cursor|copilot-instr|copilot-prompt")
+
+        return cmd</span>
+}
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package commands
+
+import (
+        "fmt"
+        "path/filepath"
+
+        "github.com/ZanzyTHEbar/cursor-rules/cli"
+        "github.com/ZanzyTHEbar/cursor-rules/internal/core"
+        "github.com/spf13/cobra"
+)
+
+// NewInitCmd returns the init command
+func NewInitCmd(ctx *cli.AppContext) *cobra.Command <span class="cov0" title="0">{
+        cmd := &amp;cobra.Command{
+                Use:   "init",
+                Short: "Initialize a project with .cursor/rules/ directory",
+                RunE: func(cmd *cobra.Command, args []string) error </span><span class="cov0" title="0">{
+                        // prefer workdir from AppContext.Viper, fallback to flag
+                        var wd string
+                        if ctx != nil &amp;&amp; ctx.Viper != nil </span><span class="cov0" title="0">{
+                                wd = ctx.Viper.GetString("workdir")
+                        }</span>
+                        <span class="cov0" title="0">if wd == "" </span><span class="cov0" title="0">{
+                                w, _ := cmd.Root().Flags().GetString("workdir")
+                                if w == "" </span><span class="cov0" title="0">{
+                                        w, _ = filepath.Abs(".")
+                                }</span>
+                                <span class="cov0" title="0">wd = w</span>
+                        }
+                        <span class="cov0" title="0">if err := core.InitProject(wd); err != nil </span><span class="cov0" title="0">{
+                                return fmt.Errorf("init failed: %w", err)
+                        }</span>
+                        <span class="cov0" title="0">fmt.Printf("Initialized project at %s/.cursor/rules/\n", wd)
+                        return nil</span>
+                },
+        }
+        <span class="cov0" title="0">return cmd</span>
+}
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package commands
+
+import (
+        "bytes"
+        "fmt"
+        "os"
+        "path/filepath"
+        "strings"
+
+        "github.com/ZanzyTHEbar/cursor-rules/cli"
+        "github.com/ZanzyTHEbar/cursor-rules/internal/core"
+        "github.com/ZanzyTHEbar/cursor-rules/internal/manifest"
+        "github.com/ZanzyTHEbar/cursor-rules/internal/transform"
+        "github.com/spf13/cobra"
+)
+
+// NewInstallCmd returns the install command with transformer support.
+func NewInstallCmd(ctx *cli.AppContext) *cobra.Command <span class="cov0" title="0">{
+        var excludeFlag []string
+        var noFlattenFlag bool
+        var targetFlag string
+        var allTargetsFlag bool
+
+        cmd := &amp;cobra.Command{
+                Use:   "install &lt;preset|package&gt;",
+                Short: "Install a preset or package into the current project",
+                Long: `Install a preset or package into .cursor/rules/ (default) or 
+.github/instructions/ or .github/prompts/ depending on --target flag.
+
+Examples:
+  # Install to Cursor (default)
+  cursor-rules install frontend
+  
+  # Install to Copilot Instructions
+  cursor-rules install frontend --target copilot-instr
+  
+  # Install to Copilot Prompts
+  cursor-rules install frontend --target copilot-prompt
+  
+  # Install to all targets defined in manifest
+  cursor-rules install frontend --all-targets`,
+                Args: cobra.ExactArgs(1),
+                RunE: func(cmd *cobra.Command, args []string) error </span><span class="cov0" title="0">{
+                        presetName := args[0]
+
+                        // Get workdir
+                        var wd string
+                        if ctx != nil &amp;&amp; ctx.Viper != nil </span><span class="cov0" title="0">{
+                                wd = ctx.Viper.GetString("workdir")
+                        }</span>
+                        <span class="cov0" title="0">if wd == "" </span><span class="cov0" title="0">{
+                                w, err := cmd.Root().Flags().GetString("workdir")
+                                if err != nil </span><span class="cov0" title="0">{
+                                        return err
+                                }</span>
+                                <span class="cov0" title="0">if w == "" </span><span class="cov0" title="0">{
+                                        w, _ = filepath.Abs(".")
+                                }</span>
+                                <span class="cov0" title="0">wd = w</span>
+                        }
+
+                        // Get shared directory
+                        <span class="cov0" title="0">shared := core.DefaultSharedDir()
+                        pkgPath := filepath.Join(shared, presetName)
+
+                        // Check if it's a directory (package) or single file
+                        info, err := os.Stat(pkgPath)
+                        isPackage := err == nil &amp;&amp; info.IsDir()
+
+                        // Load manifest if exists
+                        var m *manifest.Manifest
+                        if isPackage </span><span class="cov0" title="0">{
+                                m, _ = manifest.Load(pkgPath)
+                        }</span>
+
+                        // Determine targets
+                        <span class="cov0" title="0">var targets []string
+                        if allTargetsFlag &amp;&amp; m != nil &amp;&amp; len(m.Targets) &gt; 0 </span><span class="cov0" title="0">{
+                                targets = m.Targets
+                        }</span> else<span class="cov0" title="0"> {
+                                targets = []string{targetFlag}
+                        }</span>
+
+                        // Install to each target
+                        <span class="cov0" title="0">for _, tgt := range targets </span><span class="cov0" title="0">{
+                                transformer, err := ctx.Transformer(tgt)
+                                if err != nil </span><span class="cov0" title="0">{
+                                        return err
+                                }</span>
+
+                                <span class="cov0" title="0">if isPackage </span><span class="cov0" title="0">{
+                                        if err := installPackageWithTransformer(wd, pkgPath, presetName, transformer, excludeFlag, noFlattenFlag, m); err != nil </span><span class="cov0" title="0">{
+                                                return fmt.Errorf("install to %s failed: %w", tgt, err)
+                                        }</span>
+                                } else<span class="cov0" title="0"> {
+                                        // Single file install
+                                        if err := installPresetWithTransformer(wd, pkgPath, presetName, transformer); err != nil </span><span class="cov0" title="0">{
+                                                return fmt.Errorf("install to %s failed: %w", tgt, err)
+                                        }</span>
+                                }
+
+                                <span class="cov0" title="0">ctx.Logger.Printf("✅ Installed %q to %s\n", presetName, transformer.OutputDir())</span>
+                        }
+
+                        <span class="cov0" title="0">return nil</span>
+                },
+        }
+
+        <span class="cov0" title="0">cmd.Flags().StringArrayVar(&amp;excludeFlag, "exclude", []string{}, "patterns to exclude when installing a package (can be repeated)")
+        cmd.Flags().BoolVarP(&amp;noFlattenFlag, "no-flatten", "n", false, "preserve package directory structure")
+        cmd.Flags().StringVar(&amp;targetFlag, "target", "cursor", "output target: cursor|copilot-instr|copilot-prompt")
+        cmd.Flags().BoolVar(&amp;allTargetsFlag, "all-targets", false, "install to all targets in manifest")
+
+        return cmd</span>
+}
+
+// installPackageWithTransformer installs a package directory using the specified transformer.
+func installPackageWithTransformer(
+        workDir, pkgPath, presetName string,
+        transformer transform.Transformer,
+        excludes []string,
+        noFlatten bool,
+        m *manifest.Manifest,
+) error <span class="cov0" title="0">{
+        // Merge exclusions from manifest
+        if m != nil &amp;&amp; len(m.Exclude) &gt; 0 </span><span class="cov0" title="0">{
+                excludes = append(excludes, m.Exclude...)
+        }</span>
+
+        // Create output directory
+        <span class="cov0" title="0">outDir := filepath.Join(workDir, transformer.OutputDir())
+        if err := os.MkdirAll(outDir, 0755); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("create output dir: %w", err)
+        }</span>
+
+        // Walk package directory
+        <span class="cov0" title="0">return filepath.Walk(pkgPath, func(path string, info os.FileInfo, err error) error </span><span class="cov0" title="0">{
+                if err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+
+                <span class="cov0" title="0">if info.IsDir() || !strings.HasSuffix(info.Name(), ".mdc") </span><span class="cov0" title="0">{
+                        return nil
+                }</span>
+
+                // Check exclusions
+                <span class="cov0" title="0">relPath, _ := filepath.Rel(pkgPath, path)
+                if shouldExclude(relPath, excludes) </span><span class="cov0" title="0">{
+                        return nil
+                }</span>
+
+                <span class="cov0" title="0">return transformAndWriteFile(path, relPath, outDir, transformer, noFlatten)</span>
+        })
+}
+
+// installPresetWithTransformer installs a single preset file using the specified transformer.
+func installPresetWithTransformer(
+        workDir, presetPath, presetName string,
+        transformer transform.Transformer,
+) error <span class="cov0" title="0">{
+        // Ensure .mdc extension
+        if !strings.HasSuffix(presetPath, ".mdc") </span><span class="cov0" title="0">{
+                presetPath += ".mdc"
+        }</span>
+
+        // Check if file exists
+        <span class="cov0" title="0">if _, err := os.Stat(presetPath); os.IsNotExist(err) </span><span class="cov0" title="0">{
+                return fmt.Errorf("preset not found: %s", presetPath)
+        }</span>
+
+        // Create output directory
+        <span class="cov0" title="0">outDir := filepath.Join(workDir, transformer.OutputDir())
+        if err := os.MkdirAll(outDir, 0755); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("create output dir: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return transformAndWriteFile(presetPath, filepath.Base(presetPath), outDir, transformer, false)</span>
+}
+
+// transformAndWriteFile reads, transforms, and writes a single file.
+func transformAndWriteFile(
+        srcPath, relPath, outDir string,
+        transformer transform.Transformer,
+        noFlatten bool,
+) error <span class="cov0" title="0">{
+        // Read file
+        data, err := os.ReadFile(srcPath)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("read %s: %w", srcPath, err)
+        }</span>
+
+        // Split frontmatter and body
+        <span class="cov0" title="0">frontmatter, body, err := transform.SplitFrontmatter(data)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("parse %s: %w", srcPath, err)
+        }</span>
+
+        // Transform
+        <span class="cov0" title="0">transformedFM, transformedBody, err := transformer.Transform(frontmatter, body)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("transform %s: %w", srcPath, err)
+        }</span>
+
+        // Validate
+        <span class="cov0" title="0">if err := transformer.Validate(transformedFM); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("validate %s: %w", srcPath, err)
+        }</span>
+
+        // Determine output path
+        <span class="cov0" title="0">var outPath string
+        if noFlatten </span><span class="cov0" title="0">{
+                outPath = filepath.Join(outDir, relPath)
+        }</span> else<span class="cov0" title="0"> {
+                outPath = filepath.Join(outDir, filepath.Base(relPath))
+        }</span>
+        <span class="cov0" title="0">outPath = strings.TrimSuffix(outPath, ".mdc") + transformer.Extension()
+
+        // Marshal back to file
+        output, err := transform.MarshalMarkdown(transformedFM, transformedBody)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("marshal %s: %w", srcPath, err)
+        }</span>
+
+        // Idempotent write (hash check)
+        <span class="cov0" title="0">if existing, _ := os.ReadFile(outPath); bytes.Equal(existing, output) </span><span class="cov0" title="0">{
+                return nil // Skip unchanged
+        }</span>
+
+        // Ensure parent dir exists
+        <span class="cov0" title="0">if err := os.MkdirAll(filepath.Dir(outPath), 0755); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov0" title="0">return os.WriteFile(outPath, output, 0644)</span>
+}
+
+// shouldExclude checks if a path matches any exclusion pattern.
+func shouldExclude(relPath string, patterns []string) bool <span class="cov0" title="0">{
+        for _, pattern := range patterns </span><span class="cov0" title="0">{
+                if matched, _ := filepath.Match(pattern, relPath); matched </span><span class="cov0" title="0">{
+                        return true
+                }</span>
+                // Also check if pattern matches any parent directory
+                <span class="cov0" title="0">if matched, _ := filepath.Match(pattern, filepath.Dir(relPath)); matched </span><span class="cov0" title="0">{
+                        return true
+                }</span>
+        }
+        <span class="cov0" title="0">return false</span>
+}
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">package commands
+
+import (
+        "fmt"
+
+        "github.com/ZanzyTHEbar/cursor-rules/cli"
+        "github.com/ZanzyTHEbar/cursor-rules/internal/core"
+        "github.com/spf13/cobra"
+)
+
+// NewListCmd returns the list command. Accepts AppContext for parity.
+func NewListCmd(ctx *cli.AppContext) *cobra.Command <span class="cov0" title="0">{
+        cmd := &amp;cobra.Command{
+                Use:   "list",
+                Short: "List installed presets in current project",
+                RunE: func(cmd *cobra.Command, args []string) error </span><span class="cov0" title="0">{
+                        var wd string
+                        if ctx != nil &amp;&amp; ctx.Viper != nil </span><span class="cov0" title="0">{
+                                wd = ctx.Viper.GetString("workdir")
+                        }</span>
+                        <span class="cov0" title="0">if wd == "" </span><span class="cov0" title="0">{
+                                w, _ := cmd.Root().Flags().GetString("workdir")
+                                if w == "" </span><span class="cov0" title="0">{
+                                        w, _ = core.WorkingDir()
+                                }</span>
+                                <span class="cov0" title="0">wd = w</span>
+                        }
+                        <span class="cov0" title="0">presets, err := core.ListProjectPresets(wd)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return err
+                        }</span>
+                        <span class="cov0" title="0">for _, p := range presets </span><span class="cov0" title="0">{
+                                fmt.Println(p)
+                        }</span>
+                        <span class="cov0" title="0">return nil</span>
+                },
+        }
+        <span class="cov0" title="0">return cmd</span>
+}
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">package commands
+
+import (
+        "github.com/ZanzyTHEbar/cursor-rules/cli"
+        "github.com/spf13/cobra"
+)
+
+// NewPolicyCmd returns the policy command
+func NewPolicyCmd(_ *cli.AppContext) *cobra.Command <span class="cov0" title="0">{
+        cmd := &amp;cobra.Command{
+                Use:   "policy",
+                Short: "Manage application policy for presets",
+                RunE: func(cmd *cobra.Command, args []string) error </span><span class="cov0" title="0">{
+                        // placeholder: implement policy listing/management
+                        cmd.Println("policy command not yet implemented")
+                        return nil
+                }</span>,
+        }
+        <span class="cov0" title="0">return cmd</span>
+}
+</pre>
+		
+		<pre class="file" id="file12" style="display: none">package commands
+
+import (
+        "fmt"
+        "path/filepath"
+
+        "github.com/ZanzyTHEbar/cursor-rules/cli"
+        "github.com/ZanzyTHEbar/cursor-rules/internal/core"
+        "github.com/spf13/cobra"
+)
+
+// NewRemoveCmd returns the remove command. Accepts AppContext for parity.
+func NewRemoveCmd(ctx *cli.AppContext) *cobra.Command <span class="cov0" title="0">{
+        cmd := &amp;cobra.Command{
+                Use:   "remove &lt;preset&gt;",
+                Short: "Remove a preset stub from the current project",
+                Args:  cobra.ExactArgs(1),
+                RunE: func(cmd *cobra.Command, args []string) error </span><span class="cov0" title="0">{
+                        preset := args[0]
+                        var wd string
+                        if ctx != nil &amp;&amp; ctx.Viper != nil </span><span class="cov0" title="0">{
+                                wd = ctx.Viper.GetString("workdir")
+                        }</span>
+                        <span class="cov0" title="0">if wd == "" </span><span class="cov0" title="0">{
+                                w, err := cmd.Root().Flags().GetString("workdir")
+                                if err != nil </span><span class="cov0" title="0">{
+                                        return err
+                                }</span>
+                                <span class="cov0" title="0">if w == "" </span><span class="cov0" title="0">{
+                                        w, _ = filepath.Abs(".")
+                                }</span>
+                                <span class="cov0" title="0">wd = w</span>
+                        }
+                        <span class="cov0" title="0">if err := core.RemovePreset(wd, preset); err != nil </span><span class="cov0" title="0">{
+                                return fmt.Errorf("remove failed: %w", err)
+                        }</span>
+                        <span class="cov0" title="0">fmt.Printf("Removed preset %q from %s/.cursor/rules/\n", preset, wd)
+                        return nil</span>
+                },
+        }
+        <span class="cov0" title="0">return cmd</span>
+}
+</pre>
+		
+		<pre class="file" id="file13" style="display: none">package commands
+
+import (
+        "fmt"
+        "os"
+        "path/filepath"
+
+        "github.com/ZanzyTHEbar/cursor-rules/cli"
+        cfgpkg "github.com/ZanzyTHEbar/cursor-rules/internal/config"
+        "github.com/ZanzyTHEbar/cursor-rules/internal/core"
+        "github.com/spf13/cobra"
+)
+
+// NewSyncCmd returns the sync command. Accepts AppContext for parity.
+func NewSyncCmd(_ *cli.AppContext) *cobra.Command <span class="cov0" title="0">{
+        var applyFlag bool
+        var dryRunFlag bool
+
+        cmd := &amp;cobra.Command{
+                Use:   "sync",
+                Short: "Sync shared presets and optionally apply to a project",
+                Args:  cobra.NoArgs,
+                RunE: func(cmd *cobra.Command, args []string) error </span><span class="cov0" title="0">{
+                        // Load config to honor configured sharedDir when env override is not set
+                        cfg, _ := cfgpkg.LoadConfig("")
+
+                        shared := core.DefaultSharedDir()
+                        if os.Getenv("CURSOR_RULES_DIR") == "" &amp;&amp; cfg != nil &amp;&amp; cfg.SharedDir != "" </span><span class="cov0" title="0">{
+                                shared = cfg.SharedDir
+                        }</span>
+                        <span class="cov0" title="0">if err := core.SyncSharedRepo(shared); err != nil </span><span class="cov0" title="0">{
+                                return fmt.Errorf("failed to sync shared repo: %w", err)
+                        }</span>
+                        <span class="cov0" title="0">presets, err := core.ListSharedPresets(shared)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return fmt.Errorf("failed to list presets: %w", err)
+                        }</span>
+                        <span class="cov0" title="0">fmt.Printf("Shared dir: %s\n", shared)
+                        for _, p := range presets </span><span class="cov0" title="0">{
+                                fmt.Println("-", p)
+                        }</span>
+
+                        <span class="cov0" title="0">wd, _ := cmd.Root().Flags().GetString("workdir")
+                        if applyFlag &amp;&amp; wd != "" </span><span class="cov0" title="0">{
+                                var toApply []string
+                                if cfg != nil &amp;&amp; len(cfg.Presets) &gt; 0 </span><span class="cov0" title="0">{
+                                        toApply = cfg.Presets
+                                }</span> else<span class="cov0" title="0"> {
+                                        for _, p := range presets </span><span class="cov0" title="0">{
+                                                name := p[:len(p)-len(filepath.Ext(p))]
+                                                toApply = append(toApply, name)
+                                        }</span>
+                                }
+                                <span class="cov0" title="0">for _, name := range toApply </span><span class="cov0" title="0">{
+                                        if dryRunFlag </span><span class="cov0" title="0">{
+                                                fmt.Printf("would apply %s -&gt; %s/.cursor/rules/\n", name, wd)
+                                                continue</span>
+                                        }
+                                        <span class="cov0" title="0">if err := core.ApplyPresetToProject(wd, name, shared); err != nil </span><span class="cov0" title="0">{
+                                                fmt.Printf("failed to apply %s: %v\n", name, err)
+                                        }</span> else<span class="cov0" title="0"> {
+                                                fmt.Printf("applied %s -&gt; %s/.cursor/rules/\n", name, wd)
+                                        }</span>
+                                }
+                        }
+                        <span class="cov0" title="0">return nil</span>
+                },
+        }
+        <span class="cov0" title="0">cmd.Flags().BoolVar(&amp;applyFlag, "apply", false, "apply presets to --workdir (uses config.presets if set; otherwise applies all shared presets)")
+        cmd.Flags().BoolVar(&amp;dryRunFlag, "dry-run", false, "print what would be applied without making changes")
+        return cmd</span>
+}
+</pre>
+		
+		<pre class="file" id="file14" style="display: none">package commands
+
+import (
+        "fmt"
+        "os"
+        "path/filepath"
+        "strings"
+
+        "github.com/ZanzyTHEbar/cursor-rules/cli"
+        "github.com/ZanzyTHEbar/cursor-rules/internal/core"
+        "github.com/ZanzyTHEbar/cursor-rules/internal/transform"
+        "github.com/spf13/cobra"
+)
+
+// NewTransformCmd returns a command for previewing transformations.
+func NewTransformCmd(ctx *cli.AppContext) *cobra.Command <span class="cov0" title="0">{
+        var targetFlag string
+
+        cmd := &amp;cobra.Command{
+                Use:   "transform &lt;preset&gt;",
+                Short: "Preview frontmatter transformation for a preset",
+                Long: `Dry-run transformation to see how Cursor rules will be converted
+to Copilot format without writing files.
+
+Example:
+  cursor-rules transform frontend --target copilot-instr`,
+                Args: cobra.ExactArgs(1),
+                RunE: func(cmd *cobra.Command, args []string) error </span><span class="cov0" title="0">{
+                        preset := args[0]
+
+                        transformer, err := ctx.Transformer(targetFlag)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return err
+                        }</span>
+
+                        <span class="cov0" title="0">shared := core.DefaultSharedDir()
+                        pkgPath := filepath.Join(shared, preset)
+
+                        // Check if it's a directory or single file
+                        info, err := os.Stat(pkgPath)
+                        if err != nil </span><span class="cov0" title="0">{
+                                // Try with .mdc extension
+                                pkgPath += ".mdc"
+                                info, err = os.Stat(pkgPath)
+                                if err != nil </span><span class="cov0" title="0">{
+                                        return fmt.Errorf("preset not found: %s", preset)
+                                }</span>
+                        }
+
+                        <span class="cov0" title="0">fmt.Printf("Transforming %q to %s format:\n\n", preset, transformer.Target())
+
+                        if info.IsDir() </span><span class="cov0" title="0">{
+                                // Walk directory
+                                return filepath.Walk(pkgPath, func(path string, info os.FileInfo, err error) error </span><span class="cov0" title="0">{
+                                        if err != nil || info.IsDir() || !strings.HasSuffix(info.Name(), ".mdc") </span><span class="cov0" title="0">{
+                                                return err
+                                        }</span>
+                                        <span class="cov0" title="0">return previewTransform(path, transformer)</span>
+                                })
+                        }
+
+                        // Single file
+                        <span class="cov0" title="0">return previewTransform(pkgPath, transformer)</span>
+                },
+        }
+
+        <span class="cov0" title="0">cmd.Flags().StringVar(&amp;targetFlag, "target", "copilot-instr", "target format")
+
+        return cmd</span>
+}
+
+// previewTransform reads, transforms, and displays a single file transformation.
+func previewTransform(path string, transformer transform.Transformer) error <span class="cov0" title="0">{
+        data, err := os.ReadFile(path)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov0" title="0">fm, body, err := transform.SplitFrontmatter(data)
+        if err != nil </span><span class="cov0" title="0">{
+                fmt.Printf("❌ %s: %v\n", filepath.Base(path), err)
+                return nil
+        }</span>
+
+        <span class="cov0" title="0">transformedFM, transformedBody, err := transformer.Transform(fm, body)
+        if err != nil </span><span class="cov0" title="0">{
+                fmt.Printf("❌ %s: %v\n", filepath.Base(path), err)
+                return nil
+        }</span>
+
+        <span class="cov0" title="0">if err := transformer.Validate(transformedFM); err != nil </span><span class="cov0" title="0">{
+                fmt.Printf("⚠️  %s: validation warning: %v\n", filepath.Base(path), err)
+        }</span>
+
+        <span class="cov0" title="0">output, err := transform.MarshalMarkdown(transformedFM, transformedBody)
+        if err != nil </span><span class="cov0" title="0">{
+                fmt.Printf("❌ %s: marshal error: %v\n", filepath.Base(path), err)
+                return nil
+        }</span>
+
+        <span class="cov0" title="0">baseName := strings.TrimSuffix(filepath.Base(path), ".mdc")
+        fmt.Printf("📄 %s.mdc → %s%s\n", baseName, baseName, transformer.Extension())
+        fmt.Println(string(output))
+        fmt.Println("---")
+
+        return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file15" style="display: none">package commands
+
+import (
+        "context"
+        "fmt"
+        "os"
+        "os/signal"
+        "syscall"
+
+        "github.com/ZanzyTHEbar/cursor-rules/cli"
+        cfgpkg "github.com/ZanzyTHEbar/cursor-rules/internal/config"
+        "github.com/ZanzyTHEbar/cursor-rules/internal/core"
+        "github.com/spf13/cobra"
+)
+
+// NewWatchCmd returns the watch command. Accepts AppContext for parity.
+func NewWatchCmd(ctx *cli.AppContext) *cobra.Command <span class="cov0" title="0">{
+        cmd := &amp;cobra.Command{
+                Use:   "watch",
+                Short: "Start a long-running watcher that auto-applies presets based on mapping",
+                RunE: func(cmd *cobra.Command, args []string) error </span><span class="cov0" title="0">{
+                        // prefer viper-configured path, fallback to flag
+                        var cfgFileFlag string
+                        if ctx != nil &amp;&amp; ctx.Viper != nil </span><span class="cov0" title="0">{
+                                cfgFileFlag = ctx.Viper.GetString("config")
+                        }</span>
+                        <span class="cov0" title="0">if cfgFileFlag == "" </span><span class="cov0" title="0">{
+                                cfgFileFlag, _ = cmd.Root().Flags().GetString("config")
+                        }</span>
+                        <span class="cov0" title="0">cfg, err := cfgpkg.LoadConfig(cfgFileFlag)
+                        if err != nil </span><span class="cov0" title="0">{
+                                return fmt.Errorf("failed to load config: %w", err)
+                        }</span>
+                        <span class="cov0" title="0">if cfg == nil </span><span class="cov0" title="0">{
+                                return fmt.Errorf("no config found; please provide --config or create $HOME/.cursor-rules/config.yaml")
+                        }</span>
+                        <span class="cov0" title="0">if cfg.SharedDir == "" </span><span class="cov0" title="0">{
+                                cfg.SharedDir = core.DefaultSharedDir()
+                        }</span>
+                        <span class="cov0" title="0">ctxBG, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+                        defer stop()
+                        if err := core.StartWatcher(ctxBG, cfg.SharedDir, cfg.AutoApply); err != nil </span><span class="cov0" title="0">{
+                                return fmt.Errorf("failed to start watcher: %w", err)
+                        }</span>
+                        <span class="cov0" title="0">&lt;-ctxBG.Done()
+                        fmt.Fprintln(os.Stderr, "watcher: shutting down")
+                        return nil</span>
+                },
+        }
+        <span class="cov0" title="0">return cmd</span>
+}
+</pre>
+		
+		<pre class="file" id="file16" style="display: none">package main
+
+func main() <span class="cov0" title="0">{
+        Execute()
+}</span>
+</pre>
+		
+		<pre class="file" id="file17" style="display: none">package main
+
+import (
+        "context"
+        "fmt"
+        "log/slog"
+        "os"
+
+        "github.com/ZanzyTHEbar/cursor-rules/cli"
+        "github.com/ZanzyTHEbar/cursor-rules/cmd/cursor-rules/commands"
+        "github.com/ZanzyTHEbar/cursor-rules/internal/config"
+        "github.com/ZanzyTHEbar/cursor-rules/internal/core"
+        gblogger "github.com/ZanzyTHEbar/go-basetools/logger"
+        "github.com/spf13/cobra"
+        "github.com/spf13/viper"
+)
+
+// Version is set at build time via -ldflags. Defaults to "dev".
+var Version = "dev"
+
+// cfgFile is intentionally omitted here; configuration is wired by
+// `cli.ConfigureRoot` which defines and manages the `--config` flag.
+
+var rootCmd = &amp;cobra.Command{
+        Use:   "cursor-rules",
+        Short: "Manage shared Cursor .mdc presets across projects",
+        Long:  "cursor-rules is a CLI to install/sync/manage shared Cursor rules in .cursor/rules/ stubs.",
+}
+
+func Execute() <span class="cov0" title="0">{
+        if err := rootCmd.Execute(); err != nil </span><span class="cov0" title="0">{
+                fmt.Fprintln(os.Stderr, err)
+                os.Exit(1)
+        }</span>
+}
+
+func init() <span class="cov8" title="1">{
+        rootCmd.Version = Version
+        rootCmd.PersistentFlags().StringP("workdir", "w", "", "workspace root (defaults to current directory)")
+
+        ctx := cli.NewAppContext(nil, nil)
+        // postInit loads config into the application and may start background services
+        postInit := func(v *viper.Viper) error </span><span class="cov0" title="0">{
+                // Initialize logger (defaults); can be made configurable later
+                gblogger.InitLogger(&amp;gblogger.Config{Logger: gblogger.Logger{Style: "text", Level: "info"}})
+                // Load config and optionally start watcher
+                cfg, err := config.LoadConfig(v.ConfigFileUsed())
+                if err != nil </span><span class="cov0" title="0">{
+                        slog.Warn("failed to load config", "error", err)
+                        return nil
+                }</span>
+                <span class="cov0" title="0">if cfg.Watch </span><span class="cov0" title="0">{
+                        ctxBG := context.Background()
+                        if err := core.StartWatcher(ctxBG, cfg.SharedDir, cfg.AutoApply); err != nil </span><span class="cov0" title="0">{
+                                slog.Warn("failed to start watcher", "error", err)
+                        }</span> else<span class="cov0" title="0"> {
+                                slog.Info("watching shared dir", "dir", cfg.SharedDir)
+                        }</span>
+                }
+                <span class="cov0" title="0">return nil</span>
+        }
+        <span class="cov8" title="1">cli.ConfigureRoot(rootCmd, ctx, postInit)
+
+        // register all command factories into the global palette
+        cli.Register(
+                commands.NewInstallCmd,
+                commands.NewRemoveCmd,
+                commands.NewSyncCmd,
+                commands.NewWatchCmd,
+                commands.NewListCmd,
+                commands.NewEffectiveCmd,
+                commands.NewPolicyCmd,
+                commands.NewInitCmd,
+                commands.NewTransformCmd,
+        )
+
+        // Add commands registered into the global CLI palette (registered in
+        // cmd/cursor-rules/init.go). ConfigureRoot only wires config/flags; we
+        // still need to attach the concrete subcommands from the global palette.
+        rootCmd.AddCommand(cli.DefaultPalette.Commands(ctx)...)</span>
+}
+</pre>
+		
+		<pre class="file" id="file18" style="display: none">package config
+
+import (
+        "os"
+        "path/filepath"
+
+        "github.com/spf13/viper"
+)
+
+type Config struct {
+        SharedDir string
+        Watch     bool
+        AutoApply bool
+        Presets   []string
+}
+
+// LoadConfig reads config from provided file or default location
+func LoadConfig(cfgFile string) (*Config, error) <span class="cov0" title="0">{
+        v := viper.New()
+        if cfgFile != "" </span><span class="cov0" title="0">{
+                v.SetConfigFile(cfgFile)
+        }</span> else<span class="cov0" title="0"> {
+                home, _ := os.UserHomeDir()
+                v.AddConfigPath(filepath.Join(home, ".cursor-rules"))
+                v.SetConfigName("config")
+                v.SetConfigType("yaml")
+        }</span>
+
+        // defaults
+        <span class="cov0" title="0">v.SetDefault("sharedDir", filepath.Join(os.Getenv("HOME"), ".cursor-rules"))
+        v.SetDefault("watch", false)
+        v.SetDefault("autoApply", false)
+        v.SetDefault("presets", []string{})
+
+        if err := v.ReadInConfig(); err != nil </span><span class="cov0" title="0">{
+                // if not found, return defaults
+                return &amp;Config{
+                        SharedDir: v.GetString("sharedDir"),
+                        Watch:     v.GetBool("watch"),
+                        AutoApply: v.GetBool("autoApply"),
+                        Presets:   v.GetStringSlice("presets"),
+                }, nil
+        }</span>
+
+        <span class="cov0" title="0">cfg := &amp;Config{
+                SharedDir: v.GetString("sharedDir"),
+                Watch:     v.GetBool("watch"),
+                AutoApply: v.GetBool("autoApply"),
+                Presets:   v.GetStringSlice("presets"),
+        }
+        return cfg, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file19" style="display: none">package core
+
+import (
+        "fmt"
+        "io"
+        "os"
+        "path/filepath"
+        "strings"
+)
+
+// ApplyPresetToProject copies a shared preset file into the project's .cursor/rules as a stub (@file).
+// If the stub already exists, it is left unchanged (idempotent).
+func ApplyPresetToProject(projectRoot, preset, sharedDir string) error <span class="cov10" title="5">{
+        // Normalize preset name: remove .mdc extension if present
+        normalizedPreset := strings.TrimSuffix(preset, ".mdc")
+
+        // ensure source exists
+        src := filepath.Join(sharedDir, normalizedPreset+".mdc")
+        if _, err := os.Stat(src); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("shared preset not found: %s", src)
+        }</span>
+        <span class="cov10" title="5">rulesDir := filepath.Join(projectRoot, ".cursor", "rules")
+        if err := os.MkdirAll(rulesDir, 0o755); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov10" title="5">dest := filepath.Join(rulesDir, normalizedPreset+".mdc")
+
+        // Ensure destination directory exists (handles nested paths like emissium/behaviour/)
+        destDir := filepath.Dir(dest)
+        if err := os.MkdirAll(destDir, 0o755); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov10" title="5">if _, err := os.Stat(dest); err == nil </span><span class="cov1" title="1">{
+                // already exists -&gt; idempotent
+                return nil
+        }</span>
+        // If symlinking or stow support requested, prefer ApplyPresetWithOptionalSymlink
+        <span class="cov8" title="4">if UseSymlink() || strings.ToLower(os.Getenv("CURSOR_RULES_USE_GNUSTOW")) == "1" </span><span class="cov1" title="1">{
+                return ApplyPresetWithOptionalSymlink(projectRoot, normalizedPreset, sharedDir)
+        }</span>
+        // create stub file that references shared path
+        <span class="cov7" title="3">f, err := os.Create(dest)
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov7" title="3">defer f.Close()
+        _, err = io.WriteString(f, "---\n@file "+src+"\n")
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov7" title="3">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file20" style="display: none">package core
+
+import (
+        "fmt"
+        "os"
+        "os/exec"
+        "path/filepath"
+        "strings"
+)
+
+// UseSymlink checks environment override to decide whether to create real symlinks
+// instead of stub .mdc files. Default is false to preserve existing behavior.
+func UseSymlink() bool <span class="cov10" title="20">{
+        v := os.Getenv("CURSOR_RULES_SYMLINK")
+        return v == "1" || strings.ToLower(v) == "true"
+}</span>
+
+// HasStow returns true if GNU stow binary is available on PATH.
+func HasStow() bool <span class="cov0" title="0">{
+        if _, err := exec.LookPath("stow"); err == nil </span><span class="cov0" title="0">{
+                return true
+        }</span>
+        <span class="cov0" title="0">return false</span>
+}
+
+// UseGNUStow reports whether GNU stow should be used (env requests and stow present).
+func UseGNUStow() bool <span class="cov6" title="6">{
+        return strings.ToLower(os.Getenv("CURSOR_RULES_USE_GNUSTOW")) == "1" &amp;&amp; HasStow()
+}</span>
+
+// CreateSymlink attempts to create a symlink from src -&gt; dest. It will create parent
+// directories if necessary and will be idempotent if dest already exists and points
+// to the same target.
+func CreateSymlink(src, dest string) error <span class="cov1" title="1">{
+        // Ensure source exists
+        if _, err := os.Stat(src); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("source not found: %s", src)
+        }</span>
+
+        <span class="cov1" title="1">if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to create parent dirs for %s: %w", dest, err)
+        }</span>
+
+        // If destination exists, check whether it points to src
+        <span class="cov1" title="1">if info, err := os.Lstat(dest); err == nil </span><span class="cov0" title="0">{
+                if info.Mode()&amp;os.ModeSymlink != 0 </span><span class="cov0" title="0">{
+                        current, err := os.Readlink(dest)
+                        if err == nil &amp;&amp; current == src </span><span class="cov0" title="0">{
+                                // already correct symlink
+                                return nil
+                        }</span>
+                        // remove stale symlink
+                        <span class="cov0" title="0">_ = os.Remove(dest)</span>
+                } else<span class="cov0" title="0"> {
+                        // file exists and is not a symlink - do not overwrite
+                        return fmt.Errorf("destination exists and is not a symlink: %s", dest)
+                }</span>
+        }
+
+        <span class="cov1" title="1">if err := os.Symlink(src, dest); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to create symlink %s -&gt; %s: %w", dest, src, err)
+        }</span>
+        <span class="cov1" title="1">return nil</span>
+}
+
+// ApplyPresetWithOptionalSymlink applies a preset either by creating a stub file (default)
+// or by creating a symlink if the environment requests it. If GNU Stow is requested via
+// CURSOR_RULES_USE_GNUSTOW and stow is available, attempt to use it (best-effort).
+func ApplyPresetWithOptionalSymlink(projectRoot, preset, sharedDir string) error <span class="cov1" title="1">{
+        // Ensure target rules directory exists for all strategies (stow/symlink/stub)
+        rulesDir := filepath.Join(projectRoot, ".cursor", "rules")
+        if err := os.MkdirAll(rulesDir, 0o755); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov1" title="1">src := filepath.Join(sharedDir, preset+".mdc")
+        dest := filepath.Join(projectRoot, ".cursor", "rules", preset+".mdc")
+
+        // If env requests GNU stow and stow exists, attempt to use it. This expects the
+        // sharedDir to be structured for stow (package directories). If stow fails,
+        // fallback to symlink creation.
+        if strings.ToLower(os.Getenv("CURSOR_RULES_USE_GNUSTOW")) == "1" &amp;&amp; HasStow() </span><span class="cov0" title="0">{
+                cmd := exec.Command("stow", "-v", "-d", sharedDir, "-t", rulesDir, preset)
+                if _, err := cmd.CombinedOutput(); err == nil </span><span class="cov0" title="0">{
+                        return nil
+                }</span>
+                // else: fall through
+        }
+
+        // If user requested symlink behavior, create a symlink
+        <span class="cov1" title="1">if UseSymlink() </span><span class="cov1" title="1">{
+                if err := CreateSymlink(src, dest); err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+                <span class="cov1" title="1">return nil</span>
+        }
+
+        // Default behavior: write stub file atomically
+        <span class="cov0" title="0">tmp, err := os.CreateTemp(rulesDir, ".stub-*.tmp")
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov0" title="0">tmpPath := tmp.Name()
+        defer func() </span><span class="cov0" title="0">{ _ = os.Remove(tmpPath) }</span>()
+        <span class="cov0" title="0">if _, err := tmp.WriteString("---\n@file " + src + "\n"); err != nil </span><span class="cov0" title="0">{
+                tmp.Close()
+                return err
+        }</span>
+        <span class="cov0" title="0">if err := tmp.Sync(); err != nil </span><span class="cov0" title="0">{
+                tmp.Close()
+                return err
+        }</span>
+        <span class="cov0" title="0">if err := tmp.Close(); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov0" title="0">if err := os.Rename(tmpPath, dest); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file21" style="display: none">package core
+
+import (
+        "fmt"
+        "os"
+        "path/filepath"
+
+        "gopkg.in/yaml.v3"
+)
+
+// LoadWatcherMapping looks for "watcher-mapping.yaml" inside sharedDir and
+// returns a mapping of preset name -&gt; list of project paths to auto-apply to.
+// If the file does not exist, returns (nil, nil).
+func LoadWatcherMapping(sharedDir string) (map[string][]string, error) <span class="cov8" title="1">{
+        mappingPath := filepath.Join(sharedDir, "watcher-mapping.yaml")
+        if _, err := os.Stat(mappingPath); os.IsNotExist(err) </span><span class="cov0" title="0">{
+                return nil, nil
+        }</span>
+        <span class="cov8" title="1">b, err := os.ReadFile(mappingPath)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to read watcher mapping: %w", err)
+        }</span>
+        // expected format:
+        // presets:
+        //   frontend:
+        //     - /abs/path/to/project
+        //     - ../relative/project
+        <span class="cov8" title="1">var raw struct {
+                Presets map[string][]string `yaml:"presets"`
+        }
+        if err := yaml.Unmarshal(b, &amp;raw); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to parse watcher mapping: %w", err)
+        }</span>
+        <span class="cov8" title="1">if raw.Presets == nil </span><span class="cov0" title="0">{
+                return nil, nil
+        }</span>
+        // resolve relative paths (relative to sharedDir)
+        <span class="cov8" title="1">resolved := make(map[string][]string)
+        for preset, projects := range raw.Presets </span><span class="cov8" title="1">{
+                for _, p := range projects </span><span class="cov8" title="1">{
+                        if !filepath.IsAbs(p) </span><span class="cov0" title="0">{
+                                p = filepath.Join(sharedDir, p)
+                        }</span>
+                        <span class="cov8" title="1">resolved[preset] = append(resolved[preset], filepath.Clean(p))</span>
+                }
+        }
+        <span class="cov8" title="1">return resolved, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file22" style="display: none">package core
+
+import (
+        "fmt"
+        "io"
+        "os"
+        "path/filepath"
+        "strings"
+        "text/template"
+)
+
+var stubTmpl = `---
+description: "Shared preset: {{ .Preset }}"
+alwaysApply: true
+---
+@file {{ .SourcePath }}
+`
+
+// InstallPreset writes a small stub .mdc in the project's .cursor/rules/
+// pointing to the shared preset under sharedDir (default: ~/.cursor-rules).
+func InstallPreset(projectRoot, preset string) error <span class="cov6" title="6">{
+        sharedDir := DefaultSharedDir()
+
+        // Normalize preset name: remove .mdc extension if present
+        normalizedPreset := strings.TrimSuffix(preset, ".mdc")
+        src := filepath.Join(sharedDir, normalizedPreset+".mdc")
+
+        // If preset file not found, allow package-style layout when stow is enabled
+        if _, err := os.Stat(src); os.IsNotExist(err) </span><span class="cov0" title="0">{
+                if !(UseGNUStow() &amp;&amp; func() bool </span><span class="cov0" title="0">{
+                        d := filepath.Join(sharedDir, normalizedPreset)
+                        if info, err := os.Stat(d); err == nil &amp;&amp; info.IsDir() </span><span class="cov0" title="0">{
+                                return true
+                        }</span>
+                        <span class="cov0" title="0">return false</span>
+                }()) <span class="cov0" title="0">{
+                        return fmt.Errorf("preset not found: %s (expected %s)", preset, src)
+                }</span>
+        }
+
+        <span class="cov6" title="6">rulesDir := filepath.Join(projectRoot, ".cursor", "rules")
+        if err := os.MkdirAll(rulesDir, 0o755); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        // If symlink/stow behavior requested, prefer that path
+        <span class="cov6" title="6">if UseSymlink() || UseGNUStow() </span><span class="cov0" title="0">{
+                return ApplyPresetWithOptionalSymlink(projectRoot, normalizedPreset, sharedDir)
+        }</span>
+
+        <span class="cov6" title="6">dest := filepath.Join(rulesDir, normalizedPreset+".mdc")
+
+        // Ensure destination directory exists (handles nested paths like emissium/behaviour/)
+        destDir := filepath.Dir(dest)
+        if err := os.MkdirAll(destDir, 0o755); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov6" title="6">tmp, err := os.CreateTemp(destDir, ".stub-*.tmp")
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov6" title="6">tmpPath := tmp.Name()
+        defer func() </span><span class="cov6" title="6">{ _ = os.Remove(tmpPath) }</span>()
+
+        <span class="cov6" title="6">t := template.Must(template.New("stub").Parse(stubTmpl))
+        data := map[string]string{
+                "Preset":     normalizedPreset,
+                "SourcePath": src,
+        }
+        if err := t.Execute(tmp, data); err != nil </span><span class="cov0" title="0">{
+                tmp.Close()
+                return err
+        }</span>
+        <span class="cov6" title="6">if err := tmp.Sync(); err != nil </span><span class="cov0" title="0">{
+                tmp.Close()
+                return err
+        }</span>
+        <span class="cov6" title="6">if err := tmp.Close(); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov6" title="6">if err := os.Rename(tmpPath, dest); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov6" title="6">_ = os.Chmod(dest, 0o644)
+        return nil</span>
+}
+
+// DefaultSharedDir returns ~/.cursor-rules by default; environment overrides allowed.
+func DefaultSharedDir() string <span class="cov8" title="11">{
+        if v := os.Getenv("CURSOR_RULES_DIR"); v != "" </span><span class="cov8" title="11">{
+                return v
+        }</span>
+        <span class="cov0" title="0">home, err := os.UserHomeDir()
+        if err != nil || home == "" </span><span class="cov0" title="0">{
+                if env := os.Getenv("HOME"); env != "" </span><span class="cov0" title="0">{
+                        return filepath.Join(env, ".cursor-rules")
+                }</span>
+                <span class="cov0" title="0">if cwd, cwdErr := os.Getwd(); cwdErr == nil &amp;&amp; cwd != "" </span><span class="cov0" title="0">{
+                        return filepath.Join(cwd, ".cursor-rules")
+                }</span>
+                <span class="cov0" title="0">return ".cursor-rules"</span>
+        }
+        <span class="cov0" title="0">return filepath.Join(home, ".cursor-rules")</span>
+}
+
+// InstallPackage installs an entire package directory from sharedDir into the project's
+// .cursor/rules. The package is a directory under sharedDir (e.g. "frontend" or "git").
+// It supports excluding specific files via the excludes slice and respects a
+// .cursor-rules-ignore file placed inside the package which lists patterns to skip.
+// By default, packages are flattened into .cursor/rules/. Use noFlatten=true to preserve structure.
+func InstallPackage(projectRoot, packageName string, excludes []string, noFlatten bool) error <span class="cov5" title="5">{
+        sharedDir := DefaultSharedDir()
+        pkgDir := filepath.Join(sharedDir, packageName)
+        info, err := os.Stat(pkgDir)
+        if err != nil || !info.IsDir() </span><span class="cov0" title="0">{
+                return fmt.Errorf("package not found: %s", pkgDir)
+        }</span>
+
+        // Read .cursor-rules-ignore if present in package dir
+        <span class="cov5" title="5">ignorePath := filepath.Join(pkgDir, ".cursor-rules-ignore")
+        var ignorePatterns []string
+        if b, err := os.ReadFile(ignorePath); err == nil </span><span class="cov1" title="1">{
+                lines := strings.Split(string(b), "\n")
+                for _, l := range lines </span><span class="cov3" title="2">{
+                        l = strings.TrimSpace(l)
+                        if l == "" || strings.HasPrefix(l, "#") </span><span class="cov1" title="1">{
+                                continue</span>
+                        }
+                        <span class="cov1" title="1">ignorePatterns = append(ignorePatterns, l)</span>
+                }
+        }
+
+        // Merge excludes param into ignorePatterns
+        <span class="cov5" title="5">for _, ex := range excludes </span><span class="cov0" title="0">{
+                ex = strings.TrimSpace(ex)
+                if ex != "" </span><span class="cov0" title="0">{
+                        ignorePatterns = append(ignorePatterns, ex)
+                }</span>
+        }
+
+        // Walk package dir and install each .mdc file unless excluded
+        <span class="cov5" title="5">rulesDir := filepath.Join(projectRoot, ".cursor", "rules")
+        if err := os.MkdirAll(rulesDir, 0o755); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov5" title="5">err = filepath.Walk(pkgDir, func(path string, info os.FileInfo, err error) error </span><span class="cov10" title="19">{
+                if err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+                <span class="cov10" title="19">if info.IsDir() </span><span class="cov7" title="8">{
+                        return nil
+                }</span>
+                <span class="cov8" title="11">if filepath.Ext(path) != ".mdc" &amp;&amp; filepath.Ext(path) != ".md" </span><span class="cov1" title="1">{
+                        return nil
+                }</span>
+
+                <span class="cov8" title="10">rel, err := filepath.Rel(pkgDir, path)
+                if err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+
+                // Check ignore patterns (simple glob match)
+                <span class="cov8" title="10">for _, pat := range ignorePatterns </span><span class="cov3" title="2">{
+                        matched, _ := filepath.Match(pat, rel)
+                        if matched </span><span class="cov1" title="1">{
+                                return nil
+                        }</span>
+                }
+
+                // Destination path preserves package name as prefix to avoid collisions
+                // For nested packages (containing "/"), always flatten to avoid deep directory structures
+                // By default, all packages are flattened unless noFlatten is explicitly set
+                <span class="cov7" title="9">var dest string
+                if !noFlatten || strings.Contains(packageName, "/") </span><span class="cov6" title="7">{
+                        dest = filepath.Join(rulesDir, filepath.Base(rel))
+                }</span> else<span class="cov3" title="2"> {
+                        destName := filepath.Join(packageName, rel)
+                        dest = filepath.Join(rulesDir, destName)
+                }</span>
+                <span class="cov7" title="9">if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+
+                // If symlink/stow requested, attempt to use ApplyPresetWithOptionalSymlink semantics
+                // For package installs, prefer creating a symlink to the source file when available.
+                <span class="cov7" title="9">if UseSymlink() </span><span class="cov0" title="0">{
+                        if err := CreateSymlink(path, dest); err == nil </span><span class="cov0" title="0">{
+                                return nil
+                        }</span>
+                        // else fallthrough to copy
+                }
+
+                <span class="cov7" title="9">in, err := os.Open(path)
+                if err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+                <span class="cov7" title="9">defer in.Close()
+                out, err := os.Create(dest)
+                if err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+                <span class="cov7" title="9">defer out.Close()
+                if _, err := io.Copy(out, in); err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+                <span class="cov7" title="9">return nil</span>
+        })
+        <span class="cov5" title="5">if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov5" title="5">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file23" style="display: none">package core
+
+import (
+        "bytes"
+        "fmt"
+        "os"
+        "path/filepath"
+        "sort"
+)
+
+// DetectProjectType inspects common files and returns a simple project type hint.
+// FIXME: This heuristic is not good enough, we need something more sophisticated.
+func DetectProjectType(root string) (string, error) <span class="cov0" title="0">{
+        // Fast helper to check for file existence
+        exists := func(p string) bool </span><span class="cov0" title="0">{
+                _, err := os.Stat(filepath.Join(root, p))
+                return err == nil
+        }</span>
+
+        // Monorepo / workspace indicators (prefer more specific detection)
+        <span class="cov0" title="0">if exists("lerna.json") || exists("pnpm-workspace.yaml") || exists("pnpm-workspace.yml") || exists("turbo.json") </span><span class="cov0" title="0">{
+                return "node-monorepo", nil
+        }</span>
+
+        // Language-specific checks (ordered by clarity)
+        <span class="cov0" title="0">if exists("go.mod") </span><span class="cov0" title="0">{
+                return "go", nil
+        }</span>
+
+        <span class="cov0" title="0">if exists("pyproject.toml") || exists("requirements.txt") </span><span class="cov0" title="0">{
+                return "python", nil
+        }</span>
+
+        <span class="cov0" title="0">if exists("Cargo.toml") </span><span class="cov0" title="0">{
+                return "rust", nil
+        }</span>
+
+        // Node ecosystem - look for package.json or lockfiles
+        <span class="cov0" title="0">if exists("package.json") || exists("package-lock.json") || exists("yarn.lock") || exists("pnpm-lock.yaml") || exists("pnpm-lock.yml") </span><span class="cov0" title="0">{
+                // Distinguish workspace (package.json with workspaces) if possible
+                pkgPath := filepath.Join(root, "package.json")
+                if _, err := os.Stat(pkgPath); err == nil </span><span class="cov0" title="0">{
+                        data, err := os.ReadFile(pkgPath)
+                        if err == nil </span><span class="cov0" title="0">{
+                                if bytes.Contains(data, []byte("\"workspaces\"")) || bytes.Contains(data, []byte("\"packages\"")) </span><span class="cov0" title="0">{
+                                        return "node-monorepo", nil
+                                }</span>
+                        }
+                }
+                <span class="cov0" title="0">return "node", nil</span>
+        }
+
+        // Fallback: look for generic build files
+        <span class="cov0" title="0">if exists("Makefile") </span><span class="cov0" title="0">{
+                return "make", nil
+        }</span>
+        <span class="cov0" title="0">if exists("Dockerfile") </span><span class="cov0" title="0">{
+                return "docker", nil
+        }</span>
+        <span class="cov0" title="0">if exists(".gitlab-ci.yml") || exists(".github/workflows") </span><span class="cov0" title="0">{
+                return "ci", nil
+        }</span>
+
+        <span class="cov0" title="0">return "unknown", nil</span>
+}
+
+// EffectiveRules walks .cursor/rules and returns merged raw text (deterministic order).
+// FIXME: in v2 we will return a structured object with metadata.
+func EffectiveRules(projectRoot string) (string, error) <span class="cov1" title="1">{
+        rulesDir := filepath.Join(projectRoot, ".cursor", "rules")
+        if _, err := os.Stat(rulesDir); os.IsNotExist(err) </span><span class="cov0" title="0">{
+                return "", fmt.Errorf("no .cursor/rules directory found in project")
+        }</span>
+        <span class="cov1" title="1">var files []string
+        err := filepath.Walk(rulesDir, func(path string, info os.FileInfo, err error) error </span><span class="cov10" title="2">{
+                if err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+                <span class="cov10" title="2">if info.IsDir() </span><span class="cov1" title="1">{
+                        return nil
+                }</span>
+                <span class="cov1" title="1">ext := filepath.Ext(path)
+                if ext != ".md" &amp;&amp; ext != ".mdc" </span><span class="cov0" title="0">{
+                        return nil
+                }</span>
+                <span class="cov1" title="1">files = append(files, path)
+                return nil</span>
+        })
+        <span class="cov1" title="1">if err != nil </span><span class="cov0" title="0">{
+                return "", err
+        }</span>
+        <span class="cov1" title="1">sort.Strings(files)
+        out := ""
+        for _, path := range files </span><span class="cov1" title="1">{
+                b, readErr := os.ReadFile(path)
+                if readErr != nil </span><span class="cov0" title="0">{
+                        return "", readErr
+                }</span>
+                <span class="cov1" title="1">out += "\n\n---\n# " + filepath.Base(path) + "\n\n" + string(b)</span>
+        }
+        <span class="cov1" title="1">return out, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file24" style="display: none">package core
+
+import (
+        "fmt"
+        "os"
+        "path/filepath"
+)
+
+// RemovePreset removes the stub file for a preset from the project's .cursor/rules
+func RemovePreset(projectRoot, preset string) error <span class="cov10" title="2">{
+        rulesDir := filepath.Join(projectRoot, ".cursor", "rules")
+        target := filepath.Join(rulesDir, preset+".mdc")
+        if _, err := os.Stat(target); os.IsNotExist(err) </span><span class="cov0" title="0">{
+                return fmt.Errorf("preset stub not found: %s", target)
+        }</span>
+        <span class="cov10" title="2">if err := os.Remove(target); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        <span class="cov10" title="2">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file25" style="display: none">package core
+
+import (
+        "fmt"
+        "io/fs"
+        "os"
+        "os/exec"
+        "path/filepath"
+)
+
+// ListSharedPresets returns list of .mdc files found in sharedDir
+func ListSharedPresets(sharedDir string) ([]string, error) <span class="cov6" title="2">{
+        var out []string
+        entries, err := fs.ReadDir(os.DirFS(sharedDir), ".")
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov6" title="2">for _, e := range entries </span><span class="cov10" title="3">{
+                if e.IsDir() </span><span class="cov0" title="0">{
+                        // skip directories here; packages are handled via ListSharedPackages
+                        continue</span>
+                }
+                <span class="cov10" title="3">if filepath.Ext(e.Name()) == ".mdc" </span><span class="cov6" title="2">{
+                        out = append(out, e.Name())
+                }</span>
+        }
+        <span class="cov6" title="2">return out, nil</span>
+}
+
+// ListSharedPackages returns directories directly under sharedDir which can be
+// treated as packages (e.g., "frontend", "git").
+func ListSharedPackages(sharedDir string) ([]string, error) <span class="cov0" title="0">{
+        var out []string
+        entries, err := fs.ReadDir(os.DirFS(sharedDir), ".")
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">for _, e := range entries </span><span class="cov0" title="0">{
+                if e.IsDir() </span><span class="cov0" title="0">{
+                        out = append(out, e.Name())
+                }</span>
+        }
+        <span class="cov0" title="0">return out, nil</span>
+}
+
+// SyncSharedRepo attempts to git pull if the sharedDir is a git repo.
+// If not a git repo, it is a no-op.
+func SyncSharedRepo(sharedDir string) error <span class="cov0" title="0">{
+        gitDir := filepath.Join(sharedDir, ".git")
+        if _, err := os.Stat(gitDir); err != nil </span><span class="cov0" title="0">{
+                // not a git repo; nothing to do
+                return nil
+        }</span>
+        <span class="cov0" title="0">cmd := exec.Command("git", "-C", sharedDir, "pull", "--ff-only")
+        output, err := cmd.CombinedOutput()
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("git pull failed: %v: %s", err, string(output))
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file26" style="display: none">package core
+
+import (
+        "io/fs"
+        "os"
+        "path/filepath"
+)
+
+// WorkingDir returns the current working directory or an error.
+func WorkingDir() (string, error) <span class="cov0" title="0">{
+        return os.Getwd()
+}</span>
+
+// ListProjectPresets lists files in project's .cursor/rules directory (returns file names).
+func ListProjectPresets(projectRoot string) ([]string, error) <span class="cov0" title="0">{
+        rulesDir := filepath.Join(projectRoot, ".cursor", "rules")
+        var out []string
+        entries, err := fs.ReadDir(os.DirFS(rulesDir), ".")
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">for _, e := range entries </span><span class="cov0" title="0">{
+                if e.IsDir() </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+                <span class="cov0" title="0">if filepath.Ext(e.Name()) == ".mdc" </span><span class="cov0" title="0">{
+                        out = append(out, e.Name())
+                }</span>
+        }
+        <span class="cov0" title="0">return out, nil</span>
+}
+
+// InitProject ensures the .cursor/rules directory exists for a project.
+func InitProject(projectRoot string) error <span class="cov0" title="0">{
+        rulesDir := filepath.Join(projectRoot, ".cursor", "rules")
+        return os.MkdirAll(rulesDir, 0o755)
+}</span>
+</pre>
+		
+		<pre class="file" id="file27" style="display: none">package core
+
+import (
+        "context"
+        "log/slog"
+        "os"
+        "path/filepath"
+        "time"
+
+        "github.com/fsnotify/fsnotify"
+)
+
+// StartWatcher watches sharedDir recursively for changes and optionally auto-applies presets to projects.
+// It runs until ctx is cancelled.
+func StartWatcher(ctx context.Context, sharedDir string, autoApply bool) error <span class="cov1" title="1">{
+        watcher, err := fsnotify.NewWatcher()
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        // add root and subdirectories
+        <span class="cov1" title="1">if err := addRecursive(watcher, sharedDir); err != nil </span><span class="cov0" title="0">{
+                watcher.Close()
+                return err
+        }</span>
+
+        // run watcher loop in a resilient goroutine: recover from panics and keep running
+        <span class="cov1" title="1">go func() </span><span class="cov1" title="1">{
+                defer watcher.Close()
+                defer func() </span><span class="cov1" title="1">{
+                        if r := recover(); r != nil </span><span class="cov0" title="0">{
+                                slog.Warn("watcher panic recovered", "panic", r)
+                        }</span>
+                }()
+
+                // simple event debounce: track last event time per preset filename
+                <span class="cov1" title="1">lastEvent := make(map[string]time.Time)
+                const debounce = 300 * time.Millisecond
+
+                for </span><span class="cov6" title="2">{
+                        select </span>{
+                        case &lt;-ctx.Done():<span class="cov1" title="1">
+                                slog.Info("watcher context cancelled; shutting down")
+                                return</span>
+                        case ev, ok := &lt;-watcher.Events:<span class="cov1" title="1">
+                                if !ok </span><span class="cov0" title="0">{
+                                        slog.Warn("watcher events channel closed")
+                                        return
+                                }</span>
+                                // on write/create, log
+                                <span class="cov1" title="1">if ev.Op&amp;fsnotify.Write == fsnotify.Write || ev.Op&amp;fsnotify.Create == fsnotify.Create </span><span class="cov1" title="1">{
+                                        slog.Info("detected change", "path", ev.Name)
+                                        if !autoApply </span><span class="cov0" title="0">{
+                                                continue</span>
+                                        }
+
+                                        // debounce by filename: ignore rapid repeated events within debounce window
+                                        <span class="cov1" title="1">now := time.Now()
+                                        key := ev.Name
+                                        if t, ok := lastEvent[key]; ok &amp;&amp; now.Sub(t) &lt; debounce </span><span class="cov0" title="0">{
+                                                // skip noisy duplicate
+                                                continue</span>
+                                        }
+                                        <span class="cov1" title="1">lastEvent[key] = now
+
+                                        // when new directories are created, add them recursively
+                                        if info, statErr := os.Stat(ev.Name); statErr == nil &amp;&amp; info.IsDir() &amp;&amp; ev.Op&amp;fsnotify.Create == fsnotify.Create </span><span class="cov0" title="0">{
+                                                _ = addRecursive(watcher, ev.Name)
+                                                continue</span>
+                                        }
+
+                                        // Wait for file to stabilize to avoid reading partially written files
+                                        <span class="cov1" title="1">if stable := waitForStability(ev.Name, 3, 100*time.Millisecond); !stable </span><span class="cov0" title="0">{
+                                                slog.Debug("file did not stabilize in time", "path", ev.Name)
+                                                continue</span>
+                                        }
+
+                                        <span class="cov1" title="1">presets, err := ListSharedPresets(sharedDir)
+                                        if err != nil </span><span class="cov0" title="0">{
+                                                slog.Warn("watcher list presets error", "error", err)
+                                                continue</span>
+                                        }
+                                        <span class="cov1" title="1">mapping, _ := LoadWatcherMapping(sharedDir)
+                                        for _, p := range presets </span><span class="cov1" title="1">{
+                                                name := p[:len(p)-len(filepath.Ext(p))]
+                                                slog.Debug("watcher sees preset", "preset", name, "autoApply", autoApply)
+                                                if mapping != nil </span><span class="cov1" title="1">{
+                                                        if projects, ok := mapping[name]; ok </span><span class="cov1" title="1">{
+                                                                for _, proj := range projects </span><span class="cov1" title="1">{
+                                                                        if err := ApplyPresetToProject(proj, name, sharedDir); err != nil </span><span class="cov0" title="0">{
+                                                                                slog.Warn("watcher failed to apply preset", "preset", name, "project", proj, "error", err)
+                                                                        }</span> else<span class="cov1" title="1"> {
+                                                                                slog.Info("watcher applied preset", "preset", name, "project", proj)
+                                                                        }</span>
+                                                                }
+                                                        } else<span class="cov0" title="0"> {
+                                                                slog.Debug("watcher skipping preset without mapping", "preset", name)
+                                                        }</span>
+                                                } else<span class="cov0" title="0"> {
+                                                        slog.Debug("watcher mapping not provided; skipping auto-apply", "preset", name)
+                                                }</span>
+                                        }
+                                }
+                        case err, ok := &lt;-watcher.Errors:<span class="cov0" title="0">
+                                if !ok </span><span class="cov0" title="0">{
+                                        slog.Warn("watcher errors channel closed")
+                                        return
+                                }</span>
+                                <span class="cov0" title="0">slog.Error("watcher error", "error", err)</span>
+                        }
+                }
+        }()
+
+        <span class="cov1" title="1">return nil</span>
+}
+
+// addRecursive walks root and adds watches for all directories.
+func addRecursive(w *fsnotify.Watcher, root string) error <span class="cov1" title="1">{
+        return filepath.WalkDir(root, func(path string, d os.DirEntry, err error) error </span><span class="cov10" title="3">{
+                if err != nil </span><span class="cov0" title="0">{
+                        return err
+                }</span>
+                <span class="cov10" title="3">if d.IsDir() </span><span class="cov1" title="1">{
+                        if err := w.Add(path); err != nil </span><span class="cov0" title="0">{
+                                return err
+                        }</span>
+                }
+                <span class="cov10" title="3">return nil</span>
+        })
+}
+
+// waitForStability checks the file size timestamp over a handful of intervals and
+// returns true if it remains unchanged across checks.
+func waitForStability(path string, checks int, interval time.Duration) bool <span class="cov1" title="1">{
+        var lastSize int64 = -1
+        for i := 0; i &lt; checks; i++ </span><span class="cov6" title="2">{
+                fi, err := os.Stat(path)
+                if err != nil </span><span class="cov0" title="0">{
+                        return false
+                }</span>
+                <span class="cov6" title="2">size := fi.Size()
+                if lastSize == size </span><span class="cov1" title="1">{
+                        return true
+                }</span>
+                <span class="cov1" title="1">lastSize = size
+                time.Sleep(interval)</span>
+        }
+        <span class="cov0" title="0">return false</span>
+}
+</pre>
+		
+		<pre class="file" id="file28" style="display: none">package manifest
+
+import (
+        "os"
+        "path/filepath"
+
+        "gopkg.in/yaml.v3"
+)
+
+// Manifest defines the structure of cursor-rules-manifest.yaml files.
+type Manifest struct {
+        Version   string              `yaml:"version"`
+        Targets   []string            `yaml:"targets"`
+        Overrides map[string]Override `yaml:"overrides,omitempty"`
+        Exclude   []string            `yaml:"exclude,omitempty"`
+}
+
+// Override defines target-specific configuration overrides.
+type Override struct {
+        DefaultMode  string   `yaml:"defaultMode,omitempty"`
+        DefaultTools []string `yaml:"defaultTools,omitempty"`
+        IncludeRefs  []string `yaml:"includeRefs,omitempty"`
+}
+
+// Load reads and parses a cursor-rules-manifest.yaml file from the given package path.
+// Returns nil if the manifest file doesn't exist (it's optional).
+func Load(pkgPath string) (*Manifest, error) <span class="cov10" title="6">{
+        manifestPath := filepath.Join(pkgPath, "cursor-rules-manifest.yaml")
+
+        data, err := os.ReadFile(manifestPath)
+        if err != nil </span><span class="cov1" title="1">{
+                if os.IsNotExist(err) </span><span class="cov1" title="1">{
+                        return nil, nil // Manifest is optional
+                }</span>
+                <span class="cov0" title="0">return nil, err</span>
+        }
+
+        <span class="cov9" title="5">var m Manifest
+        if err := yaml.Unmarshal(data, &amp;m); err != nil </span><span class="cov1" title="1">{
+                return nil, err
+        }</span>
+
+        <span class="cov7" title="4">return &amp;m, nil</span>
+}
+
+// HasTarget checks if the manifest includes a specific target.
+func (m *Manifest) HasTarget(target string) bool <span class="cov7" title="4">{
+        if m == nil </span><span class="cov1" title="1">{
+                return false
+        }</span>
+        <span class="cov6" title="3">for _, t := range m.Targets </span><span class="cov4" title="2">{
+                if t == target </span><span class="cov1" title="1">{
+                        return true
+                }</span>
+        }
+        <span class="cov4" title="2">return false</span>
+}
+
+// GetOverride retrieves target-specific overrides if they exist.
+func (m *Manifest) GetOverride(target string) *Override <span class="cov6" title="3">{
+        if m == nil || m.Overrides == nil </span><span class="cov1" title="1">{
+                return nil
+        }</span>
+        <span class="cov4" title="2">if override, ok := m.Overrides[target]; ok </span><span class="cov1" title="1">{
+                return &amp;override
+        }</span>
+        <span class="cov1" title="1">return nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file29" style="display: none">package testutil
+
+// Common test fixtures and data
+
+// ValidManifest returns a valid manifest YAML content
+func ValidManifest() string <span class="cov0" title="0">{
+        return `version: "1.0"
+targets:
+  - cursor
+  - copilot-instr
+  - copilot-prompt
+`
+}</span>
+
+// MinimalManifest returns a minimal manifest YAML content
+func MinimalManifest() string <span class="cov0" title="0">{
+        return `version: "1.0"
+targets:
+  - cursor
+`
+}</span>
+
+// ManifestWithOverrides returns a manifest with overrides
+func ManifestWithOverrides() string <span class="cov0" title="0">{
+        return `version: "1.0"
+targets:
+  - copilot-prompt
+overrides:
+  copilot-prompt:
+    defaultMode: "agent"
+    defaultTools:
+      - "githubRepo"
+`
+}</span>
+
+// InvalidManifest returns an invalid manifest YAML content
+func InvalidManifest() string <span class="cov0" title="0">{
+        return `version: "1.0
+targets: [unclosed
+`
+}</span>
+
+// ValidPresetWithFrontmatter returns a valid preset with frontmatter
+func ValidPresetWithFrontmatter() string <span class="cov0" title="0">{
+        return `---
+description: "Test rule"
+apply_to: "**/*.ts"
+priority: 1
+---
+Use strict mode and follow TypeScript best practices.
+`
+}</span>
+
+// ValidPresetMinimal returns a minimal valid preset
+func ValidPresetMinimal() string <span class="cov0" title="0">{
+        return `---
+description: "Minimal rule"
+---
+Simple rule content.
+`
+}</span>
+
+// ValidPresetMultiplePatterns returns a preset with multiple apply_to patterns
+func ValidPresetMultiplePatterns() string <span class="cov0" title="0">{
+        return `---
+description: "Multi-pattern rule"
+apply_to:
+  - "**/*.ts"
+  - "**/*.tsx"
+priority: 2
+---
+Apply to TypeScript and TSX files.
+`
+}</span>
+
+// PresetWithoutFrontmatter returns content without frontmatter
+func PresetWithoutFrontmatter() string <span class="cov0" title="0">{
+        return `This is just plain text without frontmatter.
+It should fail validation.
+`
+}</span>
+
+// PresetWithInvalidFrontmatter returns content with invalid YAML frontmatter
+func PresetWithInvalidFrontmatter() string <span class="cov0" title="0">{
+        return `---
+description: "Invalid
+apply_to: [unclosed
+---
+Content here.
+`
+}</span>
+
+// CopilotInstructionsFormat returns expected Copilot instructions format
+func CopilotInstructionsFormat() string <span class="cov0" title="0">{
+        return `---
+description: "Test rule"
+applyTo: "**/*.ts"
+---
+Use strict mode and follow TypeScript best practices.
+`
+}</span>
+
+// CopilotPromptsFormat returns expected Copilot prompts format
+func CopilotPromptsFormat() string <span class="cov0" title="0">{
+        return `---
+description: "Generate component"
+mode: "chat"
+---
+Create a React component with TypeScript.
+`
+}</span>
+
+// LongContent returns a long content string for truncation testing
+func LongContent() string <span class="cov0" title="0">{
+        content := ""
+        for i := 0; i &lt; 1000; i++ </span><span class="cov0" title="0">{
+                content += "This is a very long line of text that will be used for testing truncation. "
+        }</span>
+        <span class="cov0" title="0">return content</span>
+}
+
+// TestDirectoryStructure returns a map of file paths to content for testing
+func TestDirectoryStructure() map[string]string <span class="cov0" title="0">{
+        return map[string]string{
+                "cursor-rules-manifest.yaml": ValidManifest(),
+                "frontend.mdc":               ValidPresetWithFrontmatter(),
+                "backend.mdc":                ValidPresetMinimal(),
+                ".cursor/rules/test.mdc":     ValidPresetWithFrontmatter(),
+        }
+}</span>
+
+// EmptyDirectoryStructure returns an empty directory structure
+func EmptyDirectoryStructure() map[string]string <span class="cov0" title="0">{
+        return map[string]string{}
+}</span>
+</pre>
+		
+		<pre class="file" id="file30" style="display: none">package testutil
+
+import (
+        "os"
+        "path/filepath"
+        "testing"
+)
+
+// CreateTestFile creates a test file with the given content
+func CreateTestFile(t *testing.T, dir, filename, content string) string <span class="cov0" title="0">{
+        t.Helper()
+        path := filepath.Join(dir, filename)
+        
+        // Create parent directories if needed
+        if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil </span><span class="cov0" title="0">{
+                t.Fatalf("Failed to create parent directories for %s: %v", path, err)
+        }</span>
+        
+        <span class="cov0" title="0">if err := os.WriteFile(path, []byte(content), 0644); err != nil </span><span class="cov0" title="0">{
+                t.Fatalf("Failed to create test file %s: %v", path, err)
+        }</span>
+        <span class="cov0" title="0">return path</span>
+}
+
+// CreateTestManifest creates a test manifest file
+func CreateTestManifest(t *testing.T, dir string, content string) string <span class="cov0" title="0">{
+        t.Helper()
+        return CreateTestFile(t, dir, "cursor-rules-manifest.yaml", content)
+}</span>
+
+// CreateTestPreset creates a test preset file
+func CreateTestPreset(t *testing.T, dir, name, content string) string <span class="cov0" title="0">{
+        t.Helper()
+        return CreateTestFile(t, dir, name+".mdc", content)
+}</span>
+
+// AssertFileExists checks if a file exists
+func AssertFileExists(t *testing.T, path string) <span class="cov0" title="0">{
+        t.Helper()
+        if _, err := os.Stat(path); os.IsNotExist(err) </span><span class="cov0" title="0">{
+                t.Errorf("Expected file to exist: %s", path)
+        }</span>
+}
+
+// AssertFileNotExists checks if a file does not exist
+func AssertFileNotExists(t *testing.T, path string) <span class="cov0" title="0">{
+        t.Helper()
+        if _, err := os.Stat(path); err == nil </span><span class="cov0" title="0">{
+                t.Errorf("Expected file to not exist: %s", path)
+        }</span>
+}
+
+// AssertFileContent checks file content matches expected
+func AssertFileContent(t *testing.T, path, want string) <span class="cov0" title="0">{
+        t.Helper()
+        got, err := os.ReadFile(path)
+        if err != nil </span><span class="cov0" title="0">{
+                t.Fatalf("Failed to read file %s: %v", path, err)
+        }</span>
+        <span class="cov0" title="0">if string(got) != want </span><span class="cov0" title="0">{
+                t.Errorf("File content mismatch for %s:\ngot:\n%s\nwant:\n%s", path, got, want)
+        }</span>
+}
+
+// AssertFileContains checks if file contains substring
+func AssertFileContains(t *testing.T, path, substr string) <span class="cov0" title="0">{
+        t.Helper()
+        content, err := os.ReadFile(path)
+        if err != nil </span><span class="cov0" title="0">{
+                t.Fatalf("Failed to read file %s: %v", path, err)
+        }</span>
+        <span class="cov0" title="0">if !contains(string(content), substr) </span><span class="cov0" title="0">{
+                t.Errorf("File %s does not contain %q\nContent:\n%s", path, substr, content)
+        }</span>
+}
+
+// AssertNoError fails the test if err is not nil
+func AssertNoError(t *testing.T, err error) <span class="cov0" title="0">{
+        t.Helper()
+        if err != nil </span><span class="cov0" title="0">{
+                t.Fatalf("Unexpected error: %v", err)
+        }</span>
+}
+
+// AssertError fails the test if err is nil
+func AssertError(t *testing.T, err error) <span class="cov0" title="0">{
+        t.Helper()
+        if err == nil </span><span class="cov0" title="0">{
+                t.Fatal("Expected error, got nil")
+        }</span>
+}
+
+// AssertErrorContains checks if error message contains substring
+func AssertErrorContains(t *testing.T, err error, substr string) <span class="cov0" title="0">{
+        t.Helper()
+        if err == nil </span><span class="cov0" title="0">{
+                t.Fatalf("Expected error containing %q, got nil", substr)
+        }</span>
+        <span class="cov0" title="0">if !contains(err.Error(), substr) </span><span class="cov0" title="0">{
+                t.Errorf("Error %q does not contain %q", err.Error(), substr)
+        }</span>
+}
+
+// AssertEqual checks if two values are equal
+func AssertEqual(t *testing.T, got, want interface{}) <span class="cov0" title="0">{
+        t.Helper()
+        if got != want </span><span class="cov0" title="0">{
+                t.Errorf("got %v, want %v", got, want)
+        }</span>
+}
+
+// AssertNotEqual checks if two values are not equal
+func AssertNotEqual(t *testing.T, got, notWant interface{}) <span class="cov0" title="0">{
+        t.Helper()
+        if got == notWant </span><span class="cov0" title="0">{
+                t.Errorf("got %v, expected different value", got)
+        }</span>
+}
+
+// AssertStringContains checks if string contains substring
+func AssertStringContains(t *testing.T, str, substr string) <span class="cov0" title="0">{
+        t.Helper()
+        if !contains(str, substr) </span><span class="cov0" title="0">{
+                t.Errorf("String %q does not contain %q", str, substr)
+        }</span>
+}
+
+// AssertStringNotContains checks if string does not contain substring
+func AssertStringNotContains(t *testing.T, str, substr string) <span class="cov0" title="0">{
+        t.Helper()
+        if contains(str, substr) </span><span class="cov0" title="0">{
+                t.Errorf("String %q should not contain %q", str, substr)
+        }</span>
+}
+
+// contains is a helper to check if a string contains a substring
+func contains(s, substr string) bool <span class="cov0" title="0">{
+        return len(s) &gt;= len(substr) &amp;&amp; (s == substr || len(substr) == 0 || 
+                (len(s) &gt; 0 &amp;&amp; len(substr) &gt; 0 &amp;&amp; findSubstring(s, substr)))
+}</span>
+
+func findSubstring(s, substr string) bool <span class="cov0" title="0">{
+        for i := 0; i &lt;= len(s)-len(substr); i++ </span><span class="cov0" title="0">{
+                if s[i:i+len(substr)] == substr </span><span class="cov0" title="0">{
+                        return true
+                }</span>
+        }
+        <span class="cov0" title="0">return false</span>
+}
+
+// CreateTestDir creates a temporary test directory structure
+func CreateTestDir(t *testing.T, structure map[string]string) string <span class="cov0" title="0">{
+        t.Helper()
+        tmpDir := t.TempDir()
+        
+        for path, content := range structure </span><span class="cov0" title="0">{
+                fullPath := filepath.Join(tmpDir, path)
+                if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil </span><span class="cov0" title="0">{
+                        t.Fatalf("Failed to create directory for %s: %v", path, err)
+                }</span>
+                <span class="cov0" title="0">if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil </span><span class="cov0" title="0">{
+                        t.Fatalf("Failed to write file %s: %v", path, err)
+                }</span>
+        }
+        
+        <span class="cov0" title="0">return tmpDir</span>
+}
+
+// MustReadFile reads a file and fails the test if it cannot be read
+func MustReadFile(t *testing.T, path string) string <span class="cov0" title="0">{
+        t.Helper()
+        content, err := os.ReadFile(path)
+        if err != nil </span><span class="cov0" title="0">{
+                t.Fatalf("Failed to read file %s: %v", path, err)
+        }</span>
+        <span class="cov0" title="0">return string(content)</span>
+}
+
+// MustWriteFile writes a file and fails the test if it cannot be written
+func MustWriteFile(t *testing.T, path, content string) <span class="cov0" title="0">{
+        t.Helper()
+        if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil </span><span class="cov0" title="0">{
+                t.Fatalf("Failed to create parent directories for %s: %v", path, err)
+        }</span>
+        <span class="cov0" title="0">if err := os.WriteFile(path, []byte(content), 0644); err != nil </span><span class="cov0" title="0">{
+                t.Fatalf("Failed to write file %s: %v", path, err)
+        }</span>
+}
+</pre>
+		
+		<pre class="file" id="file31" style="display: none">package transform
+
+import (
+        "fmt"
+        "path/filepath"
+        "strings"
+
+        "gopkg.in/yaml.v3"
+)
+
+// CopilotInstructionsTransformer transforms Cursor rules to Copilot instructions format.
+type CopilotInstructionsTransformer struct {
+        DefaultGlobs  []string
+        MaxTokens     int
+        ValidateGlobs bool
+}
+
+// NewCopilotInstructionsTransformer creates a new transformer with default settings.
+func NewCopilotInstructionsTransformer() *CopilotInstructionsTransformer <span class="cov7" title="8">{
+        return &amp;CopilotInstructionsTransformer{
+                DefaultGlobs:  []string{"**"},
+                MaxTokens:     2000,
+                ValidateGlobs: true,
+        }
+}</span>
+
+// Transform converts Cursor frontmatter to Copilot instructions format.
+func (t *CopilotInstructionsTransformer) Transform(node *yaml.Node, body string) (*yaml.Node, string, error) <span class="cov8" title="11">{
+        var fm map[string]interface{}
+        if err := node.Decode(&amp;fm); err != nil </span><span class="cov0" title="0">{
+                return nil, "", fmt.Errorf("decode frontmatter: %w", err)
+        }</span>
+
+        <span class="cov8" title="11">result := make(map[string]interface{})
+
+        // 1. Map description (required)
+        if desc, ok := fm["description"].(string); ok </span><span class="cov8" title="10">{
+                result["description"] = desc
+        }</span> else<span class="cov1" title="1"> {
+                // Provide default if missing
+                result["description"] = "Imported from Cursor rules"
+        }</span>
+
+        // 2. Transform apply_to -&gt; applyTo
+        <span class="cov8" title="11">if applyTo := t.extractApplyTo(fm); applyTo != "" </span><span class="cov7" title="7">{
+                result["applyTo"] = applyTo
+        }</span> else<span class="cov5" title="4"> {
+                result["applyTo"] = strings.Join(t.DefaultGlobs, ",")
+        }</span>
+
+        // 3. Validate globs if enabled
+        <span class="cov8" title="11">if t.ValidateGlobs </span><span class="cov8" title="11">{
+                if err := t.validateGlobPattern(result["applyTo"].(string)); err != nil </span><span class="cov0" title="0">{
+                        return nil, "", fmt.Errorf("invalid glob: %w", err)
+                }</span>
+        }
+
+        // 4. Truncate body if exceeds token limit
+        <span class="cov8" title="11">body = t.truncateBody(body)
+
+        // 5. Encode back to YAML node
+        out := &amp;yaml.Node{}
+        if err := out.Encode(result); err != nil </span><span class="cov0" title="0">{
+                return nil, "", fmt.Errorf("encode frontmatter: %w", err)
+        }</span>
+
+        <span class="cov8" title="11">return out, body, nil</span>
+}
+
+// extractApplyTo extracts and normalizes the applyTo field from Cursor frontmatter.
+func (t *CopilotInstructionsTransformer) extractApplyTo(fm map[string]interface{}) string <span class="cov8" title="11">{
+        // Check apply_to (Cursor format)
+        if applyTo, ok := fm["apply_to"]; ok </span><span class="cov7" title="8">{
+                switch v := applyTo.(type) </span>{
+                case string:<span class="cov6" title="5">
+                        return v</span>
+                case []interface{}:<span class="cov1" title="1">
+                        strs := make([]string, len(v))
+                        for i, item := range v </span><span class="cov3" title="2">{
+                                strs[i] = fmt.Sprint(item)
+                        }</span>
+                        <span class="cov1" title="1">return strings.Join(strs, ",")</span>
+                }
+        }
+
+        // Check applyTo (already Copilot format)
+        <span class="cov6" title="5">if applyTo, ok := fm["applyTo"].(string); ok </span><span class="cov3" title="2">{
+                return applyTo
+        }</span>
+
+        <span class="cov4" title="3">return ""</span>
+}
+
+// validateGlobPattern validates glob patterns for Copilot compatibility.
+func (t *CopilotInstructionsTransformer) validateGlobPattern(pattern string) error <span class="cov9" title="16">{
+        // Split comma-separated patterns
+        patterns := strings.Split(pattern, ",")
+        for _, p := range patterns </span><span class="cov10" title="18">{
+                p = strings.TrimSpace(p)
+                // Test with filepath.Match (basic validation)
+                if _, err := filepath.Match(p, "test.ts"); err != nil </span><span class="cov1" title="1">{
+                        return fmt.Errorf("invalid pattern %q: %w", p, err)
+                }</span>
+        }
+        <span class="cov9" title="15">return nil</span>
+}
+
+// truncateBody truncates the body if it exceeds the token limit.
+func (t *CopilotInstructionsTransformer) truncateBody(body string) string <span class="cov8" title="11">{
+        // Rough token estimation: ~4 chars per token
+        maxChars := t.MaxTokens * 4
+        if len(body) &lt;= maxChars </span><span class="cov8" title="10">{
+                return body
+        }</span>
+        <span class="cov1" title="1">return body[:maxChars] + "\n\n[... truncated for token limit ...]"</span>
+}
+
+// Validate checks that required fields are present in transformed frontmatter.
+func (t *CopilotInstructionsTransformer) Validate(node *yaml.Node) error <span class="cov5" title="4">{
+        var fm map[string]interface{}
+        if err := node.Decode(&amp;fm); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        // Required fields
+        <span class="cov5" title="4">if _, ok := fm["description"]; !ok </span><span class="cov0" title="0">{
+                return fmt.Errorf("missing required field: description")
+        }</span>
+        <span class="cov5" title="4">if _, ok := fm["applyTo"]; !ok </span><span class="cov0" title="0">{
+                return fmt.Errorf("missing required field: applyTo")
+        }</span>
+
+        <span class="cov5" title="4">return nil</span>
+}
+
+// Target returns the identifier for Copilot instructions format.
+func (t *CopilotInstructionsTransformer) Target() string <span class="cov1" title="1">{
+        return "copilot-instr"
+}</span>
+
+// Extension returns the file extension for Copilot instructions.
+func (t *CopilotInstructionsTransformer) Extension() string <span class="cov1" title="1">{
+        return ".instructions.md"
+}</span>
+
+// OutputDir returns the output directory for Copilot instructions.
+func (t *CopilotInstructionsTransformer) OutputDir() string <span class="cov1" title="1">{
+        return ".github/instructions"
+}</span>
+</pre>
+		
+		<pre class="file" id="file32" style="display: none">package transform
+
+import (
+        "fmt"
+
+        "gopkg.in/yaml.v3"
+)
+
+// CopilotPromptsTransformer transforms Cursor rules to Copilot prompts format.
+type CopilotPromptsTransformer struct {
+        *CopilotInstructionsTransformer
+        DefaultMode  string
+        DefaultTools []string
+}
+
+// NewCopilotPromptsTransformer creates a new transformer with default settings.
+func NewCopilotPromptsTransformer() *CopilotPromptsTransformer <span class="cov10" title="2">{
+        return &amp;CopilotPromptsTransformer{
+                CopilotInstructionsTransformer: NewCopilotInstructionsTransformer(),
+                DefaultMode:                     "chat",
+                DefaultTools:                    []string{},
+        }
+}</span>
+
+// Transform converts Cursor frontmatter to Copilot prompts format.
+func (t *CopilotPromptsTransformer) Transform(node *yaml.Node, body string) (*yaml.Node, string, error) <span class="cov1" title="1">{
+        // Start with instructions transform
+        transformed, body, err := t.CopilotInstructionsTransformer.Transform(node, body)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, "", err
+        }</span>
+
+        <span class="cov1" title="1">var fm map[string]interface{}
+        if err := transformed.Decode(&amp;fm); err != nil </span><span class="cov0" title="0">{
+                return nil, "", err
+        }</span>
+
+        // Add prompt-specific fields
+        <span class="cov1" title="1">if _, ok := fm["mode"]; !ok </span><span class="cov1" title="1">{
+                fm["mode"] = t.DefaultMode
+        }</span>
+
+        <span class="cov1" title="1">if _, ok := fm["tools"]; !ok &amp;&amp; len(t.DefaultTools) &gt; 0 </span><span class="cov0" title="0">{
+                fm["tools"] = t.DefaultTools
+        }</span>
+
+        // Remove applyTo (not used in prompts)
+        <span class="cov1" title="1">delete(fm, "applyTo")
+
+        // Encode back to YAML node
+        out := &amp;yaml.Node{}
+        if err := out.Encode(fm); err != nil </span><span class="cov0" title="0">{
+                return nil, "", fmt.Errorf("encode frontmatter: %w", err)
+        }</span>
+
+        <span class="cov1" title="1">return out, body, nil</span>
+}
+
+// Validate checks that required fields are present for prompts.
+func (t *CopilotPromptsTransformer) Validate(node *yaml.Node) error <span class="cov1" title="1">{
+        var fm map[string]interface{}
+        if err := node.Decode(&amp;fm); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        // Required fields for prompts
+        <span class="cov1" title="1">if _, ok := fm["description"]; !ok </span><span class="cov0" title="0">{
+                return fmt.Errorf("missing required field: description")
+        }</span>
+        <span class="cov1" title="1">if _, ok := fm["mode"]; !ok </span><span class="cov0" title="0">{
+                return fmt.Errorf("missing required field: mode")
+        }</span>
+
+        // Validate mode enum
+        <span class="cov1" title="1">if mode, ok := fm["mode"].(string); ok </span><span class="cov1" title="1">{
+                validModes := map[string]bool{"agent": true, "edit": true, "chat": true}
+                if !validModes[mode] </span><span class="cov0" title="0">{
+                        return fmt.Errorf("invalid mode: %s (must be agent, edit, or chat)", mode)
+                }</span>
+        }
+
+        <span class="cov1" title="1">return nil</span>
+}
+
+// Target returns the identifier for Copilot prompts format.
+func (t *CopilotPromptsTransformer) Target() string <span class="cov10" title="2">{
+        return "copilot-prompt"
+}</span>
+
+// Extension returns the file extension for Copilot prompts.
+func (t *CopilotPromptsTransformer) Extension() string <span class="cov10" title="2">{
+        return ".prompt.md"
+}</span>
+
+// OutputDir returns the output directory for Copilot prompts.
+func (t *CopilotPromptsTransformer) OutputDir() string <span class="cov1" title="1">{
+        return ".github/prompts"
+}</span>
+</pre>
+		
+		<pre class="file" id="file33" style="display: none">package transform
+
+import (
+        "gopkg.in/yaml.v3"
+)
+
+// CursorTransformer is an identity transformer that passes through Cursor rules unchanged.
+type CursorTransformer struct{}
+
+// NewCursorTransformer creates a new CursorTransformer instance.
+func NewCursorTransformer() *CursorTransformer <span class="cov10" title="2">{
+        return &amp;CursorTransformer{}
+}</span>
+
+// Transform passes through frontmatter and body unchanged.
+func (t *CursorTransformer) Transform(frontmatter *yaml.Node, body string) (*yaml.Node, string, error) <span class="cov1" title="1">{
+        return frontmatter, body, nil
+}</span>
+
+// Validate performs basic validation on Cursor frontmatter.
+func (t *CursorTransformer) Validate(frontmatter *yaml.Node) error <span class="cov1" title="1">{
+        var fm map[string]interface{}
+        if err := frontmatter.Decode(&amp;fm); err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+        // Cursor rules are flexible; no strict validation required
+        <span class="cov1" title="1">return nil</span>
+}
+
+// Target returns the identifier for Cursor format.
+func (t *CursorTransformer) Target() string <span class="cov10" title="2">{
+        return "cursor"
+}</span>
+
+// Extension returns the file extension for Cursor rules.
+func (t *CursorTransformer) Extension() string <span class="cov10" title="2">{
+        return ".mdc"
+}</span>
+
+// OutputDir returns the output directory for Cursor rules.
+func (t *CursorTransformer) OutputDir() string <span class="cov10" title="2">{
+        return ".cursor/rules"
+}</span>
+</pre>
+		
+		<pre class="file" id="file34" style="display: none">package transform
+
+import (
+        "bytes"
+        "fmt"
+
+        "gopkg.in/yaml.v3"
+)
+
+// SplitFrontmatter separates YAML frontmatter from markdown body.
+// Expects format: ---\nYAML\n---\nBody
+func SplitFrontmatter(data []byte) (*yaml.Node, string, error) <span class="cov10" title="19">{
+        // Split on --- delimiters
+        parts := bytes.SplitN(data, []byte("---"), 3)
+        if len(parts) &lt; 3 </span><span class="cov4" title="3">{
+                return nil, "", fmt.Errorf("invalid frontmatter format: expected --- delimiters")
+        }</span>
+
+        // Parse YAML frontmatter
+        <span class="cov9" title="16">var node yaml.Node
+        if err := yaml.Unmarshal(parts[1], &amp;node); err != nil </span><span class="cov0" title="0">{
+                return nil, "", fmt.Errorf("parse YAML frontmatter: %w", err)
+        }</span>
+
+        // Extract body (trim leading/trailing whitespace)
+        <span class="cov9" title="16">body := string(bytes.TrimSpace(parts[2]))
+
+        return &amp;node, body, nil</span>
+}
+
+// MarshalMarkdown combines YAML frontmatter and body into a markdown file.
+func MarshalMarkdown(frontmatter *yaml.Node, body string) ([]byte, error) <span class="cov4" title="3">{
+        // Marshal frontmatter to YAML
+        fmBytes, err := yaml.Marshal(frontmatter)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("marshal frontmatter: %w", err)
+        }</span>
+
+        // Combine with delimiters and body
+        <span class="cov4" title="3">var buf bytes.Buffer
+        buf.WriteString("---\n")
+        buf.Write(fmBytes)
+        buf.WriteString("---\n\n")
+        buf.WriteString(body)
+
+        return buf.Bytes(), nil</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

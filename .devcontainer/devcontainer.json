@@ -1,0 +1,54 @@
+// Development Container configuration for cursor-rules project
+// See https://aka.ms/devcontainer.json for more information.
+{
+	"name": "cursor-rules (Go 1.25.2)",
+	
+	// Build configuration
+	"build": {
+		"context": ".",
+		"dockerfile": "Dockerfile"
+	},
+
+	// Workspace configuration
+	"workspaceFolder": "/workspace/cursor-rules",
+	"workspaceMount": "source=${localWorkspaceFolder},target=/workspace/cursor-rules,type=bind,consistency=cached",
+
+	// Configure tool-specific properties
+	"customizations": {
+		"vscode": {
+			"settings": {
+				"go.gopath": "/go",
+				"go.toolsManagement.checkForUpdates": "local",
+				"go.useLanguageServer": true,
+				"go.lintTool": "staticcheck",
+				"go.lintOnSave": "workspace",
+				"go.formatTool": "goimports",
+				"editor.formatOnSave": true,
+				"[go]": {
+					"editor.defaultFormatter": "golang.go",
+					"editor.codeActionsOnSave": {
+						"source.organizeImports": "explicit"
+					}
+				}
+			},
+			"extensions": [
+				"golang.go"
+			]
+		}
+	},
+
+	// Use 'postCreateCommand' to run commands after the container is created
+	"postCreateCommand": "go mod download && go mod verify"
+
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root
+	// "remoteUser": "root"
+
+	// Features add additional features to your environment
+	// Uncomment if you need Docker-in-Docker for testing
+	// "features": {
+	//   "ghcr.io/devcontainers/features/docker-in-docker": {
+	//     "moby": true,
+	//     "dockerDashComposeVersion": "v2"
+	//   }
+	// }
+}

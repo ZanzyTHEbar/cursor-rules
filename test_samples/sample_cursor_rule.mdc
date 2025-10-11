@@ -1,0 +1,18 @@
+---
+description: "React component best practices"
+apply_to:
+  - "**/*.tsx"
+  - "**/*.jsx"
+priority: 1
+alwaysApply: true
+---
+# React Component Guidelines
+
+Use functional components with hooks.
+Prefer composition over inheritance.
+Always add PropTypes or TypeScript interfaces.
+
+## Naming Conventions
+- PascalCase for component names
+- camelCase for props and handlers
+- Prefix event handlers with "handle"

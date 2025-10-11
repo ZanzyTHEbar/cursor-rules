@@ -10,7 +10,6 @@
         "files.exclude": {
             "**/.git": false,
             "**/.env": false,
-            "**/.file4you": false
         },
         "editor.foldingStrategy": "indentation",
         "editor.formatOnSave": true,
