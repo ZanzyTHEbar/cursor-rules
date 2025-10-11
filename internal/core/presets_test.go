@@ -3,6 +3,7 @@ package core
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -420,7 +421,7 @@ func TestInstallPresetWithExtensionInName(t *testing.T) {
 
 	// Should be a stub file pointing to the source, not the content itself
 	contentStr := string(content)
-	if !os.IsPathSeparator(contentStr[len(contentStr)-len(presetFile)-1]) || !filepath.HasPrefix(contentStr, "@file ") {
+	if !os.IsPathSeparator(contentStr[len(contentStr)-len(presetFile)-1]) || !strings.HasPrefix(contentStr, "@file ") {
 		t.Logf("Stub content: %q", contentStr)
 		// This might be the actual content if it's not a stub, which is also fine
 	}
