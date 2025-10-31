@@ -21,12 +21,12 @@ func ListProjectPresets(projectRoot string) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid project path: %w", err)
 	}
-	
+
 	// Check if directory exists
 	if _, err := os.Stat(rulesDir); os.IsNotExist(err) {
 		return []string{}, nil // Return empty list when directory doesn't exist
 	}
-	
+
 	var out []string
 	entries, readErr := fs.ReadDir(os.DirFS(rulesDir), ".")
 	if readErr != nil {
@@ -56,12 +56,12 @@ func InitProject(projectRoot string) error {
 // ListProjectCommands lists files in project's .cursor/commands directory (returns file names).
 func ListProjectCommands(projectRoot string) ([]string, error) {
 	commandsDir := filepath.Join(projectRoot, ".cursor", "commands")
-	
+
 	// Check if directory exists
 	if _, err := os.Stat(commandsDir); os.IsNotExist(err) {
 		return []string{}, nil // Return empty list when directory doesn't exist
 	}
-	
+
 	var out []string
 	entries, err := fs.ReadDir(os.DirFS(commandsDir), ".")
 	if err != nil {

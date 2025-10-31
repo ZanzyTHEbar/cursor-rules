@@ -10,10 +10,10 @@ import (
 var (
 	// ErrPathTraversal indicates a path traversal attempt was detected
 	ErrPathTraversal = errors.New("path traversal detected")
-	
+
 	// ErrInvalidPath indicates the path is invalid or malformed
 	ErrInvalidPath = errors.New("invalid path")
-	
+
 	// ErrPathOutsideBase indicates the path resolves outside the base directory
 	ErrPathOutsideBase = errors.New("path resolves outside base directory")
 )
@@ -41,7 +41,7 @@ func ValidatePath(path string) error {
 
 	// Clean the path to normalize it
 	cleaned := filepath.Clean(path)
-	
+
 	// After cleaning, check again for traversal
 	if strings.Contains(cleaned, "..") {
 		return fmt.Errorf("%w: path contains '..' after normalization", ErrPathTraversal)
@@ -191,23 +191,23 @@ func ValidatePackageName(name string) error {
 func SanitizeFilename(filename string) string {
 	// Remove null bytes
 	filename = strings.ReplaceAll(filename, "\x00", "")
-	
+
 	// Replace path separators with underscores
 	filename = strings.ReplaceAll(filename, "/", "_")
 	filename = strings.ReplaceAll(filename, "\\", "_")
-	
+
 	// Replace path traversal sequences with underscores
 	filename = strings.ReplaceAll(filename, "..", "_")
-	
+
 	// Remove leading dots (but preserve extension dots)
 	for strings.HasPrefix(filename, ".") && len(filename) > 1 {
 		filename = filename[1:]
 	}
-	
+
 	// If empty or only dots after sanitization, use default
 	if filename == "" || filename == "." {
 		filename = "unnamed"
 	}
-	
+
 	return filename
 }

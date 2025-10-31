@@ -65,7 +65,9 @@ func StartWatcher(ctx context.Context, sharedDir string, autoApply bool) error {
 
 					// when new directories are created, add them recursively
 					if info, statErr := os.Stat(ev.Name); statErr == nil && info.IsDir() && ev.Op&fsnotify.Create == fsnotify.Create {
-						_ = addRecursive(watcher, ev.Name)
+						if err := addRecursive(watcher, ev.Name); err != nil {
+							slog.Warn("failed to add directory recursively", "path", ev.Name, "error", err)
+						}
 						continue
 					}
 
@@ -80,7 +82,11 @@ func StartWatcher(ctx context.Context, sharedDir string, autoApply bool) error {
 						slog.Warn("watcher list presets error", "error", err)
 						continue
 					}
-					mapping, _ := LoadWatcherMapping(sharedDir)
+					mapping, mapErr := LoadWatcherMapping(sharedDir)
+					if mapErr != nil {
+						slog.Warn("failed to load watcher mapping", "error", mapErr)
+						mapping = nil
+					}
 					for _, p := range presets {
 						name := p[:len(p)-len(filepath.Ext(p))]
 						slog.Debug("watcher sees preset", "preset", name, "autoApply", autoApply)

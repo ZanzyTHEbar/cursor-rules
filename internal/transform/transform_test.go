@@ -484,11 +484,11 @@ Body`,
 
 func TestTransformerMetadata(t *testing.T) {
 	tests := []struct {
-		name      string
-		trans     Transformer
-		wantTgt   string
-		wantExt   string
-		wantDir   string
+		name    string
+		trans   Transformer
+		wantTgt string
+		wantExt string
+		wantDir string
 	}{
 		{
 			name:    "cursor",

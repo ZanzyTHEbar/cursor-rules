@@ -12,18 +12,19 @@ func CreateTestFile(t *testing.T, dir, filename, content string) string {
 	path := filepath.Join(dir, filename)
 
 	// Create parent directories if needed
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		t.Fatalf("Failed to create parent directories for %s: %v", path, err)
 	}
 
-	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+	// #nosec G306 - test files don't need strict permissions
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatalf("Failed to create test file %s: %v", path, err)
 	}
 	return path
 }
 
 // CreateTestManifest creates a test manifest file
-func CreateTestManifest(t *testing.T, dir string, content string) string {
+func CreateTestManifest(t *testing.T, dir, content string) string {
 	t.Helper()
 	return CreateTestFile(t, dir, "cursor-rules-manifest.yaml", content)
 }
@@ -135,8 +136,8 @@ func AssertStringNotContains(t *testing.T, str, substr string) {
 
 // contains is a helper to check if a string contains a substring
 func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(substr) == 0 ||
-		(len(s) > 0 && len(substr) > 0 && findSubstring(s, substr)))
+	return len(s) >= len(substr) && (s == substr || substr == "" ||
+		(s != "" && substr != "" && findSubstring(s, substr)))
 }
 
 func findSubstring(s, substr string) bool {
@@ -155,10 +156,11 @@ func CreateTestDir(t *testing.T, structure map[string]string) string {
 
 	for path, content := range structure {
 		fullPath := filepath.Join(tmpDir, path)
-		if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(fullPath), 0o755); err != nil {
 			t.Fatalf("Failed to create directory for %s: %v", path, err)
 		}
-		if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
+		// #nosec G306 - test files don't need strict permissions
+		if err := os.WriteFile(fullPath, []byte(content), 0o644); err != nil {
 			t.Fatalf("Failed to write file %s: %v", path, err)
 		}
 	}
@@ -179,10 +181,11 @@ func MustReadFile(t *testing.T, path string) string {
 // MustWriteFile writes a file and fails the test if it cannot be written
 func MustWriteFile(t *testing.T, path, content string) {
 	t.Helper()
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		t.Fatalf("Failed to create parent directories for %s: %v", path, err)
 	}
-	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+	// #nosec G306 - test files don't need strict permissions
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatalf("Failed to write file %s: %v", path, err)
 	}
 }

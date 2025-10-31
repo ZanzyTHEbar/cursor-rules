@@ -29,7 +29,7 @@ Examples:
   # Show Copilot instructions
   cursor-rules effective --target copilot-instr`,
 		Args: cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			// Get workdir
 			var wd string
 			if ctx != nil && ctx.Viper != nil {

@@ -185,8 +185,8 @@ func InstallPackage(projectRoot, packageName string, excludes []string, noFlatte
 
 		// Check ignore patterns (simple glob match)
 		for _, pat := range ignorePatterns {
-			matched, _ := filepath.Match(pat, rel)
-			if matched {
+			matched, matchErr := filepath.Match(pat, rel)
+			if matchErr == nil && matched {
 				return nil
 			}
 		}

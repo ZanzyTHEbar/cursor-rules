@@ -1,3 +1,4 @@
+//go:build e2e
 // +build e2e
 
 package main
@@ -141,9 +142,9 @@ func TestE2EMultiTargetWorkflow(t *testing.T) {
 
 		// Verify all targets
 		targets := map[string]string{
-			".cursor/rules/api.mdc":                         "cursor",
-			".github/instructions/api.instructions.md":      "copilot-instr",
-			".github/prompts/api.prompt.md":                 "copilot-prompt",
+			".cursor/rules/api.mdc":                    "cursor",
+			".github/instructions/api.instructions.md": "copilot-instr",
+			".github/prompts/api.prompt.md":            "copilot-prompt",
 		}
 
 		for path, target := range targets {

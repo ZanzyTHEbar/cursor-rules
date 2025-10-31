@@ -22,8 +22,8 @@ type Transformer interface {
 	OutputDir() string
 }
 
-// TransformResult holds the output of a transformation operation.
-type TransformResult struct {
+// Result holds the output of a transformation operation.
+type Result struct {
 	Frontmatter map[string]interface{}
 	Body        string
 	Warnings    []string

@@ -264,11 +264,21 @@ help:
 	@echo "  lint-fix           - Run golangci-lint with auto-fix"
 	@echo "  vet                - Run go vet"
 	@echo "  check              - Run all quality checks (fmt, vet, lint, test)"
+	@echo "  install-hooks      - Install git pre-commit hooks"
 	@echo ""
 	@echo "Utility Targets:"
 	@echo "  clean              - Clean build artifacts"
 	@echo "  test-clean         - Clean test artifacts"
 	@echo "  help               - Show this help message"
+
+# ==============================================================================
+# Git Hooks
+# ==============================================================================
+
+.PHONY: install-hooks
+install-hooks:
+	@echo "Installing git hooks..."
+	@bash scripts/install-hooks.sh
 
 .PHONY: all
 all: build ext-prepare ext-build ext-install

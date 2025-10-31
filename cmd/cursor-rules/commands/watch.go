@@ -25,7 +25,11 @@ func NewWatchCmd(ctx *cli.AppContext) *cobra.Command {
 				cfgFileFlag = ctx.Viper.GetString("config")
 			}
 			if cfgFileFlag == "" {
-				cfgFileFlag, _ = cmd.Root().Flags().GetString("config")
+				var err error
+				cfgFileFlag, err = cmd.Root().Flags().GetString("config")
+				if err != nil {
+					return fmt.Errorf("failed to get config flag: %w", err)
+				}
 			}
 			cfg, err := cfgpkg.LoadConfig(cfgFileFlag)
 			if err != nil {

@@ -12,7 +12,7 @@ import (
 // instead of stub .mdc files. Default is false to preserve existing behavior.
 func UseSymlink() bool {
 	v := os.Getenv("CURSOR_RULES_SYMLINK")
-	return v == "1" || strings.ToLower(v) == "true"
+	return v == "1" || strings.EqualFold(v, "true")
 }
 
 // HasStow returns true if GNU stow binary is available on PATH.
@@ -89,10 +89,7 @@ func ApplyPresetWithOptionalSymlink(projectRoot, preset, sharedDir string) error
 
 	// If user requested symlink behavior, create a symlink
 	if UseSymlink() {
-		if err := CreateSymlink(src, dest); err != nil {
-			return err
-		}
-		return nil
+		return CreateSymlink(src, dest)
 	}
 
 	// Default behavior: delegate to shared helper which handles stow -> symlink -> stub

@@ -20,8 +20,10 @@ func LoadConfig(cfgFile string) (*Config, error) {
 	if cfgFile != "" {
 		v.SetConfigFile(cfgFile)
 	} else {
-		home, _ := os.UserHomeDir()
-		v.AddConfigPath(filepath.Join(home, ".cursor-rules"))
+		home, err := os.UserHomeDir()
+		if err == nil && home != "" {
+			v.AddConfigPath(filepath.Join(home, ".cursor-rules"))
+		}
 		v.SetConfigName("config")
 		v.SetConfigType("yaml")
 	}

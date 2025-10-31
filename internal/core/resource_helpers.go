@@ -99,8 +99,8 @@ func InstallPackageGeneric(projectRoot, sharedDir, packageName, destSubdir strin
 
 		// Check ignore patterns (simple glob match)
 		for _, pat := range ignorePatterns {
-			matched, _ := filepath.Match(pat, rel)
-			if matched {
+			matched, matchErr := filepath.Match(pat, rel)
+			if matchErr == nil && matched {
 				return nil
 			}
 		}
@@ -118,10 +118,7 @@ func InstallPackageGeneric(projectRoot, sharedDir, packageName, destSubdir strin
 		}
 
 		// Delegate applying source to dest (stow/symlink or stub)
-		if err := ApplySourceToDest(sharedDir, path, dest, packageName); err != nil {
-			return err
-		}
-		return nil
+		return ApplySourceToDest(sharedDir, path, dest, packageName)
 	})
 	if err != nil {
 		return err
@@ -155,8 +152,7 @@ func AtomicWriteString(tmpDir, dest, content string, perm os.FileMode) error {
 	if err := os.Rename(tmpPath, dest); err != nil {
 		return err
 	}
-	_ = os.Chmod(dest, perm)
-	return nil
+	return os.Chmod(dest, perm)
 }
 
 // ApplySourceToDest attempts to apply a source file to dest using stow (packageName),
@@ -211,6 +207,5 @@ func AtomicWriteTemplate(tmpDir, dest string, tmpl *template.Template, data inte
 	if err := os.Rename(tmpPath, dest); err != nil {
 		return err
 	}
-	_ = os.Chmod(dest, perm)
-	return nil
+	return os.Chmod(dest, perm)
 }

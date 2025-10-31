@@ -50,8 +50,12 @@ func (t *CopilotInstructionsTransformer) Transform(node *yaml.Node, body string)
 
 	// 3. Validate globs if enabled
 	if t.ValidateGlobs {
-		if err := t.validateGlobPattern(result["applyTo"].(string)); err != nil {
-			return nil, "", fmt.Errorf("invalid glob: %w", err)
+		applyToStr, ok := result["applyTo"].(string)
+		if !ok {
+			return nil, "", fmt.Errorf("applyTo is not a string")
+		}
+		if validateErr := t.validateGlobPattern(applyToStr); validateErr != nil {
+			return nil, "", fmt.Errorf("invalid glob: %w", validateErr)
 		}
 	}
 

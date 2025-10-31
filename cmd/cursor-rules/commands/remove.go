@@ -27,7 +27,11 @@ func NewRemoveCmd(ctx *cli.AppContext) *cobra.Command {
 					return err
 				}
 				if w == "" {
-					w, _ = filepath.Abs(".")
+					var absErr error
+					w, absErr = filepath.Abs(".")
+					if absErr != nil {
+						return fmt.Errorf("failed to get absolute path: %w", absErr)
+					}
 				}
 				wd = w
 			}

@@ -17,8 +17,8 @@ type CopilotPromptsTransformer struct {
 func NewCopilotPromptsTransformer() *CopilotPromptsTransformer {
 	return &CopilotPromptsTransformer{
 		CopilotInstructionsTransformer: NewCopilotInstructionsTransformer(),
-		DefaultMode:                     "chat",
-		DefaultTools:                    []string{},
+		DefaultMode:                    "chat",
+		DefaultTools:                   []string{},
 	}
 }
 

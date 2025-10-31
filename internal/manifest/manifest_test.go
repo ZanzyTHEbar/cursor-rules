@@ -163,7 +163,7 @@ func TestHasTarget(t *testing.T) {
 }
 
 func TestHasTargetNilSafe(t *testing.T) {
-	var m *Manifest = nil
+	var m *Manifest
 	if m.HasTarget("cursor") {
 		t.Error("Nil manifest should return false for HasTarget")
 	}
@@ -196,7 +196,7 @@ func TestGetOverride(t *testing.T) {
 }
 
 func TestGetOverrideNilSafe(t *testing.T) {
-	var m *Manifest = nil
+	var m *Manifest
 	override := m.GetOverride("cursor")
 	if override != nil {
 		t.Error("Nil manifest should return nil for GetOverride")

@@ -63,10 +63,7 @@ func InstallCommand(projectRoot, command string) error {
 		"Command":    normalized,
 		"SourcePath": src,
 	}
-	if err := AtomicWriteTemplate(filepath.Dir(dest), dest, t, data, 0o644); err != nil {
-		return err
-	}
-	return nil
+	return AtomicWriteTemplate(filepath.Dir(dest), dest, t, data, 0o644)
 }
 
 // ApplyCommandToProject copies a shared command file into the project's .cursor/commands as a stub (@file).

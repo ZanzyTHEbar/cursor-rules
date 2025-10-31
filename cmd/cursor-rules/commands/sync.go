@@ -20,9 +20,13 @@ func NewSyncCmd(_ *cli.AppContext) *cobra.Command {
 		Use:   "sync",
 		Short: "Sync shared presets and optionally apply to a project",
 		Args:  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			// Load config to honor configured sharedDir when env override is not set
-			cfg, _ := cfgpkg.LoadConfig("")
+			cfg, err := cfgpkg.LoadConfig("")
+			if err != nil {
+				// Config load errors are non-fatal; we can proceed with defaults
+				cfg = nil
+			}
 
 			shared := core.DefaultSharedDir()
 			if os.Getenv("CURSOR_RULES_DIR") == "" && cfg != nil && cfg.SharedDir != "" {
@@ -49,7 +53,10 @@ func NewSyncCmd(_ *cli.AppContext) *cobra.Command {
 				}
 			}
 
-			wd, _ := cmd.Root().Flags().GetString("workdir")
+			wd, err := cmd.Root().Flags().GetString("workdir")
+			if err != nil {
+				return fmt.Errorf("failed to get workdir flag: %w", err)
+			}
 			if applyFlag && wd != "" {
 				var toApply []string
 				if cfg != nil && len(cfg.Presets) > 0 {

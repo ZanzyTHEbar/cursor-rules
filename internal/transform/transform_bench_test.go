@@ -108,14 +108,14 @@ func BenchmarkMarshalMarkdown(b *testing.B) {
 // BenchmarkTransformWithLargeBody benchmarks transformation with large content
 func BenchmarkTransformWithLargeBody(b *testing.B) {
 	transformer := NewCopilotInstructionsTransformer()
-	
+
 	// Create large body content
 	var bodyBuilder strings.Builder
 	for i := 0; i < 1000; i++ {
 		bodyBuilder.WriteString("This is a line of content that will be repeated many times. ")
 	}
 	largeBody := bodyBuilder.String()
-	
+
 	input := `---
 description: "Large content test"
 apply_to: "**/*.ts"

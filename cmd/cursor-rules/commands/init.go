@@ -14,16 +14,23 @@ func NewInitCmd(ctx *cli.AppContext) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "init",
 		Short: "Initialize a project with .cursor/rules/ directory",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			// prefer workdir from AppContext.Viper, fallback to flag
 			var wd string
 			if ctx != nil && ctx.Viper != nil {
 				wd = ctx.Viper.GetString("workdir")
 			}
 			if wd == "" {
-				w, _ := cmd.Root().Flags().GetString("workdir")
+				w, err := cmd.Root().Flags().GetString("workdir")
+				if err != nil {
+					return fmt.Errorf("failed to get workdir flag: %w", err)
+				}
 				if w == "" {
-					w, _ = filepath.Abs(".")
+					var absErr error
+					w, absErr = filepath.Abs(".")
+					if absErr != nil {
+						return fmt.Errorf("failed to get absolute path: %w", absErr)
+					}
 				}
 				wd = w
 			}

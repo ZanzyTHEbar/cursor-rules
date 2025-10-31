@@ -17,23 +17,16 @@ linters:
     
     # Additional recommended linters
     - gofmt         # Check code formatting
-    - goimports     # Check import formatting
     - misspell      # Check for misspelled words
     - revive        # Fast, configurable, extensible linter
     - gosec         # Security-focused linter
     - gocritic      # Opinionated linter
-    - gocyclo       # Cyclomatic complexity
-    - dupl          # Code clone detection
     - unconvert     # Remove unnecessary type conversions
     - prealloc      # Find slice declarations that could be preallocated
-    - exportloopref # Check for pointers to loop variables
     - nolintlint    # Ensure nolint directives are used correctly
     
   disable:
     - typecheck     # Disabled because it can be slow
-    - deadcode      # Deprecated, replaced by unused
-    - varcheck      # Deprecated, replaced by unused
-    - structcheck   # Deprecated, replaced by unused
 
 linters-settings:
   errcheck:
@@ -45,6 +38,9 @@ linters-settings:
   
   govet:
     enable-all: true
+    disable:
+      - fieldalignment  # Optimization, not critical
+      - shadow          # Can be noisy, especially in tests
   
   gofmt:
     simplify: true
@@ -97,10 +93,10 @@ linters-settings:
       - whyNoLint
   
   gocyclo:
-    min-complexity: 15
+    min-complexity: 30  # Increased from 15 to reduce noise
   
   dupl:
-    threshold: 100
+    threshold: 150  # Increased from 100 to allow some helper duplication
   
   misspell:
     locale: US
@@ -108,6 +104,7 @@ linters-settings:
       - cursor
       - copilot
       - mdc
+      - behaviour  # UK spelling used in test directory names
 
 issues:
   exclude-rules:

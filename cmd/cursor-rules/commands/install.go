@@ -54,7 +54,11 @@ Examples:
 					return err
 				}
 				if w == "" {
-					w, _ = filepath.Abs(".")
+					var absErr error
+					w, absErr = filepath.Abs(".")
+					if absErr != nil {
+						return fmt.Errorf("failed to get absolute path: %w", absErr)
+					}
 				}
 				wd = w
 			}
@@ -70,7 +74,11 @@ Examples:
 			// Load manifest if exists
 			var m *manifest.Manifest
 			if isPackage {
-				m, _ = manifest.Load(pkgPath)
+				m, err = manifest.Load(pkgPath)
+				if err != nil {
+					// Manifest load errors are non-fatal; proceed without it
+					m = nil
+				}
 			}
 
 			// Determine targets
@@ -129,7 +137,7 @@ func installPackageWithTransformer(
 
 	// Create output directory
 	outDir := filepath.Join(workDir, transformer.OutputDir())
-	if err := os.MkdirAll(outDir, 0755); err != nil {
+	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return fmt.Errorf("create output dir for package %q: %w", presetName, err)
 	}
 
@@ -144,7 +152,10 @@ func installPackageWithTransformer(
 		}
 
 		// Check exclusions
-		relPath, _ := filepath.Rel(pkgPath, path)
+		relPath, err := filepath.Rel(pkgPath, path)
+		if err != nil {
+			return fmt.Errorf("failed to get relative path: %w", err)
+		}
 		if shouldExclude(relPath, excludes) {
 			return nil
 		}
@@ -181,7 +192,7 @@ func installPresetWithTransformer(
 
 	// Create output directory
 	outDir := filepath.Join(workDir, transformer.OutputDir())
-	if err := os.MkdirAll(outDir, 0755); err != nil {
+	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return fmt.Errorf("create output dir for preset %q: %w", presetName, err)
 	}
 
@@ -216,8 +227,8 @@ func transformAndWriteFile(
 	}
 
 	// Validate
-	if err := transformer.Validate(transformedFM); err != nil {
-		return fmt.Errorf("validate %s: %w", srcPath, err)
+	if validateErr := transformer.Validate(transformedFM); validateErr != nil {
+		return fmt.Errorf("validate %s: %w", srcPath, validateErr)
 	}
 
 	// Determine output path
@@ -236,26 +247,30 @@ func transformAndWriteFile(
 	}
 
 	// Idempotent write (hash check)
-	if existing, _ := os.ReadFile(outPath); bytes.Equal(existing, output) {
+	existing, readErr := os.ReadFile(outPath)
+	if readErr == nil && bytes.Equal(existing, output) {
 		return nil // Skip unchanged
 	}
 
 	// Ensure parent dir exists
-	if err := os.MkdirAll(filepath.Dir(outPath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(outPath), 0o755); err != nil {
 		return err
 	}
 
-	return os.WriteFile(outPath, output, 0644)
+	// #nosec G306 - rule files are meant to be world-readable
+	return os.WriteFile(outPath, output, 0o644)
 }
 
 // shouldExclude checks if a path matches any exclusion pattern.
 func shouldExclude(relPath string, patterns []string) bool {
 	for _, pattern := range patterns {
-		if matched, _ := filepath.Match(pattern, relPath); matched {
+		matched, err := filepath.Match(pattern, relPath)
+		if err == nil && matched {
 			return true
 		}
 		// Also check if pattern matches any parent directory
-		if matched, _ := filepath.Match(pattern, filepath.Dir(relPath)); matched {
+		matched, err = filepath.Match(pattern, filepath.Dir(relPath))
+		if err == nil && matched {
 			return true
 		}
 	}

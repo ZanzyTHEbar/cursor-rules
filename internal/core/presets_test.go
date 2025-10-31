@@ -1,9 +1,9 @@
 package core
 
 import (
-	"slices"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -55,7 +55,7 @@ func TestApplyRemoveListInstall(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListSharedPresets failed: %v", err)
 	}
-	found := slices.Contains(presets, presetName + ".mdc")
+	found := slices.Contains(presets, presetName+".mdc")
 	if !found {
 		t.Fatalf("preset %s not found in ListSharedPresets output", presetName)
 	}
