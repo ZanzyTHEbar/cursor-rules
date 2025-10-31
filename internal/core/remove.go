@@ -12,10 +12,7 @@ func RemovePreset(projectRoot, preset string) error {
 	if _, err := os.Stat(target); os.IsNotExist(err) {
 		return nil // Return nil if file doesn't exist (idempotent)
 	}
-	if err := os.Remove(target); err != nil {
-		return err
-	}
-	return nil
+	return os.Remove(target)
 }
 
 // RemoveCommand removes a command file from the project's .cursor/commands
@@ -25,8 +22,5 @@ func RemoveCommand(projectRoot, command string) error {
 	if _, err := os.Stat(target); os.IsNotExist(err) {
 		return nil // Return nil if file doesn't exist (idempotent)
 	}
-	if err := os.Remove(target); err != nil {
-		return err
-	}
-	return nil
+	return os.Remove(target)
 }

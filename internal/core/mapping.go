@@ -18,11 +18,11 @@ func LoadWatcherMapping(sharedDir string) (map[string][]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("invalid shared directory path: %w", err)
 	}
-	
+
 	if _, statErr := os.Stat(mappingPath); os.IsNotExist(statErr) {
 		return nil, nil
 	}
-	
+
 	// #nosec G304 - mappingPath is validated above and constructed from trusted sharedDir
 	b, readErr := os.ReadFile(mappingPath)
 	if readErr != nil {
@@ -49,13 +49,13 @@ func LoadWatcherMapping(sharedDir string) (map[string][]string, error) {
 		if validErr := security.ValidatePackageName(preset); validErr != nil {
 			return nil, fmt.Errorf("invalid preset name %q in mapping: %w", preset, validErr)
 		}
-		
+
 		for _, p := range projects {
 			// Validate path
 			if validErr := security.ValidatePath(p); validErr != nil {
 				return nil, fmt.Errorf("invalid project path %q for preset %q: %w", p, preset, validErr)
 			}
-			
+
 			if !filepath.IsAbs(p) {
 				// Safely join relative path with sharedDir
 				absPath, joinErr := security.SafeJoin(sharedDir, p)

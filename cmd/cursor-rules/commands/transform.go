@@ -25,7 +25,7 @@ to Copilot format without writing files.
 Example:
   cursor-rules transform frontend --target copilot-instr`,
 		Args: cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			preset := args[0]
 
 			transformer, err := ctx.Transformer(targetFlag)
@@ -88,8 +88,8 @@ func previewTransform(path string, transformer transform.Transformer) error {
 		return nil
 	}
 
-	if err := transformer.Validate(transformedFM); err != nil {
-		fmt.Printf("⚠️  %s: validation warning: %v\n", filepath.Base(path), err)
+	if validateErr := transformer.Validate(transformedFM); validateErr != nil {
+		fmt.Printf("⚠️  %s: validation warning: %v\n", filepath.Base(path), validateErr)
 	}
 
 	output, err := transform.MarshalMarkdown(transformedFM, transformedBody)

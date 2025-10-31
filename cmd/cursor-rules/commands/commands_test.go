@@ -63,23 +63,23 @@ func TestInstallCommandErrors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			shared, project := tt.setup(t)
-			
+
 			// Set environment
 			os.Setenv("CURSOR_RULES_DIR", shared)
 			defer os.Unsetenv("CURSOR_RULES_DIR")
-			
+
 			// Create context
 			v := viper.New()
 			v.Set("workdir", project)
 			ctx := cli.NewAppContext(v, nil)
-			
+
 			// Create command
 			cmd := NewInstallCmd(ctx)
 			cmd.SetArgs([]string{tt.presetName, "--target", tt.target})
-			
+
 			// Execute
 			err := cmd.Execute()
-			
+
 			if tt.wantErr {
 				if err == nil {
 					t.Error("Expected error, got nil")
@@ -132,21 +132,21 @@ func TestTransformCommandErrors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			shared, presetName := tt.setup(t)
-			
+
 			// Set environment
 			os.Setenv("CURSOR_RULES_DIR", shared)
 			defer os.Unsetenv("CURSOR_RULES_DIR")
-			
+
 			// Create context
 			ctx := cli.NewAppContext(nil, nil)
-			
+
 			// Create command
 			cmd := NewTransformCmd(ctx)
 			cmd.SetArgs([]string{presetName, "--target", tt.target})
-			
+
 			// Execute
 			err := cmd.Execute()
-			
+
 			if tt.wantErr {
 				if err == nil {
 					t.Error("Expected error, got nil")
@@ -195,19 +195,19 @@ func TestEffectiveCommandErrors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			workdir := tt.setup(t)
-			
+
 			// Create context
 			v := viper.New()
 			v.Set("workdir", workdir)
 			ctx := cli.NewAppContext(v, nil)
-			
+
 			// Create command
 			cmd := NewEffectiveCmd(ctx)
 			cmd.SetArgs([]string{"--target", tt.target})
-			
+
 			// Execute
 			err := cmd.Execute()
-			
+
 			if tt.wantErr {
 				if err == nil {
 					t.Error("Expected error, got nil")
@@ -259,19 +259,19 @@ func TestRemoveCommandErrors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			workdir := tt.setup(t)
-			
+
 			// Create context
 			v := viper.New()
 			v.Set("workdir", workdir)
 			ctx := cli.NewAppContext(v, nil)
-			
+
 			// Create command
 			cmd := NewRemoveCmd(ctx)
 			cmd.SetArgs([]string{tt.presetName})
-			
+
 			// Execute
 			err := cmd.Execute()
-			
+
 			if tt.wantErr {
 				if err == nil {
 					t.Error("Expected error, got nil")
@@ -320,18 +320,18 @@ func TestListCommandErrors(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			workdir := tt.setup(t)
 			defer os.Unsetenv("CURSOR_RULES_DIR")
-			
+
 			// Create context
 			v := viper.New()
 			v.Set("workdir", workdir)
 			ctx := cli.NewAppContext(v, nil)
-			
+
 			// Create command
 			cmd := NewListCmd(ctx)
-			
+
 			// Execute
 			err := cmd.Execute()
-			
+
 			if tt.wantErr {
 				if err == nil {
 					t.Error("Expected error, got nil")
@@ -351,7 +351,7 @@ func TestListCommandErrors(t *testing.T) {
 
 // Helper function to check if string contains substring
 func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(substr) == 0 || 
+	return len(s) >= len(substr) && (s == substr || len(substr) == 0 ||
 		(len(s) > 0 && len(substr) > 0 && findSubstring(s, substr)))
 }
 

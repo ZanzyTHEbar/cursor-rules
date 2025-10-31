@@ -13,15 +13,22 @@ func NewListCmd(ctx *cli.AppContext) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List installed presets in current project",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			var wd string
 			if ctx != nil && ctx.Viper != nil {
 				wd = ctx.Viper.GetString("workdir")
 			}
 			if wd == "" {
-				w, _ := cmd.Root().Flags().GetString("workdir")
+				w, err := cmd.Root().Flags().GetString("workdir")
+				if err != nil {
+					return fmt.Errorf("failed to get workdir flag: %w", err)
+				}
 				if w == "" {
-					w, _ = core.WorkingDir()
+					var err error
+					w, err = core.WorkingDir()
+					if err != nil {
+						return fmt.Errorf("failed to get working directory: %w", err)
+					}
 				}
 				wd = w
 			}

@@ -36,9 +36,16 @@ Examples:
 				wd = ctx.Viper.GetString("workdir")
 			}
 			if wd == "" {
-				w, _ := cmd.Root().Flags().GetString("workdir")
+				w, err := cmd.Root().Flags().GetString("workdir")
+				if err != nil {
+					return fmt.Errorf("failed to get workdir flag: %w", err)
+				}
 				if w == "" {
-					w, _ = filepath.Abs(".")
+					var err error
+					w, err = filepath.Abs(".")
+					if err != nil {
+						return fmt.Errorf("failed to get absolute path: %w", err)
+					}
 				}
 				wd = w
 			}
@@ -72,12 +79,14 @@ Examples:
 
 			// Collect all rule files
 			var files []string
-			filepath.Walk(rulesDir, func(path string, info os.FileInfo, err error) error {
+			if err := filepath.Walk(rulesDir, func(path string, info os.FileInfo, err error) error {
 				if err == nil && !info.IsDir() && strings.HasSuffix(path, transformer.Extension()) {
 					files = append(files, path)
 				}
 				return nil
-			})
+			}); err != nil {
+				return fmt.Errorf("failed to walk rules directory: %w", err)
+			}
 
 			if len(files) == 0 {
 				fmt.Printf("No %s files found in %s\n", transformer.Extension(), rulesDir)

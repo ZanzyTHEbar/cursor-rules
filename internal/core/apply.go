@@ -24,7 +24,7 @@ func ApplyPresetToProject(projectRoot, preset, sharedDir string) error {
 	}
 	dest := filepath.Join(rulesDir, normalizedPreset+".mdc")
 
-	// Ensure destination directory exists (handles nested paths like emissium/behaviour/)
+	// Ensure destination directory exists (handles nested paths like emissium/behavior/)
 	destDir := filepath.Dir(dest)
 	if err := os.MkdirAll(destDir, 0o755); err != nil {
 		return err

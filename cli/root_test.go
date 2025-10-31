@@ -15,7 +15,7 @@ func TestPaletteCommandsAndBuildRoot(t *testing.T) {
 	p.Register(func(_ *AppContext) *cobra.Command {
 		return &cobra.Command{
 			Use: "policy",
-			RunE: func(cmd *cobra.Command, args []string) error {
+			RunE: func(cmd *cobra.Command, _ []string) error {
 				cmd.Println("policy command not yet implemented")
 				return nil
 			},

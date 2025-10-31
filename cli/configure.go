@@ -21,7 +21,7 @@ func ConfigureRoot(root *cobra.Command, ctx *AppContext, postInit func(*viper.Vi
 	var cfgFile string
 	root.PersistentFlags().StringVar(&cfgFile, "config", "", "config file path (optional)")
 
-	root.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+	root.PersistentPreRunE = func(_ *cobra.Command, _ []string) error {
 		if ctx.Viper == nil {
 			ctx.Viper = viper.New()
 		}
@@ -30,9 +30,7 @@ func ConfigureRoot(root *cobra.Command, ctx *AppContext, postInit func(*viper.Vi
 		}
 		ctx.Viper.AutomaticEnv()
 		if err := ctx.Viper.ReadInConfig(); err != nil {
-			if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-				// no config is fine
-			} else {
+			if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
 				return fmt.Errorf("reading config: %w", err)
 			}
 		}

@@ -11,7 +11,7 @@ import (
 )
 
 // StartWatcher watches sharedDir recursively for changes and optionally auto-applies presets to projects.
-// It runs until ctx is cancelled.
+// It runs until ctx is canceled.
 func StartWatcher(ctx context.Context, sharedDir string, autoApply bool) error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -40,7 +40,7 @@ func StartWatcher(ctx context.Context, sharedDir string, autoApply bool) error {
 		for {
 			select {
 			case <-ctx.Done():
-				slog.Info("watcher context cancelled; shutting down")
+				slog.Info("watcher context canceled; shutting down")
 				return
 			case ev, ok := <-watcher.Events:
 				if !ok {

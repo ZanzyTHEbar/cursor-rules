@@ -18,7 +18,13 @@ echo "shared=$SHARED_DIR"; echo "project=$PROJECT_DIR"
 
 PRESET=frontend
 PRESET_FILE="$SHARED_DIR/${PRESET}.mdc"
-echo "# preset for $PRESET" > "$PRESET_FILE"
+cat > "$PRESET_FILE" <<EOF
+---
+description: "Preset for $PRESET"
+alwaysApply: true
+---
+# preset for $PRESET
+EOF
 
 # don't create a git repo here; SyncSharedRepo will be a no-op if not a git repo
 

@@ -2,7 +2,6 @@ package core
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -90,7 +89,7 @@ func ApplyCommandToProject(projectRoot, command, sharedDir string) error {
 		return err
 	}
 	defer f.Close()
-	_, err = io.WriteString(f, "---\n@file "+src+"\n")
+	_, err = f.WriteString("---\n@file " + src + "\n")
 	if err != nil {
 		return err
 	}

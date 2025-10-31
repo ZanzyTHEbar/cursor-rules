@@ -25,12 +25,12 @@ func InstallPreset(projectRoot, preset string) error {
 
 	// Normalize preset name: remove .mdc extension if present
 	normalizedPreset := strings.TrimSuffix(preset, ".mdc")
-	
+
 	// Validate preset name for security (use package validation since presets can have nested paths)
 	if err := security.ValidatePackageName(normalizedPreset); err != nil {
 		return fmt.Errorf("invalid preset name: %w", err)
 	}
-	
+
 	// Safely construct source path
 	src, err := security.SafeJoin(sharedDir, normalizedPreset+".mdc")
 	if err != nil {
@@ -73,7 +73,7 @@ func InstallPreset(projectRoot, preset string) error {
 		return fmt.Errorf("invalid destination path: %w", err)
 	}
 
-	// Ensure destination directory exists (handles nested paths like emissium/behaviour/)
+	// Ensure destination directory exists (handles nested paths like emissium/behavior/)
 	destDir := filepath.Dir(dest)
 	if err := os.MkdirAll(destDir, 0o755); err != nil {
 		return err
@@ -84,10 +84,7 @@ func InstallPreset(projectRoot, preset string) error {
 		"Preset":     normalizedPreset,
 		"SourcePath": src,
 	}
-	if err := AtomicWriteTemplate(destDir, dest, t, data, 0o644); err != nil {
-		return err
-	}
-	return nil
+	return AtomicWriteTemplate(destDir, dest, t, data, 0o644)
 }
 
 // DefaultSharedDir returns ~/.cursor-rules by default; environment overrides allowed.
@@ -118,9 +115,9 @@ func InstallPackage(projectRoot, packageName string, excludes []string, noFlatte
 	if err := security.ValidatePackageName(packageName); err != nil {
 		return fmt.Errorf("invalid package name: %w", err)
 	}
-	
+
 	sharedDir := DefaultSharedDir()
-	
+
 	// Safely construct package directory path
 	pkgDir, err := security.SafeJoin(sharedDir, packageName)
 	if err != nil {
@@ -180,7 +177,7 @@ func InstallPackage(projectRoot, packageName string, excludes []string, noFlatte
 		if relErr != nil {
 			return relErr
 		}
-		
+
 		// Validate relative path for security
 		if validErr := security.ValidatePath(rel); validErr != nil {
 			return fmt.Errorf("invalid file path in package: %w", validErr)

@@ -171,6 +171,14 @@ func installPresetWithTransformer(
 		return fmt.Errorf("preset %q not found: %s", presetName, presetPath)
 	}
 
+	// For cursor target, respect symlink mode like the old InstallPreset function
+	if transformer.Target() == "cursor" {
+		sharedDir := core.DefaultSharedDir()
+		if core.UseSymlink() || core.UseGNUStow() {
+			return core.ApplyPresetWithOptionalSymlink(workDir, presetName, sharedDir)
+		}
+	}
+
 	// Create output directory
 	outDir := filepath.Join(workDir, transformer.OutputDir())
 	if err := os.MkdirAll(outDir, 0755); err != nil {

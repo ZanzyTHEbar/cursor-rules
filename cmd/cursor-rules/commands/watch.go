@@ -18,7 +18,7 @@ func NewWatchCmd(ctx *cli.AppContext) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "watch",
 		Short: "Start a long-running watcher that auto-applies presets based on mapping",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			// prefer viper-configured path, fallback to flag
 			var cfgFileFlag string
 			if ctx != nil && ctx.Viper != nil {

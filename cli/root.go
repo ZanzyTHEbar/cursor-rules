@@ -23,7 +23,7 @@ func NewRoot(ctx *AppContext, p Palette) *cobra.Command {
 	root := &cobra.Command{
 		Use:   "alpha-engine",
 		Short: "Alpha Engine CLI",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
 			if ctx.Viper == nil {
 				ctx.Viper = viper.New()
 			}
