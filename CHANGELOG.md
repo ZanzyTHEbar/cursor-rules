@@ -3,6 +3,27 @@
 [![semantic versioning](https://img.shields.io/badge/semantic%20versioning-2.0.0-green.svg)](https://semver.org)
 > All notable changes to this project will be documented in this file
 
+## [0.5.0](https://github.com/ZanzyTHEbar/cursor-rules/compare/v0.4.2...v0.5.0) (2025-10-31)
+
+### 🍕 Features
+
+* **transform:** Implement Copilot and Cursor transformers with validation and transformation logic ([8a7ff75](https://github.com/ZanzyTHEbar/cursor-rules/commit/8a7ff752b5e64b943a680fa56ef13044b612da87))
+* **commands:** move commands under cursor-rules shared dir and extract generic package installer ([57869d9](https://github.com/ZanzyTHEbar/cursor-rules/commit/57869d9801da8c045f5f87c5de904af8a02257c3))
+
+### 📝 Documentation
+
+* enhance contributing guide and improve code quality ([5062874](https://github.com/ZanzyTHEbar/cursor-rules/commit/5062874591ec5b1bdd94b50e4fd9aff9c23e911e))
+
+### 🧑‍💻 Code Refactoring
+
+* **core:** consolidate symlink/stow/stub logic and standardize naming ([bb0cd51](https://github.com/ZanzyTHEbar/cursor-rules/commit/bb0cd51b9e1963f8411dbf87062fe94b23827581))
+* improve code quality and respect symlink mode for cursor target ([66f4217](https://github.com/ZanzyTHEbar/cursor-rules/commit/66f4217a5a0a37a1605eea74bfdf1a7b46429e99))
+
+### 🔁 Continuous Integration
+
+* add security permissions and local CI testing script ([fa6c10d](https://github.com/ZanzyTHEbar/cursor-rules/commit/fa6c10dc488a4fe485cd5f6d5c0b826eecef0ce4))
+* configure gosec security linter and suppress false positives ([f44e65d](https://github.com/ZanzyTHEbar/cursor-rules/commit/f44e65d1494965d9586314e0646c40d3cd561cb3)), closes [#nosec](https://github.com/ZanzyTHEbar/cursor-rules/issues/nosec)
+
 ## [0.4.2](https://github.com/ZanzyTHEbar/cursor-rules/compare/v0.4.1...v0.4.2) (2025-10-11)
 
 ### 🐛 Bug Fixes
