@@ -2,10 +2,11 @@ package core
 
 import (
 	"fmt"
-	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
+	"text/template"
 )
 
 // DefaultSharedDirWithEnv returns a shared dir path based on an env var or a default name under the user's home.
@@ -116,25 +117,8 @@ func InstallPackageGeneric(projectRoot, sharedDir, packageName, destSubdir strin
 			return err
 		}
 
-		// If symlink requested, try to create symlink
-		if UseSymlink() {
-			if err := CreateSymlink(path, dest); err == nil {
-				return nil
-			}
-			// else fallthrough to copy
-		}
-
-		in, err := os.Open(path)
-		if err != nil {
-			return err
-		}
-		defer in.Close()
-		out, err := os.Create(dest)
-		if err != nil {
-			return err
-		}
-		defer out.Close()
-		if _, err := io.Copy(out, in); err != nil {
+		// Delegate applying source to dest (stow/symlink or stub)
+		if err := ApplySourceToDest(sharedDir, path, dest, packageName); err != nil {
 			return err
 		}
 		return nil
@@ -142,5 +126,91 @@ func InstallPackageGeneric(projectRoot, sharedDir, packageName, destSubdir strin
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+// AtomicWriteString writes content to dest atomically using a temp file in tmpDir.
+func AtomicWriteString(tmpDir, dest, content string, perm os.FileMode) error {
+	tmp, err := os.CreateTemp(tmpDir, ".stub-*.tmp")
+	if err != nil {
+		return err
+	}
+	tmpPath := tmp.Name()
+	// ensure cleanup on error
+	defer func() {
+		_ = tmp.Close()
+		_ = os.Remove(tmpPath)
+	}()
+	if _, err := tmp.WriteString(content); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Sync(); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	if err := os.Rename(tmpPath, dest); err != nil {
+		return err
+	}
+	_ = os.Chmod(dest, perm)
+	return nil
+}
+
+// ApplySourceToDest attempts to apply a source file to dest using stow (packageName),
+// then symlink, and finally falls back to writing a stub that references the source.
+func ApplySourceToDest(sharedDir, src, dest, packageName string) error {
+	destDir := filepath.Dir(dest)
+	// Try GNU stow if requested
+	if strings.ToLower(os.Getenv("CURSOR_RULES_USE_GNUSTOW")) == "1" && HasStow() {
+		cmd := exec.Command("stow", "-v", "-d", sharedDir, "-t", destDir, packageName)
+		if out, err := cmd.CombinedOutput(); err == nil {
+			_ = out
+			return nil
+		}
+		// else fallthrough
+	}
+	// Try symlink if requested
+	if UseSymlink() {
+		if err := CreateSymlink(src, dest); err == nil {
+			return nil
+		}
+		// else fallthrough to stub write
+	}
+	// Default: write stub referencing source
+	content := "---\n@file " + src + "\n"
+	return AtomicWriteString(destDir, dest, content, 0o644)
+}
+
+// AtomicWriteTemplate renders tmpl with data into a temp file in tmpDir and
+// atomically renames it to dest with the given permission.
+func AtomicWriteTemplate(tmpDir, dest string, tmpl *template.Template, data interface{}, perm os.FileMode) error {
+	tmp, err := os.CreateTemp(tmpDir, ".stub-*.tmp")
+	if err != nil {
+		return err
+	}
+	tmpPath := tmp.Name()
+	// ensure cleanup on error
+	defer func() {
+		_ = tmp.Close()
+		_ = os.Remove(tmpPath)
+	}()
+	if err := tmpl.Execute(tmp, data); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Sync(); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	if err := os.Rename(tmpPath, dest); err != nil {
+		return err
+	}
+	_ = os.Chmod(dest, perm)
 	return nil
 }

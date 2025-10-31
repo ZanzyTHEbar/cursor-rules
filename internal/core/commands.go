@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -16,6 +15,7 @@ description: "Shared command: {{ .Command }}"
 @file {{ .SourcePath }}
 `
 
+<<<<<<< HEAD
 // DefaultSharedCommandsDir returns ~/.cursor-commands by default; environment overrides allowed.
 func DefaultSharedCommandsDir() string {
 	// Commands live under the main cursor-rules shared directory. Use that by default.
@@ -26,10 +26,19 @@ func DefaultSharedCommandsDir() string {
 	return DefaultSharedDir()
 }
 
+||||||| parent of 79dcabd (refactor(core): consolidate symlink/stow/stub logic and standardize naming)
+// DefaultSharedCommandsDir returns ~/.cursor-commands by default; environment overrides allowed.
+func DefaultSharedCommandsDir() string {
+	// Commands live under the main cursor-rules shared directory. Use that by default.
+	return DefaultSharedDir()
+}
+
+=======
+>>>>>>> 79dcabd (refactor(core): consolidate symlink/stow/stub logic and standardize naming)
 // InstallCommand writes a small stub .md in the project's .cursor/commands/
 // pointing to the shared command under sharedDir (default: ~/.cursor-commands).
 func InstallCommand(projectRoot, command string) error {
-	sharedDir := DefaultSharedCommandsDir()
+	sharedDir := DefaultSharedDir()
 
 	// Normalize command name: remove .md extension if present
 	normalized := strings.TrimSuffix(command, ".md")
@@ -60,33 +69,14 @@ func InstallCommand(projectRoot, command string) error {
 		return err
 	}
 
-	tmp, err := os.CreateTemp(filepath.Dir(dest), ".stub-*.tmp")
-	if err != nil {
-		return err
-	}
-	tmpPath := tmp.Name()
-	defer func() { _ = os.Remove(tmpPath) }()
-
 	t := template.Must(template.New("cmdstub").Parse(commandStubTmpl))
 	data := map[string]string{
 		"Command":    normalized,
 		"SourcePath": src,
 	}
-	if err := t.Execute(tmp, data); err != nil {
-		tmp.Close()
+	if err := AtomicWriteTemplate(filepath.Dir(dest), dest, t, data, 0o644); err != nil {
 		return err
 	}
-	if err := tmp.Sync(); err != nil {
-		tmp.Close()
-		return err
-	}
-	if err := tmp.Close(); err != nil {
-		return err
-	}
-	if err := os.Rename(tmpPath, dest); err != nil {
-		return err
-	}
-	_ = os.Chmod(dest, 0o644)
 	return nil
 }
 
@@ -125,40 +115,8 @@ func ApplyCommandWithOptionalSymlink(projectRoot, command, sharedDir string) err
 	}
 	src := filepath.Join(sharedDir, command+".md")
 	dest := filepath.Join(commandsDir, command+".md")
-
-	if strings.ToLower(os.Getenv("CURSOR_RULES_USE_GNUSTOW")) == "1" && HasStow() {
-		cmd := exec.Command("stow", "-v", "-d", sharedDir, "-t", commandsDir, command)
-		if _, err := cmd.CombinedOutput(); err == nil {
-			return nil
-		}
-	}
-	if UseSymlink() {
-		if err := CreateSymlink(src, dest); err != nil {
-			return err
-		}
-		return nil
-	}
-	tmp, err := os.CreateTemp(commandsDir, ".stub-*.tmp")
-	if err != nil {
-		return err
-	}
-	tmpPath := tmp.Name()
-	defer func() { _ = os.Remove(tmpPath) }()
-	if _, err := tmp.WriteString("---\n@file " + src + "\n"); err != nil {
-		tmp.Close()
-		return err
-	}
-	if err := tmp.Sync(); err != nil {
-		tmp.Close()
-		return err
-	}
-	if err := tmp.Close(); err != nil {
-		return err
-	}
-	if err := os.Rename(tmpPath, dest); err != nil {
-		return err
-	}
-	return nil
+	// Delegate to shared ApplySourceToDest which handles stow -> symlink -> stub
+	return ApplySourceToDest(sharedDir, src, dest, command)
 }
 
 // ListSharedCommands returns list of .md files found in sharedDir
@@ -182,9 +140,17 @@ func ListSharedCommands(sharedDir string) ([]string, error) {
 // InstallCommandPackage installs an entire package directory from sharedDir into the project's
 // .cursor/commands. The package is a directory under sharedDir (e.g. "tools" or "git-helpers").
 // It supports excluding specific files via the excludes slice and respects a
-// .cursor-commands-ignore file placed inside the package which lists patterns to skip.
+// .cursor-rules-ignore file placed inside the package which lists patterns to skip.
 // By default, packages are flattened into .cursor/commands/. Use noFlatten=true to preserve structure.
 func InstallCommandPackage(projectRoot, packageName string, excludes []string, noFlatten bool) error {
+<<<<<<< HEAD
 	sharedDir := DefaultSharedCommandsDir()
 	return InstallPackageGeneric(projectRoot, sharedDir, packageName, "commands", []string{".md"}, ".cursor-commands-ignore", excludes, noFlatten)
+||||||| parent of 79dcabd (refactor(core): consolidate symlink/stow/stub logic and standardize naming)
+	sharedDir := DefaultSharedDir()
+	return InstallPackageGeneric(projectRoot, sharedDir, packageName, "commands", []string{".md"}, ".cursor-commands-ignore", excludes, noFlatten)
+=======
+	sharedDir := DefaultSharedDir()
+	return InstallPackageGeneric(projectRoot, sharedDir, packageName, "commands", []string{".md"}, ".cursor-rules-ignore", excludes, noFlatten)
+>>>>>>> 79dcabd (refactor(core): consolidate symlink/stow/stub logic and standardize naming)
 }

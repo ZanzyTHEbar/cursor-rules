@@ -20,10 +20,10 @@ func TestInstallAndRemoveCommand(t *testing.T) {
 	// create temp project dir
 	proj := t.TempDir()
 
-	// override DefaultSharedCommandsDir via env
-	old := os.Getenv("CURSOR_COMMANDS_DIR")
-	os.Setenv("CURSOR_COMMANDS_DIR", sharedDir)
-	defer os.Setenv("CURSOR_COMMANDS_DIR", old)
+	// override DefaultSharedDir via env so shared dir used is our temp sharedDir
+	old := os.Getenv("CURSOR_RULES_DIR")
+	os.Setenv("CURSOR_RULES_DIR", sharedDir)
+	defer os.Setenv("CURSOR_RULES_DIR", old)
 
 	// Test InstallCommand
 	if err := InstallCommand(proj, cmdName); err != nil {
@@ -78,14 +78,14 @@ func TestInstallCommandPackageFlattenIgnore(t *testing.T) {
 		t.Fatalf("write t.md: %v", err)
 	}
 	// write ignore file to skip templates/*
-	if err := os.WriteFile(filepath.Join(pkg, ".cursor-commands-ignore"), []byte("templates/*\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(pkg, ".cursor-rules-ignore"), []byte("templates/*\n"), 0o644); err != nil {
 		t.Fatalf("write ignore: %v", err)
 	}
 
-	// override DefaultSharedCommandsDir via env
-	old := os.Getenv("CURSOR_COMMANDS_DIR")
-	os.Setenv("CURSOR_COMMANDS_DIR", sharedDir)
-	defer os.Setenv("CURSOR_COMMANDS_DIR", old)
+	// override DefaultSharedDir via env so shared dir used is our temp sharedDir
+	old := os.Getenv("CURSOR_RULES_DIR")
+	os.Setenv("CURSOR_RULES_DIR", sharedDir)
+	defer os.Setenv("CURSOR_RULES_DIR", old)
 
 	// target project
 	proj := t.TempDir()

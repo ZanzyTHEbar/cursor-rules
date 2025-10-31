@@ -95,26 +95,6 @@ func ApplyPresetWithOptionalSymlink(projectRoot, preset, sharedDir string) error
 		return nil
 	}
 
-	// Default behavior: write stub file atomically
-	tmp, err := os.CreateTemp(rulesDir, ".stub-*.tmp")
-	if err != nil {
-		return err
-	}
-	tmpPath := tmp.Name()
-	defer func() { _ = os.Remove(tmpPath) }()
-	if _, err := tmp.WriteString("---\n@file " + src + "\n"); err != nil {
-		tmp.Close()
-		return err
-	}
-	if err := tmp.Sync(); err != nil {
-		tmp.Close()
-		return err
-	}
-	if err := tmp.Close(); err != nil {
-		return err
-	}
-	if err := os.Rename(tmpPath, dest); err != nil {
-		return err
-	}
-	return nil
+	// Default behavior: delegate to shared helper which handles stow -> symlink -> stub
+	return ApplySourceToDest(sharedDir, src, dest, preset)
 }

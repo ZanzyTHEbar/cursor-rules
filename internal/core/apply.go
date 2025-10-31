@@ -2,7 +2,6 @@ package core
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -35,19 +34,6 @@ func ApplyPresetToProject(projectRoot, preset, sharedDir string) error {
 		// already exists -> idempotent
 		return nil
 	}
-	// If symlinking or stow support requested, prefer ApplyPresetWithOptionalSymlink
-	if UseSymlink() || strings.ToLower(os.Getenv("CURSOR_RULES_USE_GNUSTOW")) == "1" {
-		return ApplyPresetWithOptionalSymlink(projectRoot, normalizedPreset, sharedDir)
-	}
-	// create stub file that references shared path
-	f, err := os.Create(dest)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	_, err = io.WriteString(f, "---\n@file "+src+"\n")
-	if err != nil {
-		return err
-	}
-	return nil
+	// Delegate to shared ApplySourceToDest which handles stow -> symlink -> stub
+	return ApplySourceToDest(sharedDir, src, dest, normalizedPreset)
 }

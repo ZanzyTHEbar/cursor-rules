@@ -79,33 +79,14 @@ func InstallPreset(projectRoot, preset string) error {
 		return err
 	}
 
-	tmp, err := os.CreateTemp(destDir, ".stub-*.tmp")
-	if err != nil {
-		return err
-	}
-	tmpPath := tmp.Name()
-	defer func() { _ = os.Remove(tmpPath) }()
-
 	t := template.Must(template.New("stub").Parse(stubTmpl))
 	data := map[string]string{
 		"Preset":     normalizedPreset,
 		"SourcePath": src,
 	}
-	if err := t.Execute(tmp, data); err != nil {
-		tmp.Close()
+	if err := AtomicWriteTemplate(destDir, dest, t, data, 0o644); err != nil {
 		return err
 	}
-	if err := tmp.Sync(); err != nil {
-		tmp.Close()
-		return err
-	}
-	if err := tmp.Close(); err != nil {
-		return err
-	}
-	if err := os.Rename(tmpPath, dest); err != nil {
-		return err
-	}
-	_ = os.Chmod(dest, 0o644)
 	return nil
 }
 
