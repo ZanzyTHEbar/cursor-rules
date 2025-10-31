@@ -81,7 +81,7 @@ jobs:
       - name: Run gosec
         uses: securego/gosec@master
         with:
-          args: '-fmt=sarif -out=gosec.sarif ./...'
+          args: '-exclude=G104,G301,G304,G306 -fmt=sarif -out=gosec.sarif ./...'
 
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v3

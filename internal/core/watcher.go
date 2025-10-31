@@ -20,7 +20,7 @@ func StartWatcher(ctx context.Context, sharedDir string, autoApply bool) error {
 
 	// add root and subdirectories
 	if err := addRecursive(watcher, sharedDir); err != nil {
-		watcher.Close()
+		_ = watcher.Close() // #nosec G104 - error path, already returning err
 		return err
 	}
 

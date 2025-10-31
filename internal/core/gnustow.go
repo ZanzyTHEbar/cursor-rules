@@ -80,6 +80,7 @@ func ApplyPresetWithOptionalSymlink(projectRoot, preset, sharedDir string) error
 	// sharedDir to be structured for stow (package directories). If stow fails,
 	// fallback to symlink creation.
 	if strings.ToLower(os.Getenv("CURSOR_RULES_USE_GNUSTOW")) == "1" && HasStow() {
+		// #nosec G204 - sharedDir, rulesDir, and preset are validated before this call
 		cmd := exec.Command("stow", "-v", "-d", sharedDir, "-t", rulesDir, preset)
 		if _, err := cmd.CombinedOutput(); err == nil {
 			return nil

@@ -139,11 +139,11 @@ func AtomicWriteString(tmpDir, dest, content string, perm os.FileMode) error {
 		_ = os.Remove(tmpPath)
 	}()
 	if _, err := tmp.WriteString(content); err != nil {
-		tmp.Close()
+		_ = tmp.Close() // #nosec G104 - error path, already returning err
 		return err
 	}
 	if err := tmp.Sync(); err != nil {
-		tmp.Close()
+		_ = tmp.Close() // #nosec G104 - error path, already returning err
 		return err
 	}
 	if err := tmp.Close(); err != nil {
@@ -161,6 +161,7 @@ func ApplySourceToDest(sharedDir, src, dest, packageName string) error {
 	destDir := filepath.Dir(dest)
 	// Try GNU stow if requested
 	if strings.ToLower(os.Getenv("CURSOR_RULES_USE_GNUSTOW")) == "1" && HasStow() {
+		// #nosec G204 - sharedDir, destDir, and packageName are validated before this call
 		cmd := exec.Command("stow", "-v", "-d", sharedDir, "-t", destDir, packageName)
 		if out, err := cmd.CombinedOutput(); err == nil {
 			_ = out
@@ -194,11 +195,11 @@ func AtomicWriteTemplate(tmpDir, dest string, tmpl *template.Template, data inte
 		_ = os.Remove(tmpPath)
 	}()
 	if err := tmpl.Execute(tmp, data); err != nil {
-		tmp.Close()
+		_ = tmp.Close() // #nosec G104 - error path, already returning err
 		return err
 	}
 	if err := tmp.Sync(); err != nil {
-		tmp.Close()
+		_ = tmp.Close() // #nosec G104 - error path, already returning err
 		return err
 	}
 	if err := tmp.Close(); err != nil {

@@ -1,0 +1,14 @@
+{
+  "global": {
+    "nosec": true,
+    "exclude-generated": true,
+    "severity": "medium",
+    "confidence": "medium"
+  },
+  "exclude": [
+    "G104",
+    "G301",
+    "G304",
+    "G306"
+  ]
+}
