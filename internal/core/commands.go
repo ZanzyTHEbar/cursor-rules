@@ -15,7 +15,6 @@ description: "Shared command: {{ .Command }}"
 @file {{ .SourcePath }}
 `
 
-<<<<<<< HEAD
 // DefaultSharedCommandsDir returns ~/.cursor-commands by default; environment overrides allowed.
 func DefaultSharedCommandsDir() string {
 	// Commands live under the main cursor-rules shared directory. Use that by default.
@@ -26,19 +25,10 @@ func DefaultSharedCommandsDir() string {
 	return DefaultSharedDir()
 }
 
-||||||| parent of 79dcabd (refactor(core): consolidate symlink/stow/stub logic and standardize naming)
-// DefaultSharedCommandsDir returns ~/.cursor-commands by default; environment overrides allowed.
-func DefaultSharedCommandsDir() string {
-	// Commands live under the main cursor-rules shared directory. Use that by default.
-	return DefaultSharedDir()
-}
-
-=======
->>>>>>> 79dcabd (refactor(core): consolidate symlink/stow/stub logic and standardize naming)
 // InstallCommand writes a small stub .md in the project's .cursor/commands/
 // pointing to the shared command under sharedDir (default: ~/.cursor-commands).
 func InstallCommand(projectRoot, command string) error {
-	sharedDir := DefaultSharedDir()
+	sharedDir := DefaultSharedCommandsDir()
 
 	// Normalize command name: remove .md extension if present
 	normalized := strings.TrimSuffix(command, ".md")
@@ -140,17 +130,9 @@ func ListSharedCommands(sharedDir string) ([]string, error) {
 // InstallCommandPackage installs an entire package directory from sharedDir into the project's
 // .cursor/commands. The package is a directory under sharedDir (e.g. "tools" or "git-helpers").
 // It supports excluding specific files via the excludes slice and respects a
-// .cursor-rules-ignore file placed inside the package which lists patterns to skip.
+// .cursor-commands-ignore file placed inside the package which lists patterns to skip.
 // By default, packages are flattened into .cursor/commands/. Use noFlatten=true to preserve structure.
 func InstallCommandPackage(projectRoot, packageName string, excludes []string, noFlatten bool) error {
-<<<<<<< HEAD
 	sharedDir := DefaultSharedCommandsDir()
 	return InstallPackageGeneric(projectRoot, sharedDir, packageName, "commands", []string{".md"}, ".cursor-commands-ignore", excludes, noFlatten)
-||||||| parent of 79dcabd (refactor(core): consolidate symlink/stow/stub logic and standardize naming)
-	sharedDir := DefaultSharedDir()
-	return InstallPackageGeneric(projectRoot, sharedDir, packageName, "commands", []string{".md"}, ".cursor-commands-ignore", excludes, noFlatten)
-=======
-	sharedDir := DefaultSharedDir()
-	return InstallPackageGeneric(projectRoot, sharedDir, packageName, "commands", []string{".md"}, ".cursor-rules-ignore", excludes, noFlatten)
->>>>>>> 79dcabd (refactor(core): consolidate symlink/stow/stub logic and standardize naming)
 }

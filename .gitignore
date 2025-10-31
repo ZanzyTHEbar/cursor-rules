@@ -18,3 +18,7 @@ bin/
 *.out 
 
 docs/ai/
+
+coverage.html
+coverage.out
+*.test
