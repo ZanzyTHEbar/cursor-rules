@@ -139,7 +139,7 @@ func addRecursive(w *fsnotify.Watcher, root string) error {
 // returns true if it remains unchanged across checks.
 func waitForStability(path string, checks int, interval time.Duration) bool {
 	var lastSize int64 = -1
-	for range checks {
+	for i := 0; i < checks; i++ {
 		fi, err := os.Stat(path)
 		if err != nil {
 			return false
