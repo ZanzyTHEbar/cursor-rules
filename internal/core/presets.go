@@ -39,7 +39,7 @@ func InstallPreset(projectRoot, preset string) error {
 
 	// If preset file not found, allow package-style layout when stow is enabled
 	if _, statErr := os.Stat(src); os.IsNotExist(statErr) {
-		if !(UseGNUStow() && func() bool {
+		if !(WantGNUStow() && func() bool {
 			d, joinErr := security.SafeJoin(sharedDir, normalizedPreset)
 			if joinErr != nil {
 				return false
@@ -63,8 +63,9 @@ func InstallPreset(projectRoot, preset string) error {
 	}
 
 	// If symlink/stow behavior requested, prefer that path
-	if UseSymlink() || UseGNUStow() {
-		return ApplyPresetWithOptionalSymlink(projectRoot, normalizedPreset, sharedDir)
+	if UseSymlink() || WantGNUStow() {
+		_, err := ApplyPresetWithOptionalSymlink(projectRoot, normalizedPreset, sharedDir)
+		return err
 	}
 
 	// Safely construct destination path
@@ -110,10 +111,10 @@ func DefaultSharedDir() string {
 // It supports excluding specific files via the excludes slice and respects a
 // .cursor-rules-ignore file placed inside the package which lists patterns to skip.
 // By default, packages are flattened into .cursor/rules/. Use noFlatten=true to preserve structure.
-func InstallPackage(projectRoot, packageName string, excludes []string, noFlatten bool) error {
+func InstallPackage(projectRoot, packageName string, excludes []string, noFlatten bool) (InstallStrategy, error) {
 	// Validate package name for security
 	if err := security.ValidatePackageName(packageName); err != nil {
-		return fmt.Errorf("invalid package name: %w", err)
+		return StrategyUnknown, fmt.Errorf("invalid package name: %w", err)
 	}
 
 	sharedDir := DefaultSharedDir()
@@ -121,17 +122,17 @@ func InstallPackage(projectRoot, packageName string, excludes []string, noFlatte
 	// Safely construct package directory path
 	pkgDir, err := security.SafeJoin(sharedDir, packageName)
 	if err != nil {
-		return fmt.Errorf("invalid package path: %w", err)
+		return StrategyUnknown, fmt.Errorf("invalid package path: %w", err)
 	}
 	info, statErr := os.Stat(pkgDir)
 	if statErr != nil || !info.IsDir() {
-		return fmt.Errorf("package not found: %s", pkgDir)
+		return StrategyUnknown, fmt.Errorf("package not found: %s", pkgDir)
 	}
 
 	// Read .cursor-rules-ignore if present in package dir
 	ignorePath, err := security.SafeJoin(pkgDir, ".cursor-rules-ignore")
 	if err != nil {
-		return fmt.Errorf("invalid ignore file path: %w", err)
+		return StrategyUnknown, fmt.Errorf("invalid ignore file path: %w", err)
 	}
 	var ignorePatterns []string
 	if b, err := os.ReadFile(ignorePath); err == nil {
@@ -156,11 +157,13 @@ func InstallPackage(projectRoot, packageName string, excludes []string, noFlatte
 	// Walk package dir and install each .mdc file unless excluded
 	rulesDir, err := security.SafeJoin(projectRoot, ".cursor", "rules")
 	if err != nil {
-		return fmt.Errorf("invalid rules directory path: %w", err)
+		return StrategyUnknown, fmt.Errorf("invalid rules directory path: %w", err)
 	}
 	if err := os.MkdirAll(rulesDir, 0o755); err != nil {
-		return err
+		return StrategyUnknown, err
 	}
+
+	usedStrategy := StrategyCopy
 
 	err = filepath.Walk(pkgDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -211,8 +214,9 @@ func InstallPackage(projectRoot, packageName string, excludes []string, noFlatte
 
 		// If symlink/stow requested, attempt to use ApplyPresetWithOptionalSymlink semantics
 		// For package installs, prefer creating a symlink to the source file when available.
-		if UseSymlink() {
+		if UseSymlink() || WantGNUStow() {
 			if symlinkErr := CreateSymlink(path, dest); symlinkErr == nil {
+				usedStrategy = StrategySymlink
 				return nil
 			}
 			// else fallthrough to copy
@@ -235,7 +239,7 @@ func InstallPackage(projectRoot, packageName string, excludes []string, noFlatte
 		return nil
 	})
 	if err != nil {
-		return err
+		return StrategyUnknown, err
 	}
-	return nil
+	return usedStrategy, nil
 }

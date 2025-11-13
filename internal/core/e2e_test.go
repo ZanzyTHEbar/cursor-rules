@@ -29,7 +29,7 @@ func TestE2EInstallApplyRemove(t *testing.T) {
 	defer os.RemoveAll(projectDir)
 
 	// Apply preset via ApplyPresetToProject
-	if err := ApplyPresetToProject(projectDir, presetName, sharedDir); err != nil {
+	if _, err := ApplyPresetToProject(projectDir, presetName, sharedDir); err != nil {
 		t.Fatalf("ApplyPresetToProject failed: %v", err)
 	}
 

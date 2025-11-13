@@ -35,6 +35,9 @@ func TestConfigInitCreatesFile(t *testing.T) {
 	if !strings.Contains(content, "enableStow: false") {
 		t.Fatalf("expected enableStow entry, got:\n%s", content)
 	}
+	if !strings.Contains(content, "logLevel: info") {
+		t.Fatalf("expected logLevel entry, got:\n%s", content)
+	}
 }
 
 func TestConfigInitRequiresForce(t *testing.T) {

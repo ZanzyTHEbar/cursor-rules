@@ -12,7 +12,7 @@ import (
 )
 
 // NewSyncCmd returns the sync command. Accepts AppContext for parity.
-func NewSyncCmd(_ *cli.AppContext) *cobra.Command {
+func NewSyncCmd(ctx *cli.AppContext) *cobra.Command {
 	var applyFlag bool
 	var dryRunFlag bool
 
@@ -21,6 +21,34 @@ func NewSyncCmd(_ *cli.AppContext) *cobra.Command {
 		Short: "Sync shared presets and optionally apply to a project",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			var ui cli.Messenger
+			if ctx != nil {
+				ui = ctx.Messenger()
+			}
+			stdout := cmd.OutOrStdout()
+			stderr := cmd.ErrOrStderr()
+			info := func(format string, args ...interface{}) {
+				if ui != nil {
+					ui.Info(format, args...)
+					return
+				}
+				fmt.Fprintf(stdout, format, args...)
+			}
+			success := func(format string, args ...interface{}) {
+				if ui != nil {
+					ui.Success(format, args...)
+					return
+				}
+				fmt.Fprintf(stdout, format, args...)
+			}
+			errMsg := func(format string, args ...interface{}) {
+				if ui != nil {
+					ui.Error(format, args...)
+					return
+				}
+				fmt.Fprintf(stderr, format, args...)
+			}
+
 			// Load config to honor configured sharedDir when env override is not set
 			cfg, err := cfgpkg.LoadConfig("")
 			if err != nil {
@@ -39,17 +67,17 @@ func NewSyncCmd(_ *cli.AppContext) *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("failed to list presets: %w", err)
 			}
-			fmt.Printf("Shared dir: %s\n", shared)
+			success("Shared dir: %s\n", shared)
 			for _, p := range presets {
-				fmt.Println("-", p)
+				info("- %s\n", p)
 			}
 
 			// list shared commands too
 			commands, err := core.ListSharedCommands(shared)
 			if err == nil && len(commands) > 0 {
-				fmt.Println("commands in shared dir:")
+				info("commands in shared dir:\n")
 				for _, c := range commands {
-					fmt.Println("-", c)
+					info("- %s\n", c)
 				}
 			}
 
@@ -69,13 +97,14 @@ func NewSyncCmd(_ *cli.AppContext) *cobra.Command {
 				}
 				for _, name := range toApply {
 					if dryRunFlag {
-						fmt.Printf("would apply %s -> %s/.cursor/rules/\n", name, wd)
+						info("would apply %s -> %s/.cursor/rules/\n", name, wd)
 						continue
 					}
-					if err := core.ApplyPresetToProject(wd, name, shared); err != nil {
-						fmt.Printf("failed to apply %s: %v\n", name, err)
+					strategy, err := core.ApplyPresetToProject(wd, name, shared)
+					if err != nil {
+						errMsg("failed to apply %s: %v\n", name, err)
 					} else {
-						fmt.Printf("applied %s -> %s/.cursor/rules/\n", name, wd)
+						success("applied %s -> %s/.cursor/rules/ (method: %s)\n", name, wd, strategy)
 					}
 				}
 			}

@@ -38,7 +38,9 @@ func NewRoot(ctx *AppContext, p Palette) *cobra.Command {
 				}
 				return fmt.Errorf("reading config: %w", err)
 			}
-			ctx.Logger.Printf("Using config file: %s", ctx.Viper.ConfigFileUsed())
+			if ui := ctx.Messenger(); ui != nil {
+				ui.Debug("Using config file: %s\n", ctx.Viper.ConfigFileUsed())
+			}
 			return nil
 		},
 	}

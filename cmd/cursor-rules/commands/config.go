@@ -31,6 +31,19 @@ func newConfigInitCmd(ctx *cli.AppContext) *cobra.Command {
 		Use:   "init",
 		Short: "Create a default config.yaml under the shared presets directory",
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			var ui cli.Messenger
+			if ctx != nil {
+				ui = ctx.Messenger()
+			}
+			out := cmd.OutOrStdout()
+			notify := func(format string, args ...interface{}) {
+				if ui != nil {
+					ui.Info(format, args...)
+					return
+				}
+				fmt.Fprintf(out, format, args...)
+			}
+
 			sharedDir := core.DefaultSharedDir()
 			if ctx != nil && ctx.Viper != nil {
 				if v := ctx.Viper.GetString("sharedDir"); v != "" {
@@ -55,7 +68,7 @@ func newConfigInitCmd(ctx *cli.AppContext) *cobra.Command {
 				if backupErr != nil {
 					return backupErr
 				}
-				fmt.Fprintf(cmd.OutOrStdout(), "Existing config backed up to %s\n", backupPath)
+				notify("Existing config backed up to %s\n", backupPath)
 			} else if !errors.Is(statErr, os.ErrNotExist) {
 				return fmt.Errorf("failed to inspect existing config: %w", statErr)
 			}
@@ -66,7 +79,7 @@ func newConfigInitCmd(ctx *cli.AppContext) *cobra.Command {
 				return fmt.Errorf("failed to write config: %w", err)
 			}
 
-			fmt.Fprintf(cmd.OutOrStdout(), "Config written to %s (enableStow=%t)\n", cfgPath, enableStow)
+			notify("Config written to %s (enableStow=%t)\n", cfgPath, enableStow)
 			return nil
 		},
 	}
@@ -95,5 +108,6 @@ func buildDefaultConfig(sharedDir string, enableStow bool) string {
 	buf.WriteString("autoApply: false\n")
 	fmt.Fprintf(&buf, "enableStow: %t\n", enableStow)
 	buf.WriteString("presets: []\n")
+	buf.WriteString("logLevel: info\n")
 	return buf.String()
 }

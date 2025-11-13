@@ -36,11 +36,11 @@ func TestApplyRemoveListInstall(t *testing.T) {
 	defer os.Setenv("CURSOR_RULES_DIR", old)
 
 	// Test ApplyPresetToProject idempotency
-	if err := ApplyPresetToProject(projectDir, presetName, sharedDir); err != nil {
+	if _, err := ApplyPresetToProject(projectDir, presetName, sharedDir); err != nil {
 		t.Fatalf("ApplyPresetToProject failed: %v", err)
 	}
 	// apply again - should be idempotent
-	if err := ApplyPresetToProject(projectDir, presetName, sharedDir); err != nil {
+	if _, err := ApplyPresetToProject(projectDir, presetName, sharedDir); err != nil {
 		t.Fatalf("ApplyPresetToProject idempotent failed: %v", err)
 	}
 
@@ -111,7 +111,7 @@ func TestApplyWithSymlinkPreference(t *testing.T) {
 	defer os.Setenv("CURSOR_RULES_SYMLINK", oldSymlink)
 
 	// Apply preset
-	if err := ApplyPresetToProject(projectDir, presetName, sharedDir); err != nil {
+	if _, err := ApplyPresetToProject(projectDir, presetName, sharedDir); err != nil {
 		t.Fatalf("ApplyPresetToProject with symlink failed: %v", err)
 	}
 
@@ -129,6 +129,42 @@ func TestApplyWithSymlinkPreference(t *testing.T) {
 	target, err := os.Readlink(stub)
 	if err != nil {
 		t.Fatalf("failed to read symlink: %v", err)
+	}
+	if target != presetFile {
+		t.Fatalf("symlink target mismatch: got %s want %s", target, presetFile)
+	}
+}
+
+func TestInstallPresetWithGNUStowRequestCreatesSymlink(t *testing.T) {
+	sharedDir := t.TempDir()
+	presetName := "frontend"
+	presetFile := filepath.Join(sharedDir, presetName+".mdc")
+	if err := os.WriteFile(presetFile, []byte("# sample preset"), 0o644); err != nil {
+		t.Fatalf("failed to write preset: %v", err)
+	}
+
+	projectDir := t.TempDir()
+
+	t.Setenv("CURSOR_RULES_DIR", sharedDir)
+	t.Setenv("CURSOR_RULES_USE_GNUSTOW", "1")
+	t.Setenv("CURSOR_RULES_SYMLINK", "")
+
+	if err := InstallPreset(projectDir, presetName); err != nil {
+		t.Fatalf("InstallPreset with GNU stow request failed: %v", err)
+	}
+
+	dest := filepath.Join(projectDir, ".cursor", "rules", presetName+".mdc")
+	info, err := os.Lstat(dest)
+	if err != nil {
+		t.Fatalf("expected symlink at %s: %v", dest, err)
+	}
+	if info.Mode()&os.ModeSymlink == 0 {
+		t.Fatalf("expected symlink for preset install, got regular file")
+	}
+
+	target, err := os.Readlink(dest)
+	if err != nil {
+		t.Fatalf("failed to read symlink target: %v", err)
 	}
 	if target != presetFile {
 		t.Fatalf("symlink target mismatch: got %s want %s", target, presetFile)
@@ -165,7 +201,7 @@ func TestInstallPackageWithIgnoreAndFlatten(t *testing.T) {
 	// target project
 	proj := t.TempDir()
 	// run install package with noFlatten=false (default flattening behavior)
-	if err := InstallPackage(proj, "pkg", nil, false); err != nil {
+	if _, err := InstallPackage(proj, "pkg", nil, false); err != nil {
 		t.Fatalf("InstallPackage failed: %v", err)
 	}
 
@@ -176,6 +212,45 @@ func TestInstallPackageWithIgnoreAndFlatten(t *testing.T) {
 	// verify templates/t.mdc NOT copied
 	if _, err := os.Stat(filepath.Join(proj, ".cursor", "rules", "t.mdc")); err == nil {
 		t.Fatalf("expected templates t.mdc to be ignored when flattened")
+	}
+}
+
+func TestInstallPackageWithGNUStowRequestCreatesSymlinks(t *testing.T) {
+	sharedDir := t.TempDir()
+	pkgDir := filepath.Join(sharedDir, "pkg")
+	if err := os.MkdirAll(pkgDir, 0o755); err != nil {
+		t.Fatalf("mkdir pkg failed: %v", err)
+	}
+	sharedFile := filepath.Join(pkgDir, "a.mdc")
+	if err := os.WriteFile(sharedFile, []byte("content"), 0o644); err != nil {
+		t.Fatalf("write a.mdc: %v", err)
+	}
+
+	projectDir := t.TempDir()
+
+	t.Setenv("CURSOR_RULES_DIR", sharedDir)
+	t.Setenv("CURSOR_RULES_USE_GNUSTOW", "1")
+	t.Setenv("CURSOR_RULES_SYMLINK", "")
+
+	if _, err := InstallPackage(projectDir, "pkg", nil, false); err != nil {
+		t.Fatalf("InstallPackage with GNU stow request failed: %v", err)
+	}
+
+	dest := filepath.Join(projectDir, ".cursor", "rules", "a.mdc")
+	info, err := os.Lstat(dest)
+	if err != nil {
+		t.Fatalf("expected file at %s: %v", dest, err)
+	}
+	if info.Mode()&os.ModeSymlink == 0 {
+		t.Fatalf("expected symlink for package install when GNU stow requested")
+	}
+
+	target, err := os.Readlink(dest)
+	if err != nil {
+		t.Fatalf("failed to read symlink target: %v", err)
+	}
+	if target != sharedFile {
+		t.Fatalf("symlink target mismatch: got %s want %s", target, sharedFile)
 	}
 }
 
@@ -214,7 +289,7 @@ func TestInstallNestedPackage(t *testing.T) {
 	proj := t.TempDir()
 
 	// Test installing nested package - should be auto-flattened
-	if err := InstallPackage(proj, "frontend/react", nil, false); err != nil {
+	if _, err := InstallPackage(proj, "frontend/react", nil, false); err != nil {
 		t.Fatalf("InstallPackage nested failed: %v", err)
 	}
 
@@ -275,7 +350,7 @@ func TestInstallNestedPackageDeepNesting(t *testing.T) {
 	proj := t.TempDir()
 
 	// Test installing deeply nested package - should be auto-flattened
-	if err := InstallPackage(proj, "backend/nodejs/express/middleware", nil, false); err != nil {
+	if _, err := InstallPackage(proj, "backend/nodejs/express/middleware", nil, false); err != nil {
 		t.Fatalf("InstallPackage deeply nested failed: %v", err)
 	}
 
@@ -318,7 +393,7 @@ func TestInstallPackageRegularVsNested(t *testing.T) {
 	proj := t.TempDir()
 
 	// Test installing regular package WITH noFlatten=true - should preserve structure
-	if err := InstallPackage(proj, "frontend", nil, true); err != nil {
+	if _, err := InstallPackage(proj, "frontend", nil, true); err != nil {
 		t.Fatalf("InstallPackage regular failed: %v", err)
 	}
 
@@ -331,7 +406,7 @@ func TestInstallPackageRegularVsNested(t *testing.T) {
 	os.RemoveAll(filepath.Join(proj, ".cursor"))
 
 	// Test installing nested package - should auto-flatten
-	if err := InstallPackage(proj, "frontend/react", nil, false); err != nil {
+	if _, err := InstallPackage(proj, "frontend/react", nil, false); err != nil {
 		t.Fatalf("InstallPackage nested failed: %v", err)
 	}
 

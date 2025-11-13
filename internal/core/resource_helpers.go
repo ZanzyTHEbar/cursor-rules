@@ -118,7 +118,8 @@ func InstallPackageGeneric(projectRoot, sharedDir, packageName, destSubdir strin
 		}
 
 		// Delegate applying source to dest (stow/symlink or stub)
-		return ApplySourceToDest(sharedDir, path, dest, packageName)
+		_, applyErr := ApplySourceToDest(sharedDir, path, dest, packageName)
+		return applyErr
 	})
 	if err != nil {
 		return err
@@ -157,28 +158,31 @@ func AtomicWriteString(tmpDir, dest, content string, perm os.FileMode) error {
 
 // ApplySourceToDest attempts to apply a source file to dest using stow (packageName),
 // then symlink, and finally falls back to writing a stub that references the source.
-func ApplySourceToDest(sharedDir, src, dest, packageName string) error {
+func ApplySourceToDest(sharedDir, src, dest, packageName string) (InstallStrategy, error) {
 	destDir := filepath.Dir(dest)
 	// Try GNU stow if requested
-	if strings.ToLower(os.Getenv("CURSOR_RULES_USE_GNUSTOW")) == "1" && HasStow() {
+	if WantGNUStow() && HasStow() {
 		// #nosec G204 - sharedDir, destDir, and packageName are validated before this call
 		cmd := exec.Command("stow", "-v", "-d", sharedDir, "-t", destDir, packageName)
 		if out, err := cmd.CombinedOutput(); err == nil {
 			_ = out
-			return nil
+			return StrategyStow, nil
 		}
 		// else fallthrough
 	}
 	// Try symlink if requested
-	if UseSymlink() {
+	if UseSymlink() || WantGNUStow() {
 		if err := CreateSymlink(src, dest); err == nil {
-			return nil
+			return StrategySymlink, nil
 		}
 		// else fallthrough to stub write
 	}
 	// Default: write stub referencing source
 	content := "---\n@file " + src + "\n"
-	return AtomicWriteString(destDir, dest, content, 0o644)
+	if err := AtomicWriteString(destDir, dest, content, 0o644); err != nil {
+		return StrategyUnknown, err
+	}
+	return StrategyCopy, nil
 }
 
 // AtomicWriteTemplate renders tmpl with data into a temp file in tmpDir and

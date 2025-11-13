@@ -17,6 +17,7 @@ type Logger interface {
 type AppContext struct {
 	Viper        *viper.Viper
 	Logger       Logger
+	UI           Messenger
 	transformers map[string]transform.Transformer
 }
 
@@ -33,6 +34,7 @@ func NewAppContext(v *viper.Viper, l Logger) *AppContext {
 	ctx := &AppContext{
 		Viper:        v,
 		Logger:       l,
+		UI:           NewMessenger(nil, nil, "info"),
 		transformers: make(map[string]transform.Transformer),
 	}
 
@@ -65,4 +67,23 @@ func (ctx *AppContext) AvailableTargets() []string {
 		targets = append(targets, k)
 	}
 	return targets
+}
+
+// SetMessenger replaces the current messenger if a non-nil value is provided.
+func (ctx *AppContext) SetMessenger(m Messenger) {
+	if ctx == nil || m == nil {
+		return
+	}
+	ctx.UI = m
+}
+
+// Messenger returns the currently configured messenger.
+func (ctx *AppContext) Messenger() Messenger {
+	if ctx == nil {
+		return nil
+	}
+	if ctx.UI == nil {
+		ctx.UI = NewMessenger(nil, nil, "info")
+	}
+	return ctx.UI
 }

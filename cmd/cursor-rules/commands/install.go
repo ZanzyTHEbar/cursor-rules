@@ -89,6 +89,11 @@ Examples:
 				targets = []string{targetFlag}
 			}
 
+			effectiveExcludes := append([]string{}, excludeFlag...)
+			if m != nil && len(m.Exclude) > 0 {
+				effectiveExcludes = append(effectiveExcludes, m.Exclude...)
+			}
+
 			// Install to each target
 			for _, tgt := range targets {
 				transformer, err := ctx.Transformer(tgt)
@@ -96,18 +101,37 @@ Examples:
 					return err
 				}
 
+				var strategy core.InstallStrategy
+
 				if isPackage {
-					if err := installPackageWithTransformer(wd, pkgPath, presetName, transformer, excludeFlag, noFlattenFlag, m); err != nil {
-						return fmt.Errorf("install to %s failed: %w", tgt, err)
+					if transformer.Target() == "cursor" && (core.UseSymlink() || core.WantGNUStow()) {
+						strategy, err = core.InstallPackage(wd, presetName, effectiveExcludes, noFlattenFlag)
+						if err != nil {
+							return fmt.Errorf("install to %s failed: %w", tgt, err)
+						}
+					} else {
+						strategy, err = installPackageWithTransformer(wd, pkgPath, presetName, transformer, effectiveExcludes, noFlattenFlag)
+						if err != nil {
+							return fmt.Errorf("install to %s failed: %w", tgt, err)
+						}
 					}
 				} else {
 					// Single file install
-					if err := installPresetWithTransformer(wd, pkgPath, presetName, transformer); err != nil {
+					strategy, err = installPresetWithTransformer(wd, pkgPath, presetName, transformer)
+					if err != nil {
 						return fmt.Errorf("install to %s failed: %w", tgt, err)
 					}
 				}
 
-				ctx.Logger.Printf("✅ Installed %q to %s\n", presetName, transformer.OutputDir())
+				if transformer.Target() == "cursor" {
+					if ui := ctx.Messenger(); ui != nil {
+						ui.Info("Install method: %s\n", strategy)
+					}
+				}
+
+				if ui := ctx.Messenger(); ui != nil {
+					ui.Success("✅ Installed %q to %s\n", presetName, transformer.OutputDir())
+				}
 			}
 
 			return nil
@@ -128,21 +152,16 @@ func installPackageWithTransformer(
 	transformer transform.Transformer,
 	excludes []string,
 	noFlatten bool,
-	m *manifest.Manifest,
-) error {
-	// Merge exclusions from manifest
-	if m != nil && len(m.Exclude) > 0 {
-		excludes = append(excludes, m.Exclude...)
-	}
+) (core.InstallStrategy, error) {
 
 	// Create output directory
 	outDir := filepath.Join(workDir, transformer.OutputDir())
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
-		return fmt.Errorf("create output dir for package %q: %w", presetName, err)
+		return core.StrategyUnknown, fmt.Errorf("create output dir for package %q: %w", presetName, err)
 	}
 
 	// Walk package directory
-	return filepath.Walk(pkgPath, func(path string, info os.FileInfo, err error) error {
+	if err := filepath.Walk(pkgPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return fmt.Errorf("walk package %q: %w", presetName, err)
 		}
@@ -164,14 +183,17 @@ func installPackageWithTransformer(
 			return fmt.Errorf("install file from package %q: %w", presetName, err)
 		}
 		return nil
-	})
+	}); err != nil {
+		return core.StrategyUnknown, err
+	}
+	return core.StrategyCopy, nil
 }
 
 // installPresetWithTransformer installs a single preset file using the specified transformer.
 func installPresetWithTransformer(
 	workDir, presetPath, presetName string,
 	transformer transform.Transformer,
-) error {
+) (core.InstallStrategy, error) {
 	// Ensure .mdc extension
 	if !strings.HasSuffix(presetPath, ".mdc") {
 		presetPath += ".mdc"
@@ -179,13 +201,13 @@ func installPresetWithTransformer(
 
 	// Check if file exists
 	if _, err := os.Stat(presetPath); os.IsNotExist(err) {
-		return fmt.Errorf("preset %q not found: %s", presetName, presetPath)
+		return core.StrategyUnknown, fmt.Errorf("preset %q not found: %s", presetName, presetPath)
 	}
 
 	// For cursor target, respect symlink mode like the old InstallPreset function
 	if transformer.Target() == "cursor" {
 		sharedDir := core.DefaultSharedDir()
-		if core.UseSymlink() || core.UseGNUStow() {
+		if core.UseSymlink() || core.WantGNUStow() {
 			return core.ApplyPresetWithOptionalSymlink(workDir, presetName, sharedDir)
 		}
 	}
@@ -193,13 +215,13 @@ func installPresetWithTransformer(
 	// Create output directory
 	outDir := filepath.Join(workDir, transformer.OutputDir())
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
-		return fmt.Errorf("create output dir for preset %q: %w", presetName, err)
+		return core.StrategyUnknown, fmt.Errorf("create output dir for preset %q: %w", presetName, err)
 	}
 
 	if err := transformAndWriteFile(presetPath, filepath.Base(presetPath), outDir, transformer, false); err != nil {
-		return fmt.Errorf("install preset %q: %w", presetName, err)
+		return core.StrategyUnknown, fmt.Errorf("install preset %q: %w", presetName, err)
 	}
-	return nil
+	return core.StrategyCopy, nil
 }
 
 // transformAndWriteFile reads, transforms, and writes a single file.

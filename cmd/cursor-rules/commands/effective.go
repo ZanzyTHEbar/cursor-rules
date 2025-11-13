@@ -30,6 +30,26 @@ Examples:
   cursor-rules effective --target copilot-instr`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			var ui cli.Messenger
+			if ctx != nil {
+				ui = ctx.Messenger()
+			}
+			output := cmd.OutOrStdout()
+			info := func(format string, args ...interface{}) {
+				if ui != nil {
+					ui.Info(format, args...)
+					return
+				}
+				fmt.Fprintf(output, format, args...)
+			}
+			warn := func(format string, args ...interface{}) {
+				if ui != nil {
+					ui.Warn(format, args...)
+					return
+				}
+				fmt.Fprintf(output, format, args...)
+			}
+
 			// Get workdir
 			var wd string
 			if ctx != nil && ctx.Viper != nil {
@@ -56,7 +76,7 @@ Examples:
 				if err != nil {
 					return err
 				}
-				fmt.Println(out)
+				info("%s\n", out)
 				return nil
 			}
 
@@ -68,12 +88,12 @@ Examples:
 
 			rulesDir := filepath.Join(wd, transformer.OutputDir())
 
-			fmt.Printf("# Effective Rules (%s)\n\n", transformer.Target())
-			fmt.Printf("Source: %s\n\n", rulesDir)
+			info("# Effective Rules (%s)\n\n", transformer.Target())
+			info("Source: %s\n\n", rulesDir)
 
 			// Check if directory exists
 			if _, err := os.Stat(rulesDir); os.IsNotExist(err) {
-				fmt.Printf("No rules found in %s\n", rulesDir)
+				warn("No rules found in %s\n", rulesDir)
 				return nil
 			}
 
@@ -89,7 +109,7 @@ Examples:
 			}
 
 			if len(files) == 0 {
-				fmt.Printf("No %s files found in %s\n", transformer.Extension(), rulesDir)
+				warn("No %s files found in %s\n", transformer.Extension(), rulesDir)
 				return nil
 			}
 
@@ -101,9 +121,9 @@ Examples:
 				if err != nil {
 					continue
 				}
-				fmt.Printf("## %s\n\n", filepath.Base(file))
-				fmt.Println(string(data))
-				fmt.Println("\n---")
+				info("## %s\n\n", filepath.Base(file))
+				info("%s\n", string(data))
+				info("\n---\n")
 			}
 
 			return nil

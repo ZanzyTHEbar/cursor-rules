@@ -14,6 +14,19 @@ func NewListCmd(ctx *cli.AppContext) *cobra.Command {
 		Use:   "list",
 		Short: "List installed presets in current project",
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			var ui cli.Messenger
+			if ctx != nil {
+				ui = ctx.Messenger()
+			}
+			out := cmd.OutOrStdout()
+			info := func(format string, args ...interface{}) {
+				if ui != nil {
+					ui.Info(format, args...)
+					return
+				}
+				fmt.Fprintf(out, format, args...)
+			}
+
 			var wd string
 			if ctx != nil && ctx.Viper != nil {
 				wd = ctx.Viper.GetString("workdir")
@@ -37,16 +50,16 @@ func NewListCmd(ctx *cli.AppContext) *cobra.Command {
 				return err
 			}
 			for _, p := range presets {
-				fmt.Println(p)
+				info("%s\n", p)
 			}
 
 			// Also list custom commands if present
 			cmds, err := core.ListProjectCommands(wd)
 			if err == nil {
 				if len(cmds) > 0 {
-					fmt.Println("\ncommands:")
+					info("\ncommands:\n")
 					for _, c := range cmds {
-						fmt.Println(c)
+						info("%s\n", c)
 					}
 				}
 			}

@@ -93,10 +93,11 @@ func StartWatcher(ctx context.Context, sharedDir string, autoApply bool) error {
 						if mapping != nil {
 							if projects, ok := mapping[name]; ok {
 								for _, proj := range projects {
-									if err := ApplyPresetToProject(proj, name, sharedDir); err != nil {
+									strategy, err := ApplyPresetToProject(proj, name, sharedDir)
+									if err != nil {
 										slog.Warn("watcher failed to apply preset", "preset", name, "project", proj, "error", err)
 									} else {
-										slog.Info("watcher applied preset", "preset", name, "project", proj)
+										slog.Info("watcher applied preset", "preset", name, "project", proj, "method", strategy)
 									}
 								}
 							} else {

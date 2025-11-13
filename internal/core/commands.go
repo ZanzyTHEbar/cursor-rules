@@ -49,7 +49,7 @@ func InstallCommand(projectRoot, command string) error {
 	dest := filepath.Join(commandsDir, normalized+".md")
 
 	// If symlink/stow behavior requested, prefer that path
-	if UseSymlink() || UseGNUStow() {
+	if UseSymlink() || WantGNUStow() {
 		return ApplyCommandWithOptionalSymlink(projectRoot, normalized, sharedDir)
 	}
 
@@ -102,7 +102,8 @@ func ApplyCommandWithOptionalSymlink(projectRoot, command, sharedDir string) err
 	src := filepath.Join(sharedDir, command+".md")
 	dest := filepath.Join(commandsDir, command+".md")
 	// Delegate to shared ApplySourceToDest which handles stow -> symlink -> stub
-	return ApplySourceToDest(sharedDir, src, dest, command)
+	_, err := ApplySourceToDest(sharedDir, src, dest, command)
+	return err
 }
 
 // ListSharedCommands returns list of .md files found in sharedDir

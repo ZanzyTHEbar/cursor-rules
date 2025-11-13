@@ -15,6 +15,10 @@ func NewInitCmd(ctx *cli.AppContext) *cobra.Command {
 		Use:   "init",
 		Short: "Initialize a project with .cursor/rules/ directory",
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			var ui cli.Messenger
+			if ctx != nil {
+				ui = ctx.Messenger()
+			}
 			// prefer workdir from AppContext.Viper, fallback to flag
 			var wd string
 			if ctx != nil && ctx.Viper != nil {
@@ -37,7 +41,11 @@ func NewInitCmd(ctx *cli.AppContext) *cobra.Command {
 			if err := core.InitProject(wd); err != nil {
 				return fmt.Errorf("init failed: %w", err)
 			}
-			fmt.Printf("Initialized project at %s/.cursor/rules/\n", wd)
+			if ui != nil {
+				ui.Success("Initialized project at %s/.cursor/rules/\n", wd)
+			} else {
+				fmt.Printf("Initialized project at %s/.cursor/rules/\n", wd)
+			}
 			return nil
 		},
 	}

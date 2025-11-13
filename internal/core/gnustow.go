@@ -24,8 +24,15 @@ func HasStow() bool {
 }
 
 // UseGNUStow reports whether GNU stow should be used (env requests and stow present).
+// WantGNUStow reports whether the user requested GNU stow (regardless of availability).
+func WantGNUStow() bool {
+	v := strings.ToLower(os.Getenv("CURSOR_RULES_USE_GNUSTOW"))
+	return v == "1" || v == "true"
+}
+
+// UseGNUStow reports whether GNU stow should be used (requested and available).
 func UseGNUStow() bool {
-	return strings.ToLower(os.Getenv("CURSOR_RULES_USE_GNUSTOW")) == "1" && HasStow()
+	return WantGNUStow() && HasStow()
 }
 
 // CreateSymlink attempts to create a symlink from src -> dest. It will create parent
@@ -66,31 +73,37 @@ func CreateSymlink(src, dest string) error {
 // ApplyPresetWithOptionalSymlink applies a preset either by creating a stub file (default)
 // or by creating a symlink if the environment requests it. If GNU Stow is requested via
 // CURSOR_RULES_USE_GNUSTOW and stow is available, attempt to use it (best-effort).
-func ApplyPresetWithOptionalSymlink(projectRoot, preset, sharedDir string) error {
+func ApplyPresetWithOptionalSymlink(projectRoot, preset, sharedDir string) (InstallStrategy, error) {
 	// Ensure target rules directory exists for all strategies (stow/symlink/stub)
 	rulesDir := filepath.Join(projectRoot, ".cursor", "rules")
 	if err := os.MkdirAll(rulesDir, 0o755); err != nil {
-		return err
+		return StrategyUnknown, err
 	}
 
 	src := filepath.Join(sharedDir, preset+".mdc")
+	if _, err := os.Stat(src); err != nil {
+		return StrategyUnknown, fmt.Errorf("source not found: %s", src)
+	}
+
 	dest := filepath.Join(projectRoot, ".cursor", "rules", preset+".mdc")
 
 	// If env requests GNU stow and stow exists, attempt to use it. This expects the
 	// sharedDir to be structured for stow (package directories). If stow fails,
 	// fallback to symlink creation.
-	if strings.ToLower(os.Getenv("CURSOR_RULES_USE_GNUSTOW")) == "1" && HasStow() {
+	if WantGNUStow() && HasStow() {
 		// #nosec G204 - sharedDir, rulesDir, and preset are validated before this call
 		cmd := exec.Command("stow", "-v", "-d", sharedDir, "-t", rulesDir, preset)
 		if _, err := cmd.CombinedOutput(); err == nil {
-			return nil
+			return StrategyStow, nil
 		}
 		// else: fall through
 	}
 
-	// If user requested symlink behavior, create a symlink
-	if UseSymlink() {
-		return CreateSymlink(src, dest)
+	// If user requested symlink behavior (explicitly or via GNU stow), create a symlink
+	if UseSymlink() || WantGNUStow() {
+		if err := CreateSymlink(src, dest); err == nil {
+			return StrategySymlink, nil
+		}
 	}
 
 	// Default behavior: delegate to shared helper which handles stow -> symlink -> stub

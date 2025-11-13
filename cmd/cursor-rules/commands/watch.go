@@ -19,6 +19,10 @@ func NewWatchCmd(ctx *cli.AppContext) *cobra.Command {
 		Use:   "watch",
 		Short: "Start a long-running watcher that auto-applies presets based on mapping",
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			var ui cli.Messenger
+			if ctx != nil {
+				ui = ctx.Messenger()
+			}
 			// prefer viper-configured path, fallback to flag
 			var cfgFileFlag string
 			if ctx != nil && ctx.Viper != nil {
@@ -47,7 +51,11 @@ func NewWatchCmd(ctx *cli.AppContext) *cobra.Command {
 				return fmt.Errorf("failed to start watcher: %w", err)
 			}
 			<-ctxBG.Done()
-			fmt.Fprintln(os.Stderr, "watcher: shutting down")
+			if ui != nil {
+				ui.Info("watcher: shutting down\n")
+			} else {
+				fmt.Fprintln(os.Stderr, "watcher: shutting down")
+			}
 			return nil
 		},
 	}

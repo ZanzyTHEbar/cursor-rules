@@ -27,6 +27,10 @@ Example:
 		Args: cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
 			preset := args[0]
+			var ui cli.Messenger
+			if ctx != nil {
+				ui = ctx.Messenger()
+			}
 
 			transformer, err := ctx.Transformer(targetFlag)
 			if err != nil {
@@ -47,7 +51,11 @@ Example:
 				}
 			}
 
-			fmt.Printf("Transforming %q to %s format:\n\n", preset, transformer.Target())
+			if ui != nil {
+				ui.Info("Transforming %q to %s format:\n\n", preset, transformer.Target())
+			} else {
+				fmt.Printf("Transforming %q to %s format:\n\n", preset, transformer.Target())
+			}
 
 			if info.IsDir() {
 				// Walk directory
@@ -55,12 +63,12 @@ Example:
 					if err != nil || info.IsDir() || !strings.HasSuffix(info.Name(), ".mdc") {
 						return err
 					}
-					return previewTransform(path, transformer)
+					return previewTransform(path, transformer, ui)
 				})
 			}
 
 			// Single file
-			return previewTransform(pkgPath, transformer)
+			return previewTransform(pkgPath, transformer, ui)
 		},
 	}
 
@@ -70,7 +78,7 @@ Example:
 }
 
 // previewTransform reads, transforms, and displays a single file transformation.
-func previewTransform(path string, transformer transform.Transformer) error {
+func previewTransform(path string, transformer transform.Transformer, ui cli.Messenger) error {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -78,30 +86,54 @@ func previewTransform(path string, transformer transform.Transformer) error {
 
 	fm, body, err := transform.SplitFrontmatter(data)
 	if err != nil {
-		fmt.Printf("❌ %s: %v\n", filepath.Base(path), err)
+		printError(ui, "❌ %s: %v\n", filepath.Base(path), err)
 		return nil
 	}
 
 	transformedFM, transformedBody, err := transformer.Transform(fm, body)
 	if err != nil {
-		fmt.Printf("❌ %s: %v\n", filepath.Base(path), err)
+		printError(ui, "❌ %s: %v\n", filepath.Base(path), err)
 		return nil
 	}
 
 	if validateErr := transformer.Validate(transformedFM); validateErr != nil {
-		fmt.Printf("⚠️  %s: validation warning: %v\n", filepath.Base(path), validateErr)
+		printWarn(ui, "⚠️  %s: validation warning: %v\n", filepath.Base(path), validateErr)
 	}
 
 	output, err := transform.MarshalMarkdown(transformedFM, transformedBody)
 	if err != nil {
-		fmt.Printf("❌ %s: marshal error: %v\n", filepath.Base(path), err)
+		printError(ui, "❌ %s: marshal error: %v\n", filepath.Base(path), err)
 		return nil
 	}
 
 	baseName := strings.TrimSuffix(filepath.Base(path), ".mdc")
-	fmt.Printf("📄 %s.mdc → %s%s\n", baseName, baseName, transformer.Extension())
-	fmt.Println(string(output))
-	fmt.Println("---")
+	printInfo(ui, "📄 %s.mdc → %s%s\n", baseName, baseName, transformer.Extension())
+	printInfo(ui, "%s\n", string(output))
+	printInfo(ui, "---\n")
 
 	return nil
+}
+
+func printInfo(ui cli.Messenger, format string, args ...interface{}) {
+	if ui != nil {
+		ui.Info(format, args...)
+		return
+	}
+	fmt.Printf(format, args...)
+}
+
+func printWarn(ui cli.Messenger, format string, args ...interface{}) {
+	if ui != nil {
+		ui.Warn(format, args...)
+		return
+	}
+	fmt.Printf(format, args...)
+}
+
+func printError(ui cli.Messenger, format string, args ...interface{}) {
+	if ui != nil {
+		ui.Error(format, args...)
+		return
+	}
+	fmt.Printf(format, args...)
 }
