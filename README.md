@@ -155,6 +155,14 @@ cursor-rules install frontend
 Shared presets live in `~/.cursor/rules/`.
 Override with `$CURSOR_RULES_DIR`.
 
+### Generate a default config
+
+```bash
+cursor-rules config init
+```
+
+This writes `config.yaml` in your shared directory using the current defaults. Pass `--force` to overwrite (the previous file is backed up automatically). If GNU `stow` is available, the generated file sets `enableStow: true`; otherwise it remains disabled until you install stow.
+
 ## Advanced usage
 
 ```bash

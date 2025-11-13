@@ -2,16 +2,18 @@ package config
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/spf13/viper"
 )
 
 type Config struct {
-	SharedDir string
-	Watch     bool
-	AutoApply bool
-	Presets   []string
+	SharedDir  string
+	Watch      bool
+	AutoApply  bool
+	EnableStow bool
+	Presets    []string
 }
 
 // LoadConfig reads config from provided file or default location
@@ -32,23 +34,39 @@ func LoadConfig(cfgFile string) (*Config, error) {
 	v.SetDefault("sharedDir", filepath.Join(os.Getenv("HOME"), ".cursor", "rules"))
 	v.SetDefault("watch", false)
 	v.SetDefault("autoApply", false)
+	v.SetDefault("enableStow", false)
 	v.SetDefault("presets", []string{})
 
 	if err := v.ReadInConfig(); err != nil {
 		// if not found, return defaults
-		return &Config{
-			SharedDir: v.GetString("sharedDir"),
-			Watch:     v.GetBool("watch"),
-			AutoApply: v.GetBool("autoApply"),
-			Presets:   v.GetStringSlice("presets"),
-		}, nil
+		cfg := &Config{
+			SharedDir:  v.GetString("sharedDir"),
+			Watch:      v.GetBool("watch"),
+			AutoApply:  v.GetBool("autoApply"),
+			EnableStow: v.GetBool("enableStow"),
+			Presets:    v.GetStringSlice("presets"),
+		}
+		enableStowIfRequested(cfg)
+		return cfg, nil
 	}
 
 	cfg := &Config{
-		SharedDir: v.GetString("sharedDir"),
-		Watch:     v.GetBool("watch"),
-		AutoApply: v.GetBool("autoApply"),
-		Presets:   v.GetStringSlice("presets"),
+		SharedDir:  v.GetString("sharedDir"),
+		Watch:      v.GetBool("watch"),
+		AutoApply:  v.GetBool("autoApply"),
+		EnableStow: v.GetBool("enableStow"),
+		Presets:    v.GetStringSlice("presets"),
 	}
+	enableStowIfRequested(cfg)
 	return cfg, nil
+}
+
+func enableStowIfRequested(cfg *Config) {
+	if cfg == nil || !cfg.EnableStow {
+		return
+	}
+
+	if _, err := exec.LookPath("stow"); err == nil {
+		_ = os.Setenv("CURSOR_RULES_USE_GNUSTOW", "1")
+	}
 }

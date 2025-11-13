@@ -483,9 +483,42 @@ cursor-rules init
 cursor-rules init ~/cursor-rules-shared
 ```
 
+### `cursor-rules config init`
+
+Scaffold (or overwrite with `--force`) the `config.yaml` file inside your shared directory.
+
+**Usage:**
+```bash
+cursor-rules config init [flags]
+```
+
+**Flags:**
+- `-f, --force` - overwrite existing config (backs up the previous file)
+
+**Examples:**
+```bash
+# Generate config.yaml with current defaults
+cursor-rules config init
+
+# Overwrite existing config and keep a backup
+cursor-rules config init --force
+```
+
 ---
 
 ## Configuration
+
+### Generate a default config
+
+Use the helper command to scaffold `config.yaml` inside your shared directory:
+
+```bash
+cursor-rules config init
+# Overwrite existing config (backs up the previous file)
+cursor-rules config init --force
+```
+
+If GNU `stow` is available on your PATH the generated file sets `enableStow: true`; otherwise it remains disabled until stow is installed.
 
 ### Environment Variables
 
@@ -516,6 +549,9 @@ watch: true
 
 # Auto-apply changes
 autoApply: true
+
+# Prefer GNU stow when available
+enableStow: true
 
 # Default presets to install
 presets:

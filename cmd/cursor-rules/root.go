@@ -72,6 +72,7 @@ func init() {
 		commands.NewPolicyCmd,
 		commands.NewInitCmd,
 		commands.NewTransformCmd,
+		commands.NewConfigCmd,
 	)
 
 	// Add commands registered into the global CLI palette (registered in
