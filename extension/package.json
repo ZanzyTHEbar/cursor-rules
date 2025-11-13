@@ -2,7 +2,7 @@
   "name": "cursor-rules-manager",
   "displayName": "Cursor Rules Manager",
   "description": "Manage shared Cursor rules across projects (thin wrapper around cursor-rules CLI)",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "publisher": "DaOfficialWizard",
   "repository": {
     "type": "git",

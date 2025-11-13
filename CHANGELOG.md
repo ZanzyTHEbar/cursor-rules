@@ -3,6 +3,12 @@
 [![semantic versioning](https://img.shields.io/badge/semantic%20versioning-2.0.0-green.svg)](https://semver.org)
 > All notable changes to this project will be documented in this file
 
+## [0.6.1](https://github.com/ZanzyTHEbar/cursor-rules/compare/v0.6.0...v0.6.1) (2025-11-13)
+
+### 🐛 Bug Fixes
+
+* **watcher:** ensure lint compatibility ([71cf84b](https://github.com/ZanzyTHEbar/cursor-rules/commit/71cf84b7ec33ba6206b9e1288d8c4c3ced15903f))
+
 ## [0.6.0](https://github.com/ZanzyTHEbar/cursor-rules/compare/v0.5.0...v0.6.0) (2025-11-13)
 
 ### 🍕 Features
