@@ -19,7 +19,7 @@ alwaysApply: true
 `
 
 // InstallPreset writes a small stub .mdc in the project's .cursor/rules/
-// pointing to the shared preset under sharedDir (default: ~/.cursor-rules).
+// pointing to the shared preset under sharedDir (default: ~/.cursor/rules).
 func InstallPreset(projectRoot, preset string) error {
 	sharedDir := DefaultSharedDir()
 
@@ -87,7 +87,7 @@ func InstallPreset(projectRoot, preset string) error {
 	return AtomicWriteTemplate(destDir, dest, t, data, 0o644)
 }
 
-// DefaultSharedDir returns ~/.cursor-rules by default; environment overrides allowed.
+// DefaultSharedDir returns ~/.cursor/rules by default; environment overrides allowed.
 func DefaultSharedDir() string {
 	if v := os.Getenv("CURSOR_RULES_DIR"); v != "" {
 		return v
@@ -95,14 +95,14 @@ func DefaultSharedDir() string {
 	home, err := os.UserHomeDir()
 	if err != nil || home == "" {
 		if env := os.Getenv("HOME"); env != "" {
-			return filepath.Join(env, ".cursor-rules")
+			return filepath.Join(env, ".cursor", "rules")
 		}
 		if cwd, cwdErr := os.Getwd(); cwdErr == nil && cwd != "" {
-			return filepath.Join(cwd, ".cursor-rules")
+			return filepath.Join(cwd, ".cursor", "rules")
 		}
-		return ".cursor-rules"
+		return filepath.Join(".cursor", "rules")
 	}
-	return filepath.Join(home, ".cursor-rules")
+	return filepath.Join(home, ".cursor", "rules")
 }
 
 // InstallPackage installs an entire package directory from sharedDir into the project's

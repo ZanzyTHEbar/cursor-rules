@@ -152,7 +152,7 @@ cursor-rules install frontend
 
 ## Config
 
-Shared presets live in `~/.cursor-rules/`.
+Shared presets live in `~/.cursor/rules/`.
 Override with `$CURSOR_RULES_DIR`.
 
 ## Advanced usage
@@ -211,7 +211,7 @@ root := cli.NewRoot(ctx, cli.DefaultPalette)
 
 Environment variables:
 
--   `CURSOR_RULES_DIR`: override the default shared presets directory (default: `~/.cursor-rules`).
+-   `CURSOR_RULES_DIR`: override the default shared presets directory (default: `~/.cursor/rules`).
 -   `CURSOR_RULES_SYMLINK=1`: when set, `install`/`apply` operations will create real filesystem symlinks instead of writing stub `.mdc` files. Use with caution.
 -   `CURSOR_RULES_USE_GNUSTOW=1`: when set and GNU `stow` is available in PATH, the tool will attempt to use `stow` to manage symlinks from the shared directory into project targets. This is best-effort and will fall back to symlinks or stubs if stow fails.
 
@@ -371,7 +371,7 @@ For detailed examples and best practices, see [docs/copilot-integration.md](docs
 
 ## Packages
 
-You can organize shared presets as packages under your shared dir (default: `~/.cursor-rules`).
+You can organize shared presets as packages under your shared dir (default: `~/.cursor/rules`).
 Each package is a directory (for example `frontend/` or `git/`) containing one or more `.mdc` files.
 
 ### Nested Package Support
@@ -379,7 +379,7 @@ Each package is a directory (for example `frontend/` or `git/`) containing one o
 Packages can be organized in nested directory structures of arbitrary depth:
 
 ```
-~/.cursor-rules/
+~/.cursor/rules/
 ├── frontend/
 │   ├── react/
 │   │   ├── hooks.mdc

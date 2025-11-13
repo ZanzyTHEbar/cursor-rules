@@ -460,7 +460,7 @@ cursor-rules watch [flags]
 cursor-rules watch
 
 # With custom config
-cursor-rules watch --config ~/.cursor-rules.yaml
+cursor-rules watch --config ~/.cursor/rules/config.yaml
 ```
 
 ---
@@ -491,7 +491,7 @@ cursor-rules init ~/cursor-rules-shared
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `CURSOR_RULES_DIR` | Shared presets directory | `~/.cursor-rules` |
+| `CURSOR_RULES_DIR` | Shared presets directory | `~/.cursor/rules` |
 | `CURSOR_RULES_SYMLINK` | Use symlinks instead of copies | `false` |
 
 **Set in shell:**
@@ -505,7 +505,7 @@ export CURSOR_RULES_SYMLINK=1
 
 ### Config File
 
-Create `~/.cursor-rules.yaml`:
+Create `~/.cursor/rules/config.yaml`:
 
 ```yaml
 # Shared presets directory

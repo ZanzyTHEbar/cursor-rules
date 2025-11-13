@@ -36,7 +36,7 @@ func NewWatchCmd(ctx *cli.AppContext) *cobra.Command {
 				return fmt.Errorf("failed to load config: %w", err)
 			}
 			if cfg == nil {
-				return fmt.Errorf("no config found; please provide --config or create $HOME/.cursor-rules/config.yaml")
+				return fmt.Errorf("no config found; please provide --config or create $HOME/.cursor/rules/config.yaml")
 			}
 			if cfg.SharedDir == "" {
 				cfg.SharedDir = core.DefaultSharedDir()

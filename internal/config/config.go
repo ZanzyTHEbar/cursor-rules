@@ -22,14 +22,14 @@ func LoadConfig(cfgFile string) (*Config, error) {
 	} else {
 		home, err := os.UserHomeDir()
 		if err == nil && home != "" {
-			v.AddConfigPath(filepath.Join(home, ".cursor-rules"))
+			v.AddConfigPath(filepath.Join(home, ".cursor", "rules"))
 		}
 		v.SetConfigName("config")
 		v.SetConfigType("yaml")
 	}
 
 	// defaults
-	v.SetDefault("sharedDir", filepath.Join(os.Getenv("HOME"), ".cursor-rules"))
+	v.SetDefault("sharedDir", filepath.Join(os.Getenv("HOME"), ".cursor", "rules"))
 	v.SetDefault("watch", false)
 	v.SetDefault("autoApply", false)
 	v.SetDefault("presets", []string{})

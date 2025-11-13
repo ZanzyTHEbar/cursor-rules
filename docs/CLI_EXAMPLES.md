@@ -246,7 +246,7 @@ cursor-rules transform frontend --target cursor
 
 ```bash
 # Transform all presets in directory
-for preset in ~/.cursor-rules/*.mdc; do
+for preset in ~/.cursor/rules/*.mdc; do
   cursor-rules transform "$(basename "$preset" .mdc)" --target copilot-instr
 done
 
@@ -291,7 +291,7 @@ cursor-rules sync --verbose
 
 ```bash
 # Sync from specific branch
-cd ~/.cursor-rules
+cd ~/.cursor/rules
 git checkout develop
 cursor-rules sync
 
@@ -329,19 +329,19 @@ cursor-rules watch --verbose
 cursor-rules watch --projects /path/to/project1,/path/to/project2
 
 # Watch with custom mapping file
-cursor-rules watch --mapping ~/.cursor-rules/custom-mapping.yaml
+cursor-rules watch --mapping ~/.cursor/rules/custom-mapping.yaml
 
 # Watch in background
 cursor-rules watch &
-echo $! > ~/.cursor-rules-watch.pid
+echo $! > ~/.cursor/rules-watch.pid
 
 # Stop watcher
-kill $(cat ~/.cursor-rules-watch.pid)
+kill $(cat ~/.cursor/rules-watch.pid)
 ```
 
 ### Watcher Configuration
 
-Create `~/.cursor-rules/watcher-mapping.yaml`:
+Create `~/.cursor/rules/watcher-mapping.yaml`:
 
 ```yaml
 presets:
@@ -416,7 +416,7 @@ cursor-rules policy validate
 
 ### Policy Configuration
 
-Create `.cursor-rules-policy.yaml`:
+Create `.cursor/rules-policy.yaml`:
 
 ```yaml
 enforce:
@@ -549,8 +549,8 @@ jobs:
 
 ```bash
 # Create new preset
-mkdir -p ~/.cursor-rules/my-preset
-cat > ~/.cursor-rules/my-preset.mdc <<'EOF'
+mkdir -p ~/.cursor/rules/my-preset
+cat > ~/.cursor/rules/my-preset.mdc <<'EOF'
 ---
 description: "My custom preset"
 tags:
@@ -576,7 +576,7 @@ cursor-rules install my-preset --target cursor
 cursor-rules effective | grep "My Custom Preset"
 
 # Share preset
-cd ~/.cursor-rules
+cd ~/.cursor/rules
 git add my-preset.mdc
 git commit -m "feat: add my-preset"
 git push
@@ -588,7 +588,7 @@ git push
 #!/bin/bash
 # validate-presets.sh
 
-SHARED_DIR="${CURSOR_RULES_DIR:-$HOME/.cursor-rules}"
+SHARED_DIR="${CURSOR_RULES_DIR:-$HOME/.cursor/rules}"
 
 echo "Validating presets in $SHARED_DIR..."
 
@@ -622,7 +622,7 @@ echo "Validation complete!"
 ```bash
 # Backup current rules
 backup_rules() {
-  local backup_dir="$HOME/.cursor-rules-backup-$(date +%Y%m%d-%H%M%S)"
+  local backup_dir="$HOME/.cursor/rules-backup-$(date +%Y%m%d-%H%M%S)"
   mkdir -p "$backup_dir"
   
   # Backup shared rules
@@ -664,7 +664,7 @@ restore_rules() {
 
 # Usage
 backup_rules
-# restore_rules ~/.cursor-rules-backup-20250111-120000
+# restore_rules ~/.cursor/rules-backup-20250111-120000
 ```
 
 ---
@@ -713,16 +713,16 @@ crs() {
 
 # Watch in background
 crw() {
-  cursor-rules watch > ~/.cursor-rules-watch.log 2>&1 &
-  echo $! > ~/.cursor-rules-watch.pid
-  echo "Watcher started (PID: $(cat ~/.cursor-rules-watch.pid))"
+  cursor-rules watch > ~/.cursor/rules-watch.log 2>&1 &
+  echo $! > ~/.cursor/rules-watch.pid
+  echo "Watcher started (PID: $(cat ~/.cursor/rules-watch.pid))"
 }
 
 # Stop watcher
 crw-stop() {
-  if [ -f ~/.cursor-rules-watch.pid ]; then
-    kill $(cat ~/.cursor-rules-watch.pid)
-    rm ~/.cursor-rules-watch.pid
+  if [ -f ~/.cursor/rules-watch.pid ]; then
+    kill $(cat ~/.cursor/rules-watch.pid)
+    rm ~/.cursor/rules-watch.pid
     echo "Watcher stopped"
   else
     echo "No watcher running"
@@ -733,10 +733,10 @@ crw-stop() {
 ### Environment Setup
 
 ```bash
-# ~/.cursor-rules-env
+# ~/.cursor/rules-env
 
 # Shared directory
-export CURSOR_RULES_DIR="$HOME/.cursor-rules"
+export CURSOR_RULES_DIR="$HOME/.cursor/rules"
 
 # Enable symlinks (optional)
 export CURSOR_RULES_SYMLINK=1
@@ -748,7 +748,7 @@ export CURSOR_RULES_USE_STOW=1
 export CURSOR_RULES_DEFAULT_TARGET="cursor"
 
 # Load in shell
-source ~/.cursor-rules-env
+source ~/.cursor/rules-env
 ```
 
 ---
@@ -763,11 +763,11 @@ cursor-rules list  # Check available presets
 echo $CURSOR_RULES_DIR  # Verify shared directory
 
 # Permission denied
-sudo chown -R $USER:$USER ~/.cursor-rules
-chmod -R 755 ~/.cursor-rules
+sudo chown -R $USER:$USER ~/.cursor/rules
+chmod -R 755 ~/.cursor/rules
 
 # Git sync fails
-cd ~/.cursor-rules
+cd ~/.cursor/rules
 git status
 git pull --rebase
 

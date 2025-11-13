@@ -78,4 +78,28 @@ func init() {
 	// cmd/cursor-rules/init.go). ConfigureRoot only wires config/flags; we
 	// still need to attach the concrete subcommands from the global palette.
 	rootCmd.AddCommand(cli.DefaultPalette.Commands(ctx)...)
+
+	rootCmd.RunE = func(cmd *cobra.Command, _ []string) error {
+		sharedDir := core.DefaultSharedDir()
+		var cfg *config.Config
+		var err error
+		if ctx != nil && ctx.Viper != nil {
+			cfgPath := ctx.Viper.ConfigFileUsed()
+			cfg, err = config.LoadConfig(cfgPath)
+			if err == nil && cfg != nil && cfg.SharedDir != "" {
+				sharedDir = cfg.SharedDir
+			}
+		} else {
+			cfg, err = config.LoadConfig("")
+			if err == nil && cfg != nil && cfg.SharedDir != "" {
+				sharedDir = cfg.SharedDir
+			}
+		}
+
+		out := cmd.OutOrStdout()
+		fmt.Fprintf(out, "cursor-rules shared presets directory: %s\n", sharedDir)
+		fmt.Fprintln(out, "Override via CURSOR_RULES_DIR or sharedDir in $HOME/.cursor/rules/config.yaml.")
+		fmt.Fprintln(out)
+		return cmd.Help()
+	}
 }
