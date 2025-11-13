@@ -3,6 +3,12 @@
 [![semantic versioning](https://img.shields.io/badge/semantic%20versioning-2.0.0-green.svg)](https://semver.org)
 > All notable changes to this project will be documented in this file
 
+## [0.7.0](https://github.com/ZanzyTHEbar/cursor-rules/compare/v0.6.1...v0.7.0) (2025-11-13)
+
+### 🍕 Features
+
+* **config:** add initializer for default config ([8ffab86](https://github.com/ZanzyTHEbar/cursor-rules/commit/8ffab86142f85bca097eda0b74bc9a971bcc0e53))
+
 ## [0.6.1](https://github.com/ZanzyTHEbar/cursor-rules/compare/v0.6.0...v0.6.1) (2025-11-13)
 
 ### 🐛 Bug Fixes
