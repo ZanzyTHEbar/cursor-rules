@@ -3,6 +3,16 @@
 [![semantic versioning](https://img.shields.io/badge/semantic%20versioning-2.0.0-green.svg)](https://semver.org)
 > All notable changes to this project will be documented in this file
 
+## [0.6.0](https://github.com/ZanzyTHEbar/cursor-rules/compare/v0.5.0...v0.6.0) (2025-11-13)
+
+### 🍕 Features
+
+* **cli:** set new shared dir default ([3917a94](https://github.com/ZanzyTHEbar/cursor-rules/commit/3917a94c8d01a088a8dcb52a7b53aed10807e4eb))
+
+### 📝 Documentation
+
+* **rules:** update internal guidance ([552447c](https://github.com/ZanzyTHEbar/cursor-rules/commit/552447c1a1ba3ac347880060c63ea53becdacf0d))
+
 ## [0.5.0](https://github.com/ZanzyTHEbar/cursor-rules/compare/v0.4.2...v0.5.0) (2025-10-31)
 
 ### 🍕 Features
