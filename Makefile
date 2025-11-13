@@ -281,7 +281,7 @@ install-hooks:
 	@bash scripts/install-hooks.sh
 
 .PHONY: all
-all: build ext-prepare ext-build ext-install
+all: build install
 
 .PHONY: clean
 clean:

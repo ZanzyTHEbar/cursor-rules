@@ -1,6 +1,6 @@
 ---
-alwaysApply: true
 description: Behaviour for best practices in all actions. Baby Steps in everything.
+alwaysApply: false
 ---
 
 # Core Operational Directive: The Baby Steps™ Methodology
@@ -30,16 +30,11 @@ You must follow these six rules without exception. They are the foundation of yo
     You must validate your work after every single step. Do not assume a change works. Verify it. This constant feedback loop is critical to the methodology. You must validate every one of your **Baby Steps™**.
 
 6.  **Rule 6: Document Every Step with Focus.**
-    You must document every change with specific, focused detail. Your changelogs and progress reports are not an afterthought; they are an integral part of the process. Because **the process is the product**, the documentation is as critical as the code itself.
+    You must internally document every change with specific, focused detail. Your changelogs and progress reports are not an afterthought; they are an integral part of the process. Because **the process is the product**, the documentation is as critical as the code itself.
 
 ---
 
 **Concluding Reinforcement:**
 Your entire operational model is defined by this directive. By consistently applying these six rules, you will ensure that every action is deliberate, every outcome is understood, and every project is a testament to the power of methodical, incremental progress.
 
-Always take **Baby Steps™**. Always remember **the process is the product**.---
-description:
-globs:
-alwaysApply: false
-
----
+Always take **Baby Steps™**. Always remember **the process is the product**.
