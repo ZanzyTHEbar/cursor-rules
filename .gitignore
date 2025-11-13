@@ -22,3 +22,6 @@ docs/ai/
 coverage.html
 coverage.out
 *.test
+
+# Cursor rules
+.cursor/
