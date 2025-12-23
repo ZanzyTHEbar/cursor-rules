@@ -3,6 +3,12 @@
 [![semantic versioning](https://img.shields.io/badge/semantic%20versioning-2.0.0-green.svg)](https://semver.org)
 > All notable changes to this project will be documented in this file
 
+## [0.8.1](https://github.com/ZanzyTHEbar/cursor-rules/compare/v0.8.0...v0.8.1) (2025-12-23)
+
+### 🐛 Bug Fixes
+
+* **install:** skip dot packages and replace symlinks on copy ([9f81433](https://github.com/ZanzyTHEbar/cursor-rules/commit/9f814330d6fddaa51cc2c606df2c1de2bf60d98c))
+
 ## [0.8.0](https://github.com/ZanzyTHEbar/cursor-rules/compare/v0.7.1...v0.8.0) (2025-12-23)
 
 ### 🍕 Features
