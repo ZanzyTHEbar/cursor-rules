@@ -200,8 +200,9 @@ func readPackageIgnorePatterns(pkgDir, ignoreFileName string) ([]string, error) 
 		return nil, err
 	}
 
-	var patterns []string
-	for _, line := range strings.Split(string(b), "\n") {
+	lines := strings.Split(string(b), "\n")
+	patterns := make([]string, 0, len(lines))
+	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue

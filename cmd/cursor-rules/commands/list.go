@@ -33,7 +33,10 @@ func NewListCmd(ctx *cli.AppContext) *cobra.Command {
 			if ctx != nil && ctx.Viper != nil {
 				cfgPath = ctx.Viper.ConfigFileUsed()
 			}
-			cfg, _ := cfgpkg.LoadConfig(cfgPath)
+			cfg, cfgErr := cfgpkg.LoadConfig(cfgPath)
+			if cfgErr != nil && ui != nil {
+				ui.Warn("failed to load config: %v\n", cfgErr)
+			}
 
 			sharedDir := core.DefaultSharedDir()
 			if os.Getenv("CURSOR_RULES_DIR") == "" && cfg != nil && cfg.SharedDir != "" {

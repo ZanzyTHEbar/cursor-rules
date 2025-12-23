@@ -21,6 +21,11 @@ func NewInstallCmd(ctx *cli.AppContext) *cobra.Command {
 	var targetFlag string
 	var allTargetsFlag bool
 
+	var excludeAllFlag []string
+	var noFlattenAllFlag bool
+	var targetAllFlag string
+	var allTargetsAllFlag bool
+
 	cmd := &cobra.Command{
 		Use:   "install <preset|package>",
 		Short: "Install a preset or package into the current project",
@@ -41,100 +46,7 @@ Examples:
   cursor-rules install frontend --all-targets`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			presetName := args[0]
-
-			// Get workdir
-			var wd string
-			if ctx != nil && ctx.Viper != nil {
-				wd = ctx.Viper.GetString("workdir")
-			}
-			if wd == "" {
-				w, err := cmd.Root().Flags().GetString("workdir")
-				if err != nil {
-					return err
-				}
-				if w == "" {
-					var absErr error
-					w, absErr = filepath.Abs(".")
-					if absErr != nil {
-						return fmt.Errorf("failed to get absolute path: %w", absErr)
-					}
-				}
-				wd = w
-			}
-
-			// Get shared directory
-			shared := core.DefaultSharedDir()
-			pkgPath := filepath.Join(shared, presetName)
-
-			// Check if it's a directory (package) or single file
-			info, err := os.Stat(pkgPath)
-			isPackage := err == nil && info.IsDir()
-
-			// Load manifest if exists
-			var m *manifest.Manifest
-			if isPackage {
-				m, err = manifest.Load(pkgPath)
-				if err != nil {
-					// Manifest load errors are non-fatal; proceed without it
-					m = nil
-				}
-			}
-
-			// Determine targets
-			var targets []string
-			if allTargetsFlag && m != nil && len(m.Targets) > 0 {
-				targets = m.Targets
-			} else {
-				targets = []string{targetFlag}
-			}
-
-			effectiveExcludes := append([]string{}, excludeFlag...)
-			if m != nil && len(m.Exclude) > 0 {
-				effectiveExcludes = append(effectiveExcludes, m.Exclude...)
-			}
-
-			// Install to each target
-			for _, tgt := range targets {
-				transformer, err := ctx.Transformer(tgt)
-				if err != nil {
-					return err
-				}
-
-				var strategy core.InstallStrategy
-
-				if isPackage {
-					if transformer.Target() == "cursor" && (core.UseSymlink() || core.WantGNUStow()) {
-						strategy, err = core.InstallPackage(wd, presetName, effectiveExcludes, noFlattenFlag)
-						if err != nil {
-							return fmt.Errorf("install to %s failed: %w", tgt, err)
-						}
-					} else {
-						strategy, err = installPackageWithTransformer(wd, pkgPath, presetName, transformer, effectiveExcludes, noFlattenFlag)
-						if err != nil {
-							return fmt.Errorf("install to %s failed: %w", tgt, err)
-						}
-					}
-				} else {
-					// Single file install
-					strategy, err = installPresetWithTransformer(wd, pkgPath, presetName, transformer)
-					if err != nil {
-						return fmt.Errorf("install to %s failed: %w", tgt, err)
-					}
-				}
-
-				if transformer.Target() == "cursor" {
-					if ui := ctx.Messenger(); ui != nil {
-						ui.Info("Install method: %s\n", strategy)
-					}
-				}
-
-				if ui := ctx.Messenger(); ui != nil {
-					ui.Success("✅ Installed %q to %s\n", presetName, transformer.OutputDir())
-				}
-			}
-
-			return nil
+			return runInstall(ctx, cmd, args[0], "", excludeFlag, noFlattenFlag, targetFlag, allTargetsFlag)
 		},
 	}
 
@@ -143,7 +55,116 @@ Examples:
 	cmd.Flags().StringVar(&targetFlag, "target", "cursor", "output target: cursor|copilot-instr|copilot-prompt")
 	cmd.Flags().BoolVar(&allTargetsFlag, "all-targets", false, "install to all targets in manifest")
 
+	allCmd := &cobra.Command{
+		Use:   "all",
+		Short: "Install all packages from the shared directory",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			shared := core.DefaultSharedDir()
+			pkgs, err := core.ListSharedPackages(shared)
+			if err != nil {
+				return fmt.Errorf("failed to list packages: %w", err)
+			}
+			if len(pkgs) == 0 {
+				if ui := ctx.Messenger(); ui != nil {
+					ui.Info("No packages found in %s\n", shared)
+				}
+				return nil
+			}
+			for _, name := range pkgs {
+				if err := runInstall(ctx, cmd, name, shared, excludeAllFlag, noFlattenAllFlag, targetAllFlag, allTargetsAllFlag); err != nil {
+					return err
+				}
+			}
+			return nil
+		},
+	}
+
+	allCmd.Flags().StringArrayVar(&excludeAllFlag, "exclude", []string{}, "patterns to exclude when installing a package (can be repeated)")
+	allCmd.Flags().BoolVarP(&noFlattenAllFlag, "no-flatten", "n", false, "preserve package directory structure")
+	allCmd.Flags().StringVar(&targetAllFlag, "target", "cursor", "output target: cursor|copilot-instr|copilot-prompt")
+	allCmd.Flags().BoolVar(&allTargetsAllFlag, "all-targets", false, "install to all targets in manifest")
+
+	cmd.AddCommand(allCmd)
+
 	return cmd
+}
+
+func runInstall(ctx *cli.AppContext, cmd *cobra.Command, presetName, sharedDir string, excludeFlag []string, noFlattenFlag bool, targetFlag string, allTargetsFlag bool) error {
+	wd, err := resolveWorkdir(ctx, cmd)
+	if err != nil {
+		return err
+	}
+
+	shared := sharedDir
+	if shared == "" {
+		shared = core.DefaultSharedDir()
+	}
+	pkgPath := filepath.Join(shared, presetName)
+
+	info, statErr := os.Stat(pkgPath)
+	isPackage := statErr == nil && info.IsDir()
+
+	var m *manifest.Manifest
+	if isPackage {
+		m, err = manifest.Load(pkgPath)
+		if err != nil {
+			// Manifest load errors are non-fatal; proceed without it
+			m = nil
+		}
+	}
+
+	var targets []string
+	if allTargetsFlag && m != nil && len(m.Targets) > 0 {
+		targets = m.Targets
+	} else {
+		targets = []string{targetFlag}
+	}
+
+	effectiveExcludes := append([]string{}, excludeFlag...)
+	if m != nil && len(m.Exclude) > 0 {
+		effectiveExcludes = append(effectiveExcludes, m.Exclude...)
+	}
+
+	for _, tgt := range targets {
+		transformer, err := ctx.Transformer(tgt)
+		if err != nil {
+			return err
+		}
+
+		var strategy core.InstallStrategy
+
+		if isPackage {
+			if transformer.Target() == "cursor" && (core.UseSymlink() || core.WantGNUStow()) {
+				strategy, err = core.InstallPackage(wd, presetName, effectiveExcludes, noFlattenFlag)
+				if err != nil {
+					return fmt.Errorf("install to %s failed: %w", tgt, err)
+				}
+			} else {
+				strategy, err = installPackageWithTransformer(wd, pkgPath, presetName, transformer, effectiveExcludes, noFlattenFlag)
+				if err != nil {
+					return fmt.Errorf("install to %s failed: %w", tgt, err)
+				}
+			}
+		} else {
+			strategy, err = installPresetWithTransformer(wd, pkgPath, presetName, transformer)
+			if err != nil {
+				return fmt.Errorf("install to %s failed: %w", tgt, err)
+			}
+		}
+
+		if transformer.Target() == "cursor" {
+			if ui := ctx.Messenger(); ui != nil {
+				ui.Info("Install method: %s\n", strategy)
+			}
+		}
+
+		if ui := ctx.Messenger(); ui != nil {
+			ui.Success("✅ Installed %q to %s\n", presetName, transformer.OutputDir())
+		}
+	}
+
+	return nil
 }
 
 // installPackageWithTransformer installs a package directory using the specified transformer.
