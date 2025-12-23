@@ -71,10 +71,12 @@ Examples:
 				}
 				return nil
 			}
+			first := true
 			for _, name := range pkgs {
-				if err := runInstall(ctx, cmd, name, shared, excludeAllFlag, noFlattenAllFlag, targetAllFlag, allTargetsAllFlag); err != nil {
+				if err := runInstallInternal(ctx, cmd, name, shared, excludeAllFlag, noFlattenAllFlag, targetAllFlag, allTargetsAllFlag, first); err != nil {
 					return err
 				}
+				first = false
 			}
 			return nil
 		},
@@ -91,6 +93,10 @@ Examples:
 }
 
 func runInstall(ctx *cli.AppContext, cmd *cobra.Command, presetName, sharedDir string, excludeFlag []string, noFlattenFlag bool, targetFlag string, allTargetsFlag bool) error {
+	return runInstallInternal(ctx, cmd, presetName, sharedDir, excludeFlag, noFlattenFlag, targetFlag, allTargetsFlag, true)
+}
+
+func runInstallInternal(ctx *cli.AppContext, cmd *cobra.Command, presetName, sharedDir string, excludeFlag []string, noFlattenFlag bool, targetFlag string, allTargetsFlag, showInstallMethod bool) error {
 	wd, err := resolveWorkdir(ctx, cmd)
 	if err != nil {
 		return err
@@ -153,7 +159,7 @@ func runInstall(ctx *cli.AppContext, cmd *cobra.Command, presetName, sharedDir s
 			}
 		}
 
-		if transformer.Target() == "cursor" {
+		if transformer.Target() == "cursor" && showInstallMethod {
 			if ui := ctx.Messenger(); ui != nil {
 				ui.Info("Install method: %s\n", strategy)
 			}
