@@ -3,6 +3,13 @@
 [![semantic versioning](https://img.shields.io/badge/semantic%20versioning-2.0.0-green.svg)](https://semver.org)
 > All notable changes to this project will be documented in this file
 
+## [0.8.0](https://github.com/ZanzyTHEbar/cursor-rules/compare/v0.7.1...v0.8.0) (2025-12-23)
+
+### 🍕 Features
+
+* **install:** add all subcommand ([9c8dc7b](https://github.com/ZanzyTHEbar/cursor-rules/commit/9c8dc7b08effec9ed75282ce0dd0f5bcd618e89c))
+* add structured rules tree listing ([cec6298](https://github.com/ZanzyTHEbar/cursor-rules/commit/cec6298626ed39ef4109a3dc342afdec86616e5d))
+
 ## [0.7.1](https://github.com/ZanzyTHEbar/cursor-rules/compare/v0.7.0...v0.7.1) (2025-11-13)
 
 ### 🧑‍💻 Code Refactoring
