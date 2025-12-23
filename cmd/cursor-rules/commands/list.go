@@ -2,8 +2,10 @@ package commands
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/ZanzyTHEbar/cursor-rules/cli"
+	cfgpkg "github.com/ZanzyTHEbar/cursor-rules/internal/config"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/core"
 	"github.com/spf13/cobra"
 )
@@ -12,7 +14,7 @@ import (
 func NewListCmd(ctx *cli.AppContext) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
-		Short: "List installed presets in current project",
+		Short: "List rules in the configured shared directory",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			var ui cli.Messenger
 			if ctx != nil {
@@ -27,42 +29,23 @@ func NewListCmd(ctx *cli.AppContext) *cobra.Command {
 				fmt.Fprintf(out, format, args...)
 			}
 
-			var wd string
+			cfgPath := ""
 			if ctx != nil && ctx.Viper != nil {
-				wd = ctx.Viper.GetString("workdir")
+				cfgPath = ctx.Viper.ConfigFileUsed()
 			}
-			if wd == "" {
-				w, err := cmd.Root().Flags().GetString("workdir")
-				if err != nil {
-					return fmt.Errorf("failed to get workdir flag: %w", err)
-				}
-				if w == "" {
-					var err error
-					w, err = core.WorkingDir()
-					if err != nil {
-						return fmt.Errorf("failed to get working directory: %w", err)
-					}
-				}
-				wd = w
+			cfg, _ := cfgpkg.LoadConfig(cfgPath)
+
+			sharedDir := core.DefaultSharedDir()
+			if os.Getenv("CURSOR_RULES_DIR") == "" && cfg != nil && cfg.SharedDir != "" {
+				sharedDir = cfg.SharedDir
 			}
-			presets, err := core.ListProjectPresets(wd)
+
+			tree, err := core.BuildRulesTree(sharedDir)
 			if err != nil {
 				return err
 			}
-			for _, p := range presets {
-				info("%s\n", p)
-			}
 
-			// Also list custom commands if present
-			cmds, err := core.ListProjectCommands(wd)
-			if err == nil {
-				if len(cmds) > 0 {
-					info("\ncommands:\n")
-					for _, c := range cmds {
-						info("%s\n", c)
-					}
-				}
-			}
+			info("%s\n", core.FormatRulesTree(tree))
 			return nil
 		},
 	}
