@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 // ListSharedPresets returns list of .mdc files found in sharedDir
@@ -36,11 +37,34 @@ func ListSharedPackages(sharedDir string) ([]string, error) {
 		return nil, err
 	}
 	for _, e := range entries {
-		if e.IsDir() {
+		if !e.IsDir() {
+			continue
+		}
+		if strings.HasPrefix(e.Name(), ".") {
+			continue
+		}
+		if hasRuleFiles(filepath.Join(sharedDir, e.Name())) {
 			out = append(out, e.Name())
 		}
 	}
 	return out, nil
+}
+
+func hasRuleFiles(dir string) bool {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return false
+	}
+	for _, e := range entries {
+		if e.IsDir() {
+			continue
+		}
+		ext := strings.ToLower(filepath.Ext(e.Name()))
+		if ext == ".mdc" || ext == ".md" {
+			return true
+		}
+	}
+	return false
 }
 
 // SyncSharedRepo attempts to git pull if the sharedDir is a git repo.

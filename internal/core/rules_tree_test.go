@@ -22,6 +22,7 @@ func TestBuildRulesTreeAndFormat(t *testing.T) {
 	if err := os.MkdirAll(pkgB, 0o755); err != nil {
 		t.Fatalf("failed to create pkgB: %v", err)
 	}
+	writeFile(t, filepath.Join(pkgB, "b1.mdc"), "b1")
 
 	tree, err := BuildRulesTree(shared)
 	if err != nil {
@@ -50,7 +51,7 @@ func TestBuildRulesTreeAndFormat(t *testing.T) {
 		t.Fatalf("unexpected files in pkgA: %+v", tree.Packages[0].Files)
 	}
 
-	if tree.Packages[1].Name != "pkgB" || len(tree.Packages[1].Files) != 0 {
+	if tree.Packages[1].Name != "pkgB" || len(tree.Packages[1].Files) != 1 {
 		t.Fatalf("unexpected pkgB contents: %+v", tree.Packages[1])
 	}
 
@@ -64,7 +65,7 @@ packages:
   │  ├─ file1.mdc
   │  └─ nested/inner.mdc
   └─ pkgB/
-      (no rule files)`
+      └─ b1.mdc`
 
 	if got != expected {
 		t.Fatalf("formatted tree mismatch:\n--- got ---\n%s\n--- want ---\n%s", got, expected)

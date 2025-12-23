@@ -289,6 +289,17 @@ func transformAndWriteFile(
 		return fmt.Errorf("marshal %s: %w", srcPath, err)
 	}
 
+	// If we are in "copy" mode but a previous install left a symlink in place,
+	// remove it so we don't keep writing through the symlink (which would leave
+	// the filesystem state inconsistent with the reported install method).
+	if info, statErr := os.Lstat(outPath); statErr == nil {
+		if info.Mode()&os.ModeSymlink != 0 {
+			if rmErr := os.Remove(outPath); rmErr != nil {
+				return fmt.Errorf("remove existing symlink %s: %w", outPath, rmErr)
+			}
+		}
+	}
+
 	// Idempotent write (hash check)
 	existing, readErr := os.ReadFile(outPath)
 	if readErr == nil && bytes.Equal(existing, output) {

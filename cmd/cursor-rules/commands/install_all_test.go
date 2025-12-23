@@ -30,6 +30,14 @@ func TestInstallAllInstallsAllPackages(t *testing.T) {
 		t.Fatalf("failed to write pkgB/b1.mdc: %v", err)
 	}
 
+	// dot directory should be ignored
+	if err := os.MkdirAll(filepath.Join(shared, ".git"), 0o755); err != nil {
+		t.Fatalf("failed to create .git: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(shared, ".git", "config"), []byte("noop"), 0o644); err != nil {
+		t.Fatalf("failed to write .git/config: %v", err)
+	}
+
 	workdir := t.TempDir()
 	v := viper.New()
 	v.Set("workdir", workdir)
@@ -44,6 +52,15 @@ func TestInstallAllInstallsAllPackages(t *testing.T) {
 
 	expectExists(t, filepath.Join(workdir, ".cursor", "rules", "a1.mdc"))
 	expectExists(t, filepath.Join(workdir, ".cursor", "rules", "b1.mdc"))
+
+	// ensure no stray files from ignored dirs
+	files, err := os.ReadDir(filepath.Join(workdir, ".cursor", "rules"))
+	if err != nil {
+		t.Fatalf("read rules dir: %v", err)
+	}
+	if len(files) != 2 {
+		t.Fatalf("expected only 2 files installed, got %d", len(files))
+	}
 }
 
 func expectExists(t *testing.T, path string) {
