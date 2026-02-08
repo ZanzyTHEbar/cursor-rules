@@ -7,7 +7,7 @@ import (
 )
 
 func TestInstallAndRemoveCommand(t *testing.T) {
-	// create temp shared dir
+	// create temp command dir
 	sharedDir := t.TempDir()
 
 	// create sample command file
@@ -20,10 +20,10 @@ func TestInstallAndRemoveCommand(t *testing.T) {
 	// create temp project dir
 	proj := t.TempDir()
 
-	// override DefaultSharedDir via env so shared dir used is our temp sharedDir
-	old := os.Getenv("CURSOR_RULES_DIR")
-	os.Setenv("CURSOR_RULES_DIR", sharedDir)
-	defer os.Setenv("CURSOR_RULES_DIR", old)
+	// override DefaultPackageDir via env so package dir used is our temp dir
+	old := os.Getenv("CURSOR_RULES_PACKAGE_DIR")
+	os.Setenv("CURSOR_RULES_PACKAGE_DIR", sharedDir)
+	defer os.Setenv("CURSOR_RULES_PACKAGE_DIR", old)
 
 	// Test InstallCommand
 	if err := InstallCommand(proj, cmdName); err != nil {

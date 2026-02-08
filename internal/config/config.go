@@ -3,14 +3,13 @@ package config
 import (
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 
 	"github.com/spf13/viper"
 )
 
 type Config struct {
-	SharedDir  string
+	PackageDir string
 	Watch      bool
 	AutoApply  bool
 	EnableStow bool
@@ -26,16 +25,15 @@ func LoadConfig(cfgFile string) (*Config, error) {
 	if cfgFile != "" {
 		v.SetConfigFile(cfgFile)
 	} else {
-		home, err := os.UserHomeDir()
-		if err == nil && home != "" {
-			v.AddConfigPath(filepath.Join(home, ".cursor", "rules"))
+		if cfgDir := DefaultConfigDir(); cfgDir != "" {
+			v.AddConfigPath(cfgDir)
 		}
 		v.SetConfigName("config")
 		v.SetConfigType("yaml")
 	}
 
 	// defaults
-	v.SetDefault("sharedDir", filepath.Join(os.Getenv("HOME"), ".cursor", "rules"))
+	v.SetDefault("packageDir", DefaultPackageDir())
 	v.SetDefault("watch", false)
 	v.SetDefault("autoApply", false)
 	v.SetDefault("enableStow", false)
@@ -45,7 +43,7 @@ func LoadConfig(cfgFile string) (*Config, error) {
 	if err := v.ReadInConfig(); err != nil {
 		// if not found, return defaults
 		cfg := &Config{
-			SharedDir:  v.GetString("sharedDir"),
+			PackageDir: v.GetString("packageDir"),
 			Watch:      v.GetBool("watch"),
 			AutoApply:  v.GetBool("autoApply"),
 			EnableStow: v.GetBool("enableStow"),
@@ -57,7 +55,7 @@ func LoadConfig(cfgFile string) (*Config, error) {
 	}
 
 	cfg := &Config{
-		SharedDir:  v.GetString("sharedDir"),
+		PackageDir: v.GetString("packageDir"),
 		Watch:      v.GetBool("watch"),
 		AutoApply:  v.GetBool("autoApply"),
 		EnableStow: v.GetBool("enableStow"),
@@ -76,15 +74,6 @@ func enableStowIfRequested(cfg *Config) {
 	if _, err := exec.LookPath("stow"); err == nil {
 		_ = os.Setenv("CURSOR_RULES_USE_GNUSTOW", "1")
 	}
-}
-
-// DefaultConfigPath returns the standard config file path in the user's home directory.
-func DefaultConfigPath() string {
-	home, err := os.UserHomeDir()
-	if err != nil || home == "" {
-		return ""
-	}
-	return filepath.Join(home, ".cursor", "rules", "config.yaml")
 }
 
 // NormalizeLogLevel coerces any provided level string into the supported set.

@@ -26,9 +26,9 @@ alwaysApply: true
 # preset for $PRESET
 EOF
 
-# don't create a git repo here; SyncSharedRepo will be a no-op if not a git repo
+# don't create a git repo here; SyncPackageRepo will be a no-op if not a git repo
 
-export CURSOR_RULES_DIR="$SHARED_DIR"
+export CURSOR_RULES_PACKAGE_DIR="$SHARED_DIR"
 
 echo "Syncing shared presets (should list presets)"
 "$BIN" sync
@@ -66,7 +66,7 @@ YML
 # create config enabling watch
 CFG=$(mktemp)
 cat > "$CFG" <<YAML
-sharedDir: "$SHARED_DIR"
+packageDir: "$SHARED_DIR"
 watch: true
 autoApply: true
 presets: []

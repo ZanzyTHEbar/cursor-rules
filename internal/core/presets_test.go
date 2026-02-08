@@ -9,16 +9,16 @@ import (
 )
 
 func TestApplyRemoveListInstall(t *testing.T) {
-	// create temp shared dir
-	sharedDir, err := os.MkdirTemp("", "shared-")
+	// create temp package dir
+	packageDir, err := os.MkdirTemp("", "package-")
 	if err != nil {
-		t.Fatalf("failed to create shared dir: %v", err)
+		t.Fatalf("failed to create package dir: %v", err)
 	}
-	defer os.RemoveAll(sharedDir)
+	defer os.RemoveAll(packageDir)
 
 	// create a sample preset file
 	presetName := "frontend"
-	presetFile := filepath.Join(sharedDir, presetName+".mdc")
+	presetFile := filepath.Join(packageDir, presetName+".mdc")
 	if err := os.WriteFile(presetFile, []byte("# sample preset"), 0o644); err != nil {
 		t.Fatalf("failed to write preset: %v", err)
 	}
@@ -30,17 +30,17 @@ func TestApplyRemoveListInstall(t *testing.T) {
 	}
 	defer os.RemoveAll(projectDir)
 
-	// set env override so DefaultSharedDir uses our temp sharedDir
-	old := os.Getenv("CURSOR_RULES_DIR")
-	os.Setenv("CURSOR_RULES_DIR", sharedDir)
-	defer os.Setenv("CURSOR_RULES_DIR", old)
+	// set env override so DefaultPackageDir uses our temp packageDir
+	old := os.Getenv("CURSOR_RULES_PACKAGE_DIR")
+	os.Setenv("CURSOR_RULES_PACKAGE_DIR", packageDir)
+	defer os.Setenv("CURSOR_RULES_PACKAGE_DIR", old)
 
 	// Test ApplyPresetToProject idempotency
-	if _, err := ApplyPresetToProject(projectDir, presetName, sharedDir); err != nil {
+	if _, err := ApplyPresetToProject(projectDir, presetName, packageDir); err != nil {
 		t.Fatalf("ApplyPresetToProject failed: %v", err)
 	}
 	// apply again - should be idempotent
-	if _, err := ApplyPresetToProject(projectDir, presetName, sharedDir); err != nil {
+	if _, err := ApplyPresetToProject(projectDir, presetName, packageDir); err != nil {
 		t.Fatalf("ApplyPresetToProject idempotent failed: %v", err)
 	}
 
@@ -50,17 +50,17 @@ func TestApplyRemoveListInstall(t *testing.T) {
 		t.Fatalf("expected stub file at %s, err: %v", stub, err)
 	}
 
-	// Test ListSharedPresets
-	presets, err := ListSharedPresets(sharedDir)
+	// Test ListPackagePresets
+	presets, err := ListPackagePresets(packageDir)
 	if err != nil {
-		t.Fatalf("ListSharedPresets failed: %v", err)
+		t.Fatalf("ListPackagePresets failed: %v", err)
 	}
 	found := slices.Contains(presets, presetName+".mdc")
 	if !found {
-		t.Fatalf("preset %s not found in ListSharedPresets output", presetName)
+		t.Fatalf("preset %s not found in ListPackagePresets output", presetName)
 	}
 
-	// Test InstallPreset (uses DefaultSharedDir -> CURSOR_RULES_DIR)
+	// Test InstallPreset (uses DefaultPackageDir -> CURSOR_RULES_PACKAGE_DIR)
 	if err := InstallPreset(projectDir, presetName); err != nil {
 		t.Fatalf("InstallPreset failed: %v", err)
 	}
@@ -79,16 +79,16 @@ func TestApplyRemoveListInstall(t *testing.T) {
 }
 
 func TestApplyWithSymlinkPreference(t *testing.T) {
-	// create temp shared dir
-	sharedDir, err := os.MkdirTemp("", "shared-")
+	// create temp package dir
+	packageDir, err := os.MkdirTemp("", "package-")
 	if err != nil {
-		t.Fatalf("failed to create shared dir: %v", err)
+		t.Fatalf("failed to create package dir: %v", err)
 	}
-	defer os.RemoveAll(sharedDir)
+	defer os.RemoveAll(packageDir)
 
 	// create a sample preset file
 	presetName := "frontend"
-	presetFile := filepath.Join(sharedDir, presetName+".mdc")
+	presetFile := filepath.Join(packageDir, presetName+".mdc")
 	if err := os.WriteFile(presetFile, []byte("# sample preset"), 0o644); err != nil {
 		t.Fatalf("failed to write preset: %v", err)
 	}
@@ -100,10 +100,10 @@ func TestApplyWithSymlinkPreference(t *testing.T) {
 	}
 	defer os.RemoveAll(projectDir)
 
-	// set env override so DefaultSharedDir uses our temp sharedDir
-	old := os.Getenv("CURSOR_RULES_DIR")
-	os.Setenv("CURSOR_RULES_DIR", sharedDir)
-	defer os.Setenv("CURSOR_RULES_DIR", old)
+	// set env override so DefaultPackageDir uses our temp packageDir
+	old := os.Getenv("CURSOR_RULES_PACKAGE_DIR")
+	os.Setenv("CURSOR_RULES_PACKAGE_DIR", packageDir)
+	defer os.Setenv("CURSOR_RULES_PACKAGE_DIR", old)
 
 	// request symlink behavior
 	oldSymlink := os.Getenv("CURSOR_RULES_SYMLINK")
@@ -111,7 +111,7 @@ func TestApplyWithSymlinkPreference(t *testing.T) {
 	defer os.Setenv("CURSOR_RULES_SYMLINK", oldSymlink)
 
 	// Apply preset
-	if _, err := ApplyPresetToProject(projectDir, presetName, sharedDir); err != nil {
+	if _, err := ApplyPresetToProject(projectDir, presetName, packageDir); err != nil {
 		t.Fatalf("ApplyPresetToProject with symlink failed: %v", err)
 	}
 
@@ -136,16 +136,16 @@ func TestApplyWithSymlinkPreference(t *testing.T) {
 }
 
 func TestInstallPresetWithGNUStowRequestCreatesSymlink(t *testing.T) {
-	sharedDir := t.TempDir()
+	packageDir := t.TempDir()
 	presetName := "frontend"
-	presetFile := filepath.Join(sharedDir, presetName+".mdc")
+	presetFile := filepath.Join(packageDir, presetName+".mdc")
 	if err := os.WriteFile(presetFile, []byte("# sample preset"), 0o644); err != nil {
 		t.Fatalf("failed to write preset: %v", err)
 	}
 
 	projectDir := t.TempDir()
 
-	t.Setenv("CURSOR_RULES_DIR", sharedDir)
+	t.Setenv("CURSOR_RULES_PACKAGE_DIR", packageDir)
 	t.Setenv("CURSOR_RULES_USE_GNUSTOW", "1")
 	t.Setenv("CURSOR_RULES_SYMLINK", "")
 
@@ -172,10 +172,10 @@ func TestInstallPresetWithGNUStowRequestCreatesSymlink(t *testing.T) {
 }
 
 func TestInstallPackageWithIgnoreAndFlatten(t *testing.T) {
-	// Setup temp shared dir
-	sharedDir := t.TempDir()
+	// Setup temp package dir
+	packageDir := t.TempDir()
 	// create package dir
-	pkg := filepath.Join(sharedDir, "pkg")
+	pkg := filepath.Join(packageDir, "pkg")
 	if err := os.MkdirAll(pkg, 0o755); err != nil {
 		t.Fatalf("mkdir pkg failed: %v", err)
 	}
@@ -194,9 +194,9 @@ func TestInstallPackageWithIgnoreAndFlatten(t *testing.T) {
 		t.Fatalf("write ignore: %v", err)
 	}
 
-	// override DefaultSharedDir via env
-	os.Setenv("CURSOR_RULES_DIR", sharedDir)
-	defer os.Unsetenv("CURSOR_RULES_DIR")
+	// override DefaultPackageDir via env
+	os.Setenv("CURSOR_RULES_PACKAGE_DIR", packageDir)
+	defer os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
 
 	// target project
 	proj := t.TempDir()
@@ -216,8 +216,8 @@ func TestInstallPackageWithIgnoreAndFlatten(t *testing.T) {
 }
 
 func TestInstallPackageWithGNUStowRequestCreatesSymlinks(t *testing.T) {
-	sharedDir := t.TempDir()
-	pkgDir := filepath.Join(sharedDir, "pkg")
+	packageDir := t.TempDir()
+	pkgDir := filepath.Join(packageDir, "pkg")
 	if err := os.MkdirAll(pkgDir, 0o755); err != nil {
 		t.Fatalf("mkdir pkg failed: %v", err)
 	}
@@ -228,7 +228,7 @@ func TestInstallPackageWithGNUStowRequestCreatesSymlinks(t *testing.T) {
 
 	projectDir := t.TempDir()
 
-	t.Setenv("CURSOR_RULES_DIR", sharedDir)
+	t.Setenv("CURSOR_RULES_PACKAGE_DIR", packageDir)
 	t.Setenv("CURSOR_RULES_USE_GNUSTOW", "1")
 	t.Setenv("CURSOR_RULES_SYMLINK", "")
 
@@ -255,11 +255,11 @@ func TestInstallPackageWithGNUStowRequestCreatesSymlinks(t *testing.T) {
 }
 
 func TestInstallNestedPackage(t *testing.T) {
-	// Setup temp shared dir with nested package structure
-	sharedDir := t.TempDir()
+	// Setup temp package dir with nested package structure
+	packageDir := t.TempDir()
 
 	// Create nested package: frontend/react
-	nestedPkg := filepath.Join(sharedDir, "frontend", "react")
+	nestedPkg := filepath.Join(packageDir, "frontend", "react")
 	if err := os.MkdirAll(nestedPkg, 0o755); err != nil {
 		t.Fatalf("mkdir nested package failed: %v", err)
 	}
@@ -281,9 +281,9 @@ func TestInstallNestedPackage(t *testing.T) {
 		t.Fatalf("write patterns.mdc: %v", err)
 	}
 
-	// override DefaultSharedDir via env
-	os.Setenv("CURSOR_RULES_DIR", sharedDir)
-	defer os.Unsetenv("CURSOR_RULES_DIR")
+	// override DefaultPackageDir via env
+	os.Setenv("CURSOR_RULES_PACKAGE_DIR", packageDir)
+	defer os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
 
 	// target project
 	proj := t.TempDir()
@@ -325,11 +325,11 @@ func TestInstallNestedPackage(t *testing.T) {
 }
 
 func TestInstallNestedPackageDeepNesting(t *testing.T) {
-	// Setup temp shared dir with deeply nested package structure
-	sharedDir := t.TempDir()
+	// Setup temp package dir with deeply nested package structure
+	packageDir := t.TempDir()
 
 	// Create deeply nested package: backend/nodejs/express/middleware
-	deepNestedPkg := filepath.Join(sharedDir, "backend", "nodejs", "express", "middleware")
+	deepNestedPkg := filepath.Join(packageDir, "backend", "nodejs", "express", "middleware")
 	if err := os.MkdirAll(deepNestedPkg, 0o755); err != nil {
 		t.Fatalf("mkdir deep nested package failed: %v", err)
 	}
@@ -342,9 +342,9 @@ func TestInstallNestedPackageDeepNesting(t *testing.T) {
 		t.Fatalf("write logging.mdc: %v", err)
 	}
 
-	// override DefaultSharedDir via env
-	os.Setenv("CURSOR_RULES_DIR", sharedDir)
-	defer os.Unsetenv("CURSOR_RULES_DIR")
+	// override DefaultPackageDir via env
+	os.Setenv("CURSOR_RULES_PACKAGE_DIR", packageDir)
+	defer os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
 
 	// target project
 	proj := t.TempDir()
@@ -364,11 +364,11 @@ func TestInstallNestedPackageDeepNesting(t *testing.T) {
 }
 
 func TestInstallPackageRegularVsNested(t *testing.T) {
-	// Setup temp shared dir with both regular and nested packages
-	sharedDir := t.TempDir()
+	// Setup temp package dir with both regular and nested packages
+	packageDir := t.TempDir()
 
 	// Create regular package: frontend
-	regularPkg := filepath.Join(sharedDir, "frontend")
+	regularPkg := filepath.Join(packageDir, "frontend")
 	if err := os.MkdirAll(regularPkg, 0o755); err != nil {
 		t.Fatalf("mkdir regular package failed: %v", err)
 	}
@@ -377,7 +377,7 @@ func TestInstallPackageRegularVsNested(t *testing.T) {
 	}
 
 	// Create nested package: frontend/react
-	nestedPkg := filepath.Join(sharedDir, "frontend", "react")
+	nestedPkg := filepath.Join(packageDir, "frontend", "react")
 	if err := os.MkdirAll(nestedPkg, 0o755); err != nil {
 		t.Fatalf("mkdir nested package failed: %v", err)
 	}
@@ -385,9 +385,9 @@ func TestInstallPackageRegularVsNested(t *testing.T) {
 		t.Fatalf("write nested.mdc: %v", err)
 	}
 
-	// override DefaultSharedDir via env
-	os.Setenv("CURSOR_RULES_DIR", sharedDir)
-	defer os.Unsetenv("CURSOR_RULES_DIR")
+	// override DefaultPackageDir via env
+	os.Setenv("CURSOR_RULES_PACKAGE_DIR", packageDir)
+	defer os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
 
 	// target project
 	proj := t.TempDir()
@@ -423,14 +423,14 @@ func TestInstallPackageRegularVsNested(t *testing.T) {
 
 // Test the double extension bug fix - when user includes .mdc in preset name
 func TestInstallPresetWithExtensionInName(t *testing.T) {
-	sharedDir, err := os.MkdirTemp("", "shared-ext-")
+	packageDir, err := os.MkdirTemp("", "package-ext-")
 	if err != nil {
-		t.Fatalf("failed to create shared dir: %v", err)
+		t.Fatalf("failed to create package dir: %v", err)
 	}
-	defer os.RemoveAll(sharedDir)
+	defer os.RemoveAll(packageDir)
 
-	// Create a nested directory structure in shared dir
-	nestedDir := filepath.Join(sharedDir, "emissium", "behaviour")
+	// Create a nested directory structure in package dir
+	nestedDir := filepath.Join(packageDir, "emissium", "behaviour")
 	if err := os.MkdirAll(nestedDir, 0o755); err != nil {
 		t.Fatalf("failed to create nested dir: %v", err)
 	}
@@ -449,9 +449,9 @@ func TestInstallPresetWithExtensionInName(t *testing.T) {
 	defer os.RemoveAll(projectDir)
 
 	// Set env override
-	old := os.Getenv("CURSOR_RULES_DIR")
-	os.Setenv("CURSOR_RULES_DIR", sharedDir)
-	defer os.Setenv("CURSOR_RULES_DIR", old)
+	old := os.Getenv("CURSOR_RULES_PACKAGE_DIR")
+	os.Setenv("CURSOR_RULES_PACKAGE_DIR", packageDir)
+	defer os.Setenv("CURSOR_RULES_PACKAGE_DIR", old)
 
 	// Test 1: Install with .mdc extension (this was the bug)
 	presetWithExt := "emissium/behaviour/task-execution-rules.mdc"
@@ -499,14 +499,14 @@ func TestInstallPresetWithExtensionInName(t *testing.T) {
 
 // Test the directory creation bug fix - when preset has nested paths
 func TestInstallPresetWithNestedPaths(t *testing.T) {
-	sharedDir, err := os.MkdirTemp("", "shared-nested-")
+	packageDir, err := os.MkdirTemp("", "package-nested-")
 	if err != nil {
-		t.Fatalf("failed to create shared dir: %v", err)
+		t.Fatalf("failed to create package dir: %v", err)
 	}
-	defer os.RemoveAll(sharedDir)
+	defer os.RemoveAll(packageDir)
 
 	// Create deeply nested directory structure
-	deepNestedDir := filepath.Join(sharedDir, "company", "team", "backend", "api")
+	deepNestedDir := filepath.Join(packageDir, "company", "team", "backend", "api")
 	if err := os.MkdirAll(deepNestedDir, 0o755); err != nil {
 		t.Fatalf("failed to create deep nested dir: %v", err)
 	}
@@ -525,9 +525,9 @@ func TestInstallPresetWithNestedPaths(t *testing.T) {
 	defer os.RemoveAll(projectDir)
 
 	// Set env override
-	old := os.Getenv("CURSOR_RULES_DIR")
-	os.Setenv("CURSOR_RULES_DIR", sharedDir)
-	defer os.Setenv("CURSOR_RULES_DIR", old)
+	old := os.Getenv("CURSOR_RULES_PACKAGE_DIR")
+	os.Setenv("CURSOR_RULES_PACKAGE_DIR", packageDir)
+	defer os.Setenv("CURSOR_RULES_PACKAGE_DIR", old)
 
 	// Test installing preset with deeply nested path
 	nestedPresetPath := "company/team/backend/api/auth-middleware"

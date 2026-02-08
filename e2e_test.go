@@ -24,8 +24,8 @@ func TestE2ECompleteWorkflow(t *testing.T) {
 	createTestRules(t, tmpShared)
 
 	// Set environment
-	os.Setenv("CURSOR_RULES_DIR", tmpShared)
-	defer os.Unsetenv("CURSOR_RULES_DIR")
+	os.Setenv("CURSOR_RULES_PACKAGE_DIR", tmpShared)
+	defer os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
 
 	binary := "./bin/cursor-rules"
 	if _, err := os.Stat(binary); os.IsNotExist(err) {
@@ -125,8 +125,8 @@ func TestE2EMultiTargetWorkflow(t *testing.T) {
 	// Create package with manifest
 	createPackageWithManifest(t, tmpShared)
 
-	os.Setenv("CURSOR_RULES_DIR", tmpShared)
-	defer os.Unsetenv("CURSOR_RULES_DIR")
+	os.Setenv("CURSOR_RULES_PACKAGE_DIR", tmpShared)
+	defer os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
 
 	binary := "./bin/cursor-rules"
 	if _, err := os.Stat(binary); os.IsNotExist(err) {
@@ -192,7 +192,7 @@ func TestE2EErrorHandling(t *testing.T) {
 
 // Helper functions
 
-func createTestRules(t *testing.T, sharedDir string) {
+func createTestRules(t *testing.T, packageDir string) {
 	rules := map[string]string{
 		"frontend.mdc": `---
 description: "Frontend rules"
@@ -211,15 +211,15 @@ Use async/await.`,
 	}
 
 	for name, content := range rules {
-		path := filepath.Join(sharedDir, name)
+		path := filepath.Join(packageDir, name)
 		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
 			t.Fatalf("Failed to create rule %s: %v", name, err)
 		}
 	}
 }
 
-func createPackageWithManifest(t *testing.T, sharedDir string) {
-	pkgDir := filepath.Join(sharedDir, "fullstack")
+func createPackageWithManifest(t *testing.T, packageDir string) {
+	pkgDir := filepath.Join(packageDir, "fullstack")
 	os.MkdirAll(pkgDir, 0755)
 
 	manifest := `version: "1.0"

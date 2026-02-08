@@ -8,20 +8,21 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/ZanzyTHEbar/cursor-rules/internal/config"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/security"
 )
 
 var stubTmpl = `---
-description: "Shared preset: {{ .Preset }}"
+description: "Package preset: {{ .Preset }}"
 alwaysApply: true
 ---
 @file {{ .SourcePath }}
 `
 
 // InstallPreset writes a small stub .mdc in the project's .cursor/rules/
-// pointing to the shared preset under sharedDir (default: ~/.cursor/rules).
+// pointing to the package preset under packageDir (default: ~/.cursor/rules).
 func InstallPreset(projectRoot, preset string) error {
-	sharedDir := DefaultSharedDir()
+	packageDir := DefaultPackageDir()
 
 	// Normalize preset name: remove .mdc extension if present
 	normalizedPreset := strings.TrimSuffix(preset, ".mdc")
@@ -32,7 +33,7 @@ func InstallPreset(projectRoot, preset string) error {
 	}
 
 	// Safely construct source path
-	src, err := security.SafeJoin(sharedDir, normalizedPreset+".mdc")
+	src, err := security.SafeJoin(packageDir, normalizedPreset+".mdc")
 	if err != nil {
 		return fmt.Errorf("invalid preset path: %w", err)
 	}
@@ -40,7 +41,7 @@ func InstallPreset(projectRoot, preset string) error {
 	// If preset file not found, allow package-style layout when stow is enabled
 	if _, statErr := os.Stat(src); os.IsNotExist(statErr) {
 		if !(WantGNUStow() && func() bool {
-			d, joinErr := security.SafeJoin(sharedDir, normalizedPreset)
+			d, joinErr := security.SafeJoin(packageDir, normalizedPreset)
 			if joinErr != nil {
 				return false
 			}
@@ -64,7 +65,7 @@ func InstallPreset(projectRoot, preset string) error {
 
 	// If symlink/stow behavior requested, prefer that path
 	if UseSymlink() || WantGNUStow() {
-		_, err := ApplyPresetWithOptionalSymlink(projectRoot, normalizedPreset, sharedDir)
+		_, err := ApplyPresetWithOptionalSymlink(projectRoot, normalizedPreset, packageDir)
 		return err
 	}
 
@@ -88,39 +89,34 @@ func InstallPreset(projectRoot, preset string) error {
 	return AtomicWriteTemplate(destDir, dest, t, data, 0o644)
 }
 
-// DefaultSharedDir returns ~/.cursor/rules by default; environment overrides allowed.
-func DefaultSharedDir() string {
-	if v := os.Getenv("CURSOR_RULES_DIR"); v != "" {
+// DefaultPackageDir returns ~/.cursor/rules by default; environment overrides allowed.
+func DefaultPackageDir() string {
+	if v := strings.TrimSpace(os.Getenv(config.EnvPackageDir)); v != "" {
 		return v
 	}
-	home, err := os.UserHomeDir()
-	if err != nil || home == "" {
-		if env := os.Getenv("HOME"); env != "" {
-			return filepath.Join(env, ".cursor", "rules")
-		}
-		if cwd, cwdErr := os.Getwd(); cwdErr == nil && cwd != "" {
-			return filepath.Join(cwd, ".cursor", "rules")
-		}
-		return filepath.Join(".cursor", "rules")
-	}
-	return filepath.Join(home, ".cursor", "rules")
+	return config.DefaultPackageDir()
 }
 
-// InstallPackage installs an entire package directory from sharedDir into the project's
-// .cursor/rules. The package is a directory under sharedDir (e.g. "frontend" or "git").
+// InstallPackage installs an entire package directory from packageDir into the project's
+// .cursor/rules. The package is a directory under packageDir (e.g. "frontend" or "git").
 // It supports excluding specific files via the excludes slice and respects a
 // .cursor-rules-ignore file placed inside the package which lists patterns to skip.
 // By default, packages are flattened into .cursor/rules/. Use noFlatten=true to preserve structure.
 func InstallPackage(projectRoot, packageName string, excludes []string, noFlatten bool) (InstallStrategy, error) {
+	return InstallPackageFromPackageDir(projectRoot, DefaultPackageDir(), packageName, excludes, noFlatten)
+}
+
+// InstallPackageFromPackageDir installs a package directory from an explicit packageDir into the project's
+// .cursor/rules. This is the same behavior as InstallPackage, but allows callers (like the CLI) to
+// honor config-provided package directories without relying on environment variables.
+func InstallPackageFromPackageDir(projectRoot, packageDir, packageName string, excludes []string, noFlatten bool) (InstallStrategy, error) {
 	// Validate package name for security
 	if err := security.ValidatePackageName(packageName); err != nil {
 		return StrategyUnknown, fmt.Errorf("invalid package name: %w", err)
 	}
 
-	sharedDir := DefaultSharedDir()
-
 	// Safely construct package directory path
-	pkgDir, err := security.SafeJoin(sharedDir, packageName)
+	pkgDir, err := security.SafeJoin(packageDir, packageName)
 	if err != nil {
 		return StrategyUnknown, fmt.Errorf("invalid package path: %w", err)
 	}

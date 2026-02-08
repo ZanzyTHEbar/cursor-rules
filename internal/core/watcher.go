@@ -10,16 +10,16 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-// StartWatcher watches sharedDir recursively for changes and optionally auto-applies presets to projects.
+// StartWatcher watches packageDir recursively for changes and optionally auto-applies presets to projects.
 // It runs until ctx is canceled.
-func StartWatcher(ctx context.Context, sharedDir string, autoApply bool) error {
+func StartWatcher(ctx context.Context, packageDir string, autoApply bool) error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return err
 	}
 
 	// add root and subdirectories
-	if err := addRecursive(watcher, sharedDir); err != nil {
+	if err := addRecursive(watcher, packageDir); err != nil {
 		_ = watcher.Close() // #nosec G104 - error path, already returning err
 		return err
 	}
@@ -77,12 +77,12 @@ func StartWatcher(ctx context.Context, sharedDir string, autoApply bool) error {
 						continue
 					}
 
-					presets, err := ListSharedPresets(sharedDir)
+					presets, err := ListPackagePresets(packageDir)
 					if err != nil {
 						slog.Warn("watcher list presets error", "error", err)
 						continue
 					}
-					mapping, mapErr := LoadWatcherMapping(sharedDir)
+					mapping, mapErr := LoadWatcherMapping(packageDir)
 					if mapErr != nil {
 						slog.Warn("failed to load watcher mapping", "error", mapErr)
 						mapping = nil
@@ -93,7 +93,7 @@ func StartWatcher(ctx context.Context, sharedDir string, autoApply bool) error {
 						if mapping != nil {
 							if projects, ok := mapping[name]; ok {
 								for _, proj := range projects {
-									strategy, err := ApplyPresetToProject(proj, name, sharedDir)
+									strategy, err := ApplyPresetToProject(proj, name, packageDir)
 									if err != nil {
 										slog.Warn("watcher failed to apply preset", "preset", name, "project", proj, "error", err)
 									} else {

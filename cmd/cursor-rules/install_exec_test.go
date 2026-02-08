@@ -10,8 +10,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	"github.com/ZanzyTHEbar/cursor-rules/cli"
-	"github.com/ZanzyTHEbar/cursor-rules/cmd/cursor-rules/commands"
+	"github.com/ZanzyTHEbar/cursor-rules/internal/cli"
+	"github.com/ZanzyTHEbar/cursor-rules/internal/cli/commands"
 )
 
 func executeWithCapturedOutput(root *cobra.Command, ctx *cli.AppContext, args ...string) (string, error) {
@@ -27,10 +27,10 @@ func executeWithCapturedOutput(root *cobra.Command, ctx *cli.AppContext, args ..
 }
 
 func TestInstallCommandCreatesStub(t *testing.T) {
-	// prepare shared dir with a preset file
-	shared := t.TempDir()
+	// prepare package dir with a preset file
+	packageDir := t.TempDir()
 	presetName := "example"
-	presetFile := filepath.Join(shared, presetName+".mdc")
+	presetFile := filepath.Join(packageDir, presetName+".mdc")
 	presetContent := `---
 description: "Example preset"
 apply_to: "**/*.ts"
@@ -40,11 +40,11 @@ apply_to: "**/*.ts"
 	if err := os.WriteFile(presetFile, []byte(presetContent), 0o644); err != nil {
 		t.Fatalf("write preset: %v", err)
 	}
-	// set env so core.DefaultSharedDir() will pick this up
-	if err := os.Setenv("CURSOR_RULES_DIR", shared); err != nil {
+	// set env so core.DefaultPackageDir() will pick this up
+	if err := os.Setenv("CURSOR_RULES_PACKAGE_DIR", packageDir); err != nil {
 		t.Fatalf("setenv: %v", err)
 	}
-	t.Cleanup(func() { _ = os.Unsetenv("CURSOR_RULES_DIR") })
+	t.Cleanup(func() { _ = os.Unsetenv("CURSOR_RULES_PACKAGE_DIR") })
 
 	// prepare project workdir
 	project := t.TempDir()
@@ -72,9 +72,9 @@ apply_to: "**/*.ts"
 }
 
 func TestInstallCommandCopyReplacesSymlink(t *testing.T) {
-	shared := t.TempDir()
+	packageDir := t.TempDir()
 	presetName := "example"
-	presetFile := filepath.Join(shared, presetName+".mdc")
+	presetFile := filepath.Join(packageDir, presetName+".mdc")
 	presetContent := `---
 description: "Example preset"
 apply_to: "**/*.ts"
@@ -85,7 +85,7 @@ hello
 		t.Fatalf("write preset: %v", err)
 	}
 
-	t.Setenv("CURSOR_RULES_DIR", shared)
+	t.Setenv("CURSOR_RULES_PACKAGE_DIR", packageDir)
 	t.Setenv("CURSOR_RULES_USE_GNUSTOW", "")
 
 	project := t.TempDir()

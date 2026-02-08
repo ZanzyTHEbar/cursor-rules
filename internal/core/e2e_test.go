@@ -10,14 +10,14 @@ import (
 
 // Simple end-to-end test for install -> effective -> remove flows
 func TestE2EInstallApplyRemove(t *testing.T) {
-	sharedDir, err := os.MkdirTemp("", "shared-e2e-")
+	packageDir, err := os.MkdirTemp("", "package-e2e-")
 	if err != nil {
-		t.Fatalf("failed to create shared dir: %v", err)
+		t.Fatalf("failed to create package dir: %v", err)
 	}
-	defer os.RemoveAll(sharedDir)
+	defer os.RemoveAll(packageDir)
 
 	presetName := "e2e"
-	presetFile := filepath.Join(sharedDir, presetName+".mdc")
+	presetFile := filepath.Join(packageDir, presetName+".mdc")
 	if err := os.WriteFile(presetFile, []byte("# e2e preset"), 0o644); err != nil {
 		t.Fatalf("failed to write preset: %v", err)
 	}
@@ -29,7 +29,7 @@ func TestE2EInstallApplyRemove(t *testing.T) {
 	defer os.RemoveAll(projectDir)
 
 	// Apply preset via ApplyPresetToProject
-	if _, err := ApplyPresetToProject(projectDir, presetName, sharedDir); err != nil {
+	if _, err := ApplyPresetToProject(projectDir, presetName, packageDir); err != nil {
 		t.Fatalf("ApplyPresetToProject failed: %v", err)
 	}
 
@@ -49,14 +49,14 @@ func TestE2EInstallApplyRemove(t *testing.T) {
 }
 
 func TestWatcherAutoApplyMapping(t *testing.T) {
-	sharedDir, err := os.MkdirTemp("", "shared-watch-")
+	packageDir, err := os.MkdirTemp("", "package-watch-")
 	if err != nil {
-		t.Fatalf("failed to create shared dir: %v", err)
+		t.Fatalf("failed to create package dir: %v", err)
 	}
-	defer os.RemoveAll(sharedDir)
+	defer os.RemoveAll(packageDir)
 
 	presetName := "frontend"
-	presetFile := filepath.Join(sharedDir, presetName+".mdc")
+	presetFile := filepath.Join(packageDir, presetName+".mdc")
 	if err := os.WriteFile(presetFile, []byte("# watcher preset"), 0o644); err != nil {
 		t.Fatalf("failed to write preset: %v", err)
 	}
@@ -69,14 +69,14 @@ func TestWatcherAutoApplyMapping(t *testing.T) {
 
 	// write watcher-mapping.yaml
 	mapping := []byte("presets:\n  " + presetName + ":\n    - " + projDir + "\n")
-	if err := os.WriteFile(filepath.Join(sharedDir, "watcher-mapping.yaml"), mapping, 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(packageDir, "watcher-mapping.yaml"), mapping, 0o644); err != nil {
 		t.Fatalf("failed to write mapping: %v", err)
 	}
 
 	// start watcher with context
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	if err := StartWatcher(ctx, sharedDir, true); err != nil {
+	if err := StartWatcher(ctx, packageDir, true); err != nil {
 		t.Fatalf("failed to start watcher: %v", err)
 	}
 

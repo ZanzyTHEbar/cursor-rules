@@ -7,17 +7,19 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
+
+	"github.com/ZanzyTHEbar/cursor-rules/internal/config"
 )
 
-// DefaultSharedDirWithEnv returns a shared dir path based on an env var or a default name under the user's home.
-func DefaultSharedDirWithEnv(envVar, defaultName string) string {
-	// We prefer using the main DefaultSharedDir for cursor-rules.
-	if envVar == "CURSOR_RULES_DIR" || envVar == "CURSOR_COMMANDS_DIR" {
-		// If explicitly set, respect it; otherwise fall back to DefaultSharedDir
+// DefaultPackageDirWithEnv returns a package dir path based on an env var or a default name under the user's home.
+func DefaultPackageDirWithEnv(envVar, defaultName string) string {
+	// We prefer using the main DefaultPackageDir for cursor-rules.
+	if envVar == config.EnvPackageDir || envVar == "CURSOR_COMMANDS_DIR" {
+		// If explicitly set, respect it; otherwise fall back to DefaultPackageDir
 		if v := os.Getenv(envVar); v != "" {
 			return v
 		}
-		return DefaultSharedDir()
+		return DefaultPackageDir()
 	}
 	if v := os.Getenv(envVar); v != "" {
 		return v
@@ -35,11 +37,11 @@ func DefaultSharedDirWithEnv(envVar, defaultName string) string {
 	return filepath.Join(home, defaultName)
 }
 
-// InstallPackageGeneric installs an entire package directory from sharedDir into the project's
+// InstallPackageGeneric installs an entire package directory from packageDir into the project's
 // destRoot (.cursor/<subdir>). It supports excludes and a package-level ignore file name.
 // exts is a list of allowed file extensions (e.g. []string{".mdc",".md"}).
-func InstallPackageGeneric(projectRoot, sharedDir, packageName, destSubdir string, exts []string, ignoreFileName string, excludes []string, noFlatten bool) error {
-	pkgDir := filepath.Join(sharedDir, packageName)
+func InstallPackageGeneric(projectRoot, packageDir, packageName, destSubdir string, exts []string, ignoreFileName string, excludes []string, noFlatten bool) error {
+	pkgDir := filepath.Join(packageDir, packageName)
 	info, err := os.Stat(pkgDir)
 	if err != nil || !info.IsDir() {
 		return fmt.Errorf("package not found: %s", pkgDir)
@@ -118,7 +120,7 @@ func InstallPackageGeneric(projectRoot, sharedDir, packageName, destSubdir strin
 		}
 
 		// Delegate applying source to dest (stow/symlink or stub)
-		_, applyErr := ApplySourceToDest(sharedDir, path, dest, packageName)
+		_, applyErr := ApplySourceToDest(packageDir, path, dest, packageName)
 		return applyErr
 	})
 	if err != nil {
@@ -158,12 +160,12 @@ func AtomicWriteString(tmpDir, dest, content string, perm os.FileMode) error {
 
 // ApplySourceToDest attempts to apply a source file to dest using stow (packageName),
 // then symlink, and finally falls back to writing a stub that references the source.
-func ApplySourceToDest(sharedDir, src, dest, packageName string) (InstallStrategy, error) {
+func ApplySourceToDest(packageDir, src, dest, packageName string) (InstallStrategy, error) {
 	destDir := filepath.Dir(dest)
 	// Try GNU stow if requested
 	if WantGNUStow() && HasStow() {
-		// #nosec G204 - sharedDir, destDir, and packageName are validated before this call
-		cmd := exec.Command("stow", "-v", "-d", sharedDir, "-t", destDir, packageName)
+		// #nosec G204 - packageDir, destDir, and packageName are validated before this call
+		cmd := exec.Command("stow", "-v", "-d", packageDir, "-t", destDir, packageName)
 		if out, err := cmd.CombinedOutput(); err == nil {
 			_ = out
 			return StrategyStow, nil

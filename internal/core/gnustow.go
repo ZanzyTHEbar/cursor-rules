@@ -73,14 +73,14 @@ func CreateSymlink(src, dest string) error {
 // ApplyPresetWithOptionalSymlink applies a preset either by creating a stub file (default)
 // or by creating a symlink if the environment requests it. If GNU Stow is requested via
 // CURSOR_RULES_USE_GNUSTOW and stow is available, attempt to use it (best-effort).
-func ApplyPresetWithOptionalSymlink(projectRoot, preset, sharedDir string) (InstallStrategy, error) {
+func ApplyPresetWithOptionalSymlink(projectRoot, preset, packageDir string) (InstallStrategy, error) {
 	// Ensure target rules directory exists for all strategies (stow/symlink/stub)
 	rulesDir := filepath.Join(projectRoot, ".cursor", "rules")
 	if err := os.MkdirAll(rulesDir, 0o755); err != nil {
 		return StrategyUnknown, err
 	}
 
-	src := filepath.Join(sharedDir, preset+".mdc")
+	src := filepath.Join(packageDir, preset+".mdc")
 	if _, err := os.Stat(src); err != nil {
 		return StrategyUnknown, fmt.Errorf("source not found: %s", src)
 	}
@@ -88,11 +88,11 @@ func ApplyPresetWithOptionalSymlink(projectRoot, preset, sharedDir string) (Inst
 	dest := filepath.Join(projectRoot, ".cursor", "rules", preset+".mdc")
 
 	// If env requests GNU stow and stow exists, attempt to use it. This expects the
-	// sharedDir to be structured for stow (package directories). If stow fails,
+	// packageDir to be structured for stow (package directories). If stow fails,
 	// fallback to symlink creation.
 	if WantGNUStow() && HasStow() {
-		// #nosec G204 - sharedDir, rulesDir, and preset are validated before this call
-		cmd := exec.Command("stow", "-v", "-d", sharedDir, "-t", rulesDir, preset)
+		// #nosec G204 - packageDir, rulesDir, and preset are validated before this call
+		cmd := exec.Command("stow", "-v", "-d", packageDir, "-t", rulesDir, preset)
 		if _, err := cmd.CombinedOutput(); err == nil {
 			return StrategyStow, nil
 		}
@@ -107,5 +107,5 @@ func ApplyPresetWithOptionalSymlink(projectRoot, preset, sharedDir string) (Inst
 	}
 
 	// Default behavior: delegate to shared helper which handles stow -> symlink -> stub
-	return ApplySourceToDest(sharedDir, src, dest, preset)
+	return ApplySourceToDest(packageDir, src, dest, preset)
 }

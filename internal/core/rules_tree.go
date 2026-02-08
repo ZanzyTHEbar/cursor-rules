@@ -11,11 +11,11 @@ import (
 	"github.com/ZanzyTHEbar/cursor-rules/internal/security"
 )
 
-// RulesTree represents the shared rules directory contents in a structured form.
+// RulesTree represents the package rules directory contents in a structured form.
 type RulesTree struct {
-	SharedDir string
-	Presets   []string
-	Packages  []RulesPackage
+	PackageDir string
+	Presets    []string
+	Packages   []RulesPackage
 }
 
 // RulesPackage captures a package name and the rule files found within it.
@@ -24,13 +24,13 @@ type RulesPackage struct {
 	Files []string
 }
 
-// BuildRulesTree walks the configured sharedDir and returns a structured view of
+// BuildRulesTree walks the configured packageDir and returns a structured view of
 // root-level presets and package contents. Missing directories are handled
 // gracefully with empty slices.
-func BuildRulesTree(sharedDir string) (*RulesTree, error) {
-	tree := &RulesTree{SharedDir: sharedDir}
+func BuildRulesTree(packageDir string) (*RulesTree, error) {
+	tree := &RulesTree{PackageDir: packageDir}
 
-	info, err := os.Stat(sharedDir)
+	info, err := os.Stat(packageDir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return tree, nil
@@ -38,17 +38,17 @@ func BuildRulesTree(sharedDir string) (*RulesTree, error) {
 		return nil, err
 	}
 	if !info.IsDir() {
-		return tree, fmt.Errorf("shared dir is not a directory: %s", sharedDir)
+		return tree, fmt.Errorf("package dir is not a directory: %s", packageDir)
 	}
 
-	presets, err := listRootRuleFiles(sharedDir)
+	presets, err := listRootRuleFiles(packageDir)
 	if err != nil {
 		return nil, err
 	}
 	sort.Strings(presets)
 	tree.Presets = presets
 
-	pkgNames, err := ListSharedPackages(sharedDir)
+	pkgNames, err := ListPackageDirs(packageDir)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func BuildRulesTree(sharedDir string) (*RulesTree, error) {
 		if err := security.ValidatePackageName(name); err != nil {
 			continue
 		}
-		files, err := collectPackageRuleFiles(sharedDir, name)
+		files, err := collectPackageRuleFiles(packageDir, name)
 		if err != nil {
 			return nil, err
 		}
@@ -70,53 +70,8 @@ func BuildRulesTree(sharedDir string) (*RulesTree, error) {
 	return tree, nil
 }
 
-// FormatRulesTree renders the rules tree as a simple text tree with grouping.
-func FormatRulesTree(tree *RulesTree) string {
-	if tree == nil {
-		return ""
-	}
-
-	var b strings.Builder
-	fmt.Fprintf(&b, "shared dir: %s\n", tree.SharedDir)
-
-	// Presets section
-	b.WriteString("presets:\n")
-	if len(tree.Presets) == 0 {
-		b.WriteString("  (none)\n")
-	} else {
-		for i, p := range tree.Presets {
-			fmt.Fprintf(&b, "  %s %s\n", branchPrefix(i, len(tree.Presets)), p)
-		}
-	}
-
-	// Packages section
-	b.WriteString("packages:\n")
-	if len(tree.Packages) == 0 {
-		b.WriteString("  (none)\n")
-	} else {
-		for pkgIdx, pkg := range tree.Packages {
-			fmt.Fprintf(&b, "  %s %s/\n", branchPrefix(pkgIdx, len(tree.Packages)), pkg.Name)
-
-			parentIndent := "  │"
-			if pkgIdx == len(tree.Packages)-1 {
-				parentIndent = "    "
-			}
-
-			if len(pkg.Files) == 0 {
-				fmt.Fprintf(&b, "%s  (no rule files)\n", parentIndent)
-				continue
-			}
-			for fileIdx, f := range pkg.Files {
-				fmt.Fprintf(&b, "%s  %s %s\n", parentIndent, branchPrefix(fileIdx, len(pkg.Files)), f)
-			}
-		}
-	}
-
-	return strings.TrimRight(b.String(), "\n")
-}
-
-func listRootRuleFiles(sharedDir string) ([]string, error) {
-	entries, err := os.ReadDir(sharedDir)
+func listRootRuleFiles(packageDir string) ([]string, error) {
+	entries, err := os.ReadDir(packageDir)
 	if err != nil {
 		return nil, err
 	}
@@ -134,8 +89,8 @@ func listRootRuleFiles(sharedDir string) ([]string, error) {
 	return out, nil
 }
 
-func collectPackageRuleFiles(sharedDir, packageName string) ([]string, error) {
-	pkgDir := filepath.Join(sharedDir, packageName)
+func collectPackageRuleFiles(packageDir, packageName string) ([]string, error) {
+	pkgDir := filepath.Join(packageDir, packageName)
 	info, err := os.Stat(pkgDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -210,14 +165,4 @@ func readPackageIgnorePatterns(pkgDir, ignoreFileName string) ([]string, error) 
 		patterns = append(patterns, line)
 	}
 	return patterns, nil
-}
-
-func branchPrefix(idx, total int) string {
-	if total == 0 {
-		return ""
-	}
-	if idx == total-1 {
-		return "└─"
-	}
-	return "├─"
 }

@@ -16,16 +16,16 @@ description: "Shared command: {{ .Command }}"
 
 // DefaultSharedCommandsDir returns ~/.cursor-commands by default; environment overrides allowed.
 func DefaultSharedCommandsDir() string {
-	// Commands live under the main cursor-rules shared directory. Use that by default.
+	// Commands live under the main cursor-rules package directory. Use that by default.
 	// But if CURSOR_COMMANDS_DIR is explicitly set, use that instead.
 	if v := os.Getenv("CURSOR_COMMANDS_DIR"); v != "" {
 		return v
 	}
-	return DefaultSharedDir()
+	return DefaultPackageDir()
 }
 
 // InstallCommand writes a small stub .md in the project's .cursor/commands/
-// pointing to the shared command under sharedDir (default: ~/.cursor-commands).
+// pointing to the command under commandsDir (default: ~/.cursor-commands).
 func InstallCommand(projectRoot, command string) error {
 	sharedDir := DefaultSharedCommandsDir()
 
@@ -66,10 +66,10 @@ func InstallCommand(projectRoot, command string) error {
 	return AtomicWriteTemplate(filepath.Dir(dest), dest, t, data, 0o644)
 }
 
-// ApplyCommandToProject copies a shared command file into the project's .cursor/commands as a stub (@file).
-func ApplyCommandToProject(projectRoot, command, sharedDir string) error {
+// ApplyCommandToProject copies a command file into the project's .cursor/commands as a stub (@file).
+func ApplyCommandToProject(projectRoot, command, sourceDir string) error {
 	normalized := strings.TrimSuffix(command, ".md")
-	src := filepath.Join(sharedDir, normalized+".md")
+	src := filepath.Join(sourceDir, normalized+".md")
 	if _, err := os.Stat(src); err != nil {
 		return fmt.Errorf("shared command not found: %s", src)
 	}
@@ -94,22 +94,22 @@ func ApplyCommandToProject(projectRoot, command, sharedDir string) error {
 }
 
 // ApplyCommandWithOptionalSymlink attempts to apply a command via stow/symlink or stub.
-func ApplyCommandWithOptionalSymlink(projectRoot, command, sharedDir string) error {
+func ApplyCommandWithOptionalSymlink(projectRoot, command, sourceDir string) error {
 	commandsDir := filepath.Join(projectRoot, ".cursor", "commands")
 	if err := os.MkdirAll(commandsDir, 0o755); err != nil {
 		return err
 	}
-	src := filepath.Join(sharedDir, command+".md")
+	src := filepath.Join(sourceDir, command+".md")
 	dest := filepath.Join(commandsDir, command+".md")
 	// Delegate to shared ApplySourceToDest which handles stow -> symlink -> stub
-	_, err := ApplySourceToDest(sharedDir, src, dest, command)
+	_, err := ApplySourceToDest(sourceDir, src, dest, command)
 	return err
 }
 
-// ListSharedCommands returns list of .md files found in sharedDir
-func ListSharedCommands(sharedDir string) ([]string, error) {
+// ListSharedCommands returns list of .md files found in commandsDir.
+func ListSharedCommands(commandsDir string) ([]string, error) {
 	var out []string
-	entries, err := os.ReadDir(sharedDir)
+	entries, err := os.ReadDir(commandsDir)
 	if err != nil {
 		return nil, err
 	}

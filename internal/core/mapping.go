@@ -9,21 +9,21 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// LoadWatcherMapping looks for "watcher-mapping.yaml" inside sharedDir and
+// LoadWatcherMapping looks for "watcher-mapping.yaml" inside packageDir and
 // returns a mapping of preset name -> list of project paths to auto-apply to.
 // If the file does not exist, returns (nil, nil).
-func LoadWatcherMapping(sharedDir string) (map[string][]string, error) {
+func LoadWatcherMapping(packageDir string) (map[string][]string, error) {
 	// Safely construct mapping file path
-	mappingPath, err := security.SafeJoin(sharedDir, "watcher-mapping.yaml")
+	mappingPath, err := security.SafeJoin(packageDir, "watcher-mapping.yaml")
 	if err != nil {
-		return nil, fmt.Errorf("invalid shared directory path: %w", err)
+		return nil, fmt.Errorf("invalid package directory path: %w", err)
 	}
 
 	if _, statErr := os.Stat(mappingPath); os.IsNotExist(statErr) {
 		return nil, nil
 	}
 
-	// #nosec G304 - mappingPath is validated above and constructed from trusted sharedDir
+	// #nosec G304 - mappingPath is validated above and constructed from trusted packageDir
 	b, readErr := os.ReadFile(mappingPath)
 	if readErr != nil {
 		return nil, fmt.Errorf("failed to read watcher mapping: %w", readErr)
@@ -42,7 +42,7 @@ func LoadWatcherMapping(sharedDir string) (map[string][]string, error) {
 	if raw.Presets == nil {
 		return nil, nil
 	}
-	// resolve relative paths (relative to sharedDir)
+	// resolve relative paths (relative to packageDir)
 	resolved := make(map[string][]string)
 	for preset, projects := range raw.Presets {
 		// Validate preset name
@@ -57,8 +57,8 @@ func LoadWatcherMapping(sharedDir string) (map[string][]string, error) {
 			}
 
 			if !filepath.IsAbs(p) {
-				// Safely join relative path with sharedDir
-				absPath, joinErr := security.SafeJoin(sharedDir, p)
+				// Safely join relative path with packageDir
+				absPath, joinErr := security.SafeJoin(packageDir, p)
 				if joinErr != nil {
 					return nil, fmt.Errorf("invalid relative path %q for preset %q: %w", p, preset, joinErr)
 				}

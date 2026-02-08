@@ -45,8 +45,8 @@ cursor-rules install --help
 # Set working directory
 cursor-rules --workdir /path/to/project install frontend
 
-# Use environment variable for shared directory
-export CURSOR_RULES_DIR=~/my-rules
+# Use environment variable for package directory
+export CURSOR_RULES_PACKAGE_DIR=~/my-rules
 cursor-rules list
 ```
 
@@ -110,8 +110,8 @@ cursor-rules install frontend
 cursor-rules install backend
 cursor-rules install testing
 
-# Install with custom shared directory
-CURSOR_RULES_DIR=~/custom-rules cursor-rules install frontend
+# Install with custom package directory
+CURSOR_RULES_PACKAGE_DIR=~/custom-rules cursor-rules install frontend
 
 # Install to multiple projects
 for project in project1 project2 project3; do
@@ -157,7 +157,7 @@ cursor-rules remove frontend --target copilot-prompt
 
 ## List Command
 
-List available presets in shared directory.
+List available presets in package directory.
 
 ### Basic Listing
 
@@ -165,8 +165,8 @@ List available presets in shared directory.
 # List all presets
 cursor-rules list
 
-# List with custom shared directory
-CURSOR_RULES_DIR=~/custom-rules cursor-rules list
+# List with custom package directory
+CURSOR_RULES_PACKAGE_DIR=~/custom-rules cursor-rules list
 
 # List in specific format
 cursor-rules list --format json
@@ -280,8 +280,8 @@ Sync presets from remote repository.
 # Sync from default remote
 cursor-rules sync
 
-# Sync with custom shared directory
-CURSOR_RULES_DIR=~/custom-rules cursor-rules sync
+# Sync with custom package directory
+CURSOR_RULES_PACKAGE_DIR=~/custom-rules cursor-rules sync
 
 # Sync and show changes
 cursor-rules sync --verbose
@@ -315,8 +315,8 @@ Watch for changes and auto-apply to projects.
 # Start watcher
 cursor-rules watch
 
-# Watch with custom shared directory
-CURSOR_RULES_DIR=~/custom-rules cursor-rules watch
+# Watch with custom package directory
+CURSOR_RULES_PACKAGE_DIR=~/custom-rules cursor-rules watch
 
 # Watch with verbose output
 cursor-rules watch --verbose
@@ -588,7 +588,7 @@ git push
 #!/bin/bash
 # validate-presets.sh
 
-SHARED_DIR="${CURSOR_RULES_DIR:-$HOME/.cursor/rules}"
+SHARED_DIR="${CURSOR_RULES_PACKAGE_DIR:-$HOME/.cursor/rules}"
 
 echo "Validating presets in $SHARED_DIR..."
 
@@ -626,7 +626,7 @@ backup_rules() {
   mkdir -p "$backup_dir"
   
   # Backup shared rules
-  cp -r "$CURSOR_RULES_DIR" "$backup_dir/shared"
+  cp -r "$CURSOR_RULES_PACKAGE_DIR" "$backup_dir/shared"
   
   # Backup project rules
   find ~/projects -name ".cursor" -type d | while read cursor_dir; do
@@ -647,7 +647,7 @@ restore_rules() {
   fi
   
   # Restore shared rules
-  cp -r "$backup_dir/shared/"* "$CURSOR_RULES_DIR/"
+  cp -r "$backup_dir/shared/"* "$CURSOR_RULES_PACKAGE_DIR/"
   
   # Restore project rules
   find "$backup_dir/projects" -type d -mindepth 1 -maxdepth 1 | while read project_backup; do
@@ -706,7 +706,7 @@ cre() {
 
 # Sync and show changes
 crs() {
-  cd "$CURSOR_RULES_DIR"
+  cd "$CURSOR_RULES_PACKAGE_DIR"
   git pull
   cursor-rules sync
 }
@@ -735,8 +735,11 @@ crw-stop() {
 ```bash
 # ~/.cursor/rules-env
 
-# Shared directory
-export CURSOR_RULES_DIR="$HOME/.cursor/rules"
+# Package directory
+export CURSOR_RULES_PACKAGE_DIR="$HOME/.cursor/rules"
+
+# Config directory (optional)
+export CURSOR_RULES_CONFIG_DIR="$HOME/.cursor/rules"
 
 # Enable symlinks (optional)
 export CURSOR_RULES_SYMLINK=1
@@ -760,7 +763,7 @@ source ~/.cursor/rules-env
 ```bash
 # Preset not found
 cursor-rules list  # Check available presets
-echo $CURSOR_RULES_DIR  # Verify shared directory
+echo $CURSOR_RULES_PACKAGE_DIR  # Verify package directory
 
 # Permission denied
 sudo chown -R $USER:$USER ~/.cursor/rules

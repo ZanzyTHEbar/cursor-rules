@@ -9,16 +9,16 @@ import (
 	"strings"
 )
 
-// ListSharedPresets returns list of .mdc files found in sharedDir
-func ListSharedPresets(sharedDir string) ([]string, error) {
+// ListPackagePresets returns list of .mdc files found in packageDir.
+func ListPackagePresets(packageDir string) ([]string, error) {
 	var out []string
-	entries, err := fs.ReadDir(os.DirFS(sharedDir), ".")
+	entries, err := fs.ReadDir(os.DirFS(packageDir), ".")
 	if err != nil {
 		return nil, err
 	}
 	for _, e := range entries {
 		if e.IsDir() {
-			// skip directories here; packages are handled via ListSharedPackages
+			// skip directories here; packages are handled via ListPackageDirs
 			continue
 		}
 		if filepath.Ext(e.Name()) == ".mdc" {
@@ -28,11 +28,11 @@ func ListSharedPresets(sharedDir string) ([]string, error) {
 	return out, nil
 }
 
-// ListSharedPackages returns directories directly under sharedDir which can be
+// ListPackageDirs returns directories directly under packageDir which can be
 // treated as packages (e.g., "frontend", "git").
-func ListSharedPackages(sharedDir string) ([]string, error) {
+func ListPackageDirs(packageDir string) ([]string, error) {
 	var out []string
-	entries, err := fs.ReadDir(os.DirFS(sharedDir), ".")
+	entries, err := fs.ReadDir(os.DirFS(packageDir), ".")
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func ListSharedPackages(sharedDir string) ([]string, error) {
 		if strings.HasPrefix(e.Name(), ".") {
 			continue
 		}
-		if hasRuleFiles(filepath.Join(sharedDir, e.Name())) {
+		if hasRuleFiles(filepath.Join(packageDir, e.Name())) {
 			out = append(out, e.Name())
 		}
 	}
@@ -67,15 +67,15 @@ func hasRuleFiles(dir string) bool {
 	return false
 }
 
-// SyncSharedRepo attempts to git pull if the sharedDir is a git repo.
+// SyncPackageRepo attempts to git pull if the packageDir is a git repo.
 // If not a git repo, it is a no-op.
-func SyncSharedRepo(sharedDir string) error {
-	gitDir := filepath.Join(sharedDir, ".git")
+func SyncPackageRepo(packageDir string) error {
+	gitDir := filepath.Join(packageDir, ".git")
 	if _, err := os.Stat(gitDir); err != nil {
 		// not a git repo; nothing to do
 		return nil
 	}
-	cmd := exec.Command("git", "-C", sharedDir, "pull", "--ff-only")
+	cmd := exec.Command("git", "-C", packageDir, "pull", "--ff-only")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("git pull failed: %v: %s", err, string(output))

@@ -7,16 +7,16 @@ import (
 	"strings"
 )
 
-// ApplyPresetToProject copies a shared preset file into the project's .cursor/rules as a stub (@file).
+// ApplyPresetToProject copies a package preset file into the project's .cursor/rules as a stub (@file).
 // If the stub already exists, it is left unchanged (idempotent). Returns the install strategy used.
-func ApplyPresetToProject(projectRoot, preset, sharedDir string) (InstallStrategy, error) {
+func ApplyPresetToProject(projectRoot, preset, packageDir string) (InstallStrategy, error) {
 	// Normalize preset name: remove .mdc extension if present
 	normalizedPreset := strings.TrimSuffix(preset, ".mdc")
 
 	// ensure source exists
-	src := filepath.Join(sharedDir, normalizedPreset+".mdc")
+	src := filepath.Join(packageDir, normalizedPreset+".mdc")
 	if _, err := os.Stat(src); err != nil {
-		return StrategyUnknown, fmt.Errorf("shared preset not found: %s", src)
+		return StrategyUnknown, fmt.Errorf("package preset not found: %s", src)
 	}
 	rulesDir := filepath.Join(projectRoot, ".cursor", "rules")
 	if err := os.MkdirAll(rulesDir, 0o755); err != nil {
@@ -35,5 +35,5 @@ func ApplyPresetToProject(projectRoot, preset, sharedDir string) (InstallStrateg
 		return StrategyCopy, nil
 	}
 	// Delegate to shared ApplySourceToDest which handles stow -> symlink -> stub
-	return ApplySourceToDest(sharedDir, src, dest, normalizedPreset)
+	return ApplySourceToDest(packageDir, src, dest, normalizedPreset)
 }

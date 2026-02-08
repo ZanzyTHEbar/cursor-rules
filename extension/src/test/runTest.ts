@@ -10,12 +10,12 @@ async function main() {
         const shimPath = path.join(tmpBin, process.platform === 'win32' ? 'cursor-rules.cmd' : 'cursor-rules');
         const shimScript = process.platform === 'win32'
             ? '@echo off\r\n' +
-            'echo Shared dir: C:\\tmp\\cursor-rules\r\n' +
+            'echo Package dir: C:\\tmp\\cursor-rules\r\n' +
             'echo - frontend.mdc\r\n'
             : '#!/usr/bin/env bash\n' +
             'set -e\n' +
             'case "$1" in\n' +
-            '  sync) echo "Shared dir: /tmp/cursor-rules"; echo "- frontend.mdc";;\n' +
+            '  sync) echo "Package dir: /tmp/cursor-rules"; echo "- frontend.mdc";;\n' +
             '  effective) echo "---\\n# frontend.mdc\\n@file /tmp/cursor-rules/frontend.mdc";;\n' +
             '  install) echo "Installed preset \"$2\"";;\n' +
             '  *) echo "ok";;\n' +

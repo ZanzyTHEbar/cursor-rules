@@ -152,8 +152,11 @@ cursor-rules install frontend
 
 ## Config
 
-Shared presets live in `~/.cursor/rules/`.
-Override with `$CURSOR_RULES_DIR`.
+Shared presets live in `~/.cursor/rules/` by default.
+Override with `$CURSOR_RULES_PACKAGE_DIR` or `packageDir` in `config.yaml`.
+
+The config file lives in the config directory (default: `~/.cursor/rules/`), which can be
+overridden with `$CURSOR_RULES_CONFIG_DIR` or `--config`.
 
 ### Generate a default config
 
@@ -161,7 +164,7 @@ Override with `$CURSOR_RULES_DIR`.
 cursor-rules config init
 ```
 
-This writes `config.yaml` in your shared directory using the current defaults. Pass `--force` to overwrite (the previous file is backed up automatically). If GNU `stow` is available, the generated file sets `enableStow: true`; otherwise it remains disabled until you install stow.
+This writes `config.yaml` in your config directory using the current defaults. Pass `--force` to overwrite (the previous file is backed up automatically). If GNU `stow` is available, the generated file sets `enableStow: true`; otherwise it remains disabled until you install stow.
 
 ## Advanced usage
 
@@ -172,7 +175,7 @@ cursor-rules install frontend backend tooling
 # Generate effective rules for a specific path
 cursor-rules effective --workdir /path/to/project
 
-# Watch shared directory and auto-apply to mapped projects
+# Watch package directory and auto-apply to mapped projects
 cursor-rules watch
 ```
 
@@ -181,8 +184,8 @@ cursor-rules watch
 - The CLI uses a composable "palette" architecture implemented in `cli`.
 - `cli.AppContext` contains shared dependencies: `Viper` (config) and `Logger`.
 - Commands are authored as factories: `func(*cli.AppContext) *cobra.Command` so they can read configuration from `ctx.Viper` instead of global flags.
-- Register all command factories in `cmd/cursor-rules/registry.go` using `cli.Register(...)`.
-- Build the root command with `cli.BuildRoot(ctx)` or `cli.NewRoot(ctx, cli.DefaultPalette)` in `main`.
+- Register all command factories in `internal/cli/commands` using `commands.RegisterAll()`.
+- Build and execute the root command via `cli.BuildRoot(...)` or `cli.Execute()` (which calls `BuildRoot`).
 
 Migration tips:
 
@@ -192,23 +195,9 @@ Migration tips:
 Logger integration:
 
 - We use a minimal `cli.Logger` interface (Printf) so you can plug any logger easily.
-- By default `AppContext` uses the standard library logger. To use `go-basetools` create
-  a logger adapter and pass it to `cli.NewAppContext`.
+- By default `AppContext` uses the standard library logger.
 
-Example (main.go):
 
-```go
-import (
-  gblogger "github.com/ZanzyTHEbar/go-basetools/logger"
-)
-
-// configure go-basetools logger
-gblogger.InitLogger(&gblogger.Config{Logger: gblogger.Logger{Style: "text", Level: "info"}})
-
-// adapt to cli.Logger
-ctx := cli.NewAppContext(nil, cli.NewGoBasetoolsAdapter())
-root := cli.NewRoot(ctx, cli.DefaultPalette)
-```
 
 
 ### Extension workflows
@@ -219,13 +208,14 @@ root := cli.NewRoot(ctx, cli.DefaultPalette)
 
 Environment variables:
 
--   `CURSOR_RULES_DIR`: override the default shared presets directory (default: `~/.cursor/rules`).
+-   `CURSOR_RULES_PACKAGE_DIR`: override the default package directory (default: `~/.cursor/rules`).
+-   `CURSOR_RULES_CONFIG_DIR`: override the config directory (default: `~/.cursor/rules`).
 -   `CURSOR_RULES_SYMLINK=1`: when set, `install`/`apply` operations will create real filesystem symlinks instead of writing stub `.mdc` files. Use with caution.
--   `CURSOR_RULES_USE_GNUSTOW=1`: when set and GNU `stow` is available in PATH, the tool will attempt to use `stow` to manage symlinks from the shared directory into project targets. This is best-effort and will fall back to symlinks or stubs if stow fails.
+-   `CURSOR_RULES_USE_GNUSTOW=1`: when set and GNU `stow` is available in PATH, the tool will attempt to use `stow` to manage symlinks from the package directory into project targets. This is best-effort and will fall back to symlinks or stubs if stow fails.
 
 Watcher mapping (auto-apply):
 
-If you run the CLI with `watch` enabled and `autoApply=true` in your config, the watcher will consult a `watcher-mapping.yaml` file in your shared directory to determine which projects to auto-apply presets to. Example `watcher-mapping.yaml` format:
+If you run the CLI with `watch` enabled and `autoApply=true` in your config, the watcher will consult a `watcher-mapping.yaml` file in your package directory to determine which projects to auto-apply presets to. Example `watcher-mapping.yaml` format:
 
 ```yaml
 presets:
@@ -236,7 +226,7 @@ presets:
         - /abs/path/to/backend
 ```
 
-Relative project paths are resolved relative to the shared directory. The watcher will only auto-apply presets that appear in this mapping to avoid accidental writes.
+Relative project paths are resolved relative to the package directory. The watcher will only auto-apply presets that appear in this mapping to avoid accidental writes.
 
 ## GitHub Copilot Integration
 
@@ -379,7 +369,7 @@ For detailed examples and best practices, see [docs/copilot-integration.md](docs
 
 ## Packages
 
-You can organize shared presets as packages under your shared dir (default: `~/.cursor/rules`).
+You can organize shared presets as packages under your package dir (default: `~/.cursor/rules`).
 Each package is a directory (for example `frontend/` or `git/`) containing one or more `.mdc` files.
 
 ### Nested Package Support

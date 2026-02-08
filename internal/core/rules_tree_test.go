@@ -1,9 +1,12 @@
-package core
+package core_test
 
 import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/ZanzyTHEbar/cursor-rules/internal/cli/display"
+	"github.com/ZanzyTHEbar/cursor-rules/internal/core"
 )
 
 func TestBuildRulesTreeAndFormat(t *testing.T) {
@@ -24,13 +27,13 @@ func TestBuildRulesTreeAndFormat(t *testing.T) {
 	}
 	writeFile(t, filepath.Join(pkgB, "b1.mdc"), "b1")
 
-	tree, err := BuildRulesTree(shared)
+	tree, err := core.BuildRulesTree(shared)
 	if err != nil {
 		t.Fatalf("BuildRulesTree failed: %v", err)
 	}
 
-	if tree.SharedDir != shared {
-		t.Fatalf("shared dir mismatch: got %s want %s", tree.SharedDir, shared)
+	if tree.PackageDir != shared {
+		t.Fatalf("package dir mismatch: got %s want %s", tree.PackageDir, shared)
 	}
 
 	if len(tree.Presets) != 2 || tree.Presets[0] != "readme.md" || tree.Presets[1] != "root.mdc" {
@@ -55,8 +58,8 @@ func TestBuildRulesTreeAndFormat(t *testing.T) {
 		t.Fatalf("unexpected pkgB contents: %+v", tree.Packages[1])
 	}
 
-	got := FormatRulesTree(tree)
-	expected := "shared dir: " + shared + `
+	got := display.FormatRulesTree(tree)
+	expected := "package dir: " + shared + `
 presets:
   ├─ readme.md
   └─ root.mdc
@@ -73,7 +76,7 @@ packages:
 }
 
 func TestBuildRulesTreeMissingDir(t *testing.T) {
-	tree, err := BuildRulesTree(filepath.Join(t.TempDir(), "missing"))
+	tree, err := core.BuildRulesTree(filepath.Join(t.TempDir(), "missing"))
 	if err != nil {
 		t.Fatalf("expected graceful handling of missing dir, got err: %v", err)
 	}

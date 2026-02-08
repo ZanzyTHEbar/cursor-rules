@@ -97,11 +97,11 @@ Let's get you up and running in 5 minutes!
 ### Step 1: Set Up Shared Directory (1 min)
 
 ```bash
-# Create a directory for shared presets
+# Create a directory for package presets
 mkdir -p ~/cursor-rules-shared
 
 # Set environment variable (add to ~/.bashrc or ~/.zshrc)
-export CURSOR_RULES_DIR=~/cursor-rules-shared
+export CURSOR_RULES_PACKAGE_DIR=~/cursor-rules-shared
 ```
 
 ### Step 2: Create Your First Preset (2 min)
@@ -154,7 +154,7 @@ cursor-rules effective
 
 ### 1. Presets
 
-**Presets** are individual rule files (`.mdc`) stored in your shared directory.
+**Presets** are individual rule files (`.mdc`) stored in your package directory.
 
 ```
 ~/cursor-rules-shared/
@@ -250,7 +250,7 @@ git push -u origin main
 git clone https://github.com/team/cursor-rules.git ~/cursor-rules-shared
 
 # 3. Set environment variable
-export CURSOR_RULES_DIR=~/cursor-rules-shared
+export CURSOR_RULES_PACKAGE_DIR=~/cursor-rules-shared
 ```
 
 ### Workflow 3: Use with GitHub Copilot
@@ -349,7 +349,7 @@ Available packages:
 
 ### `cursor-rules sync`
 
-Sync shared presets from Git repository.
+Sync package presets from Git repository.
 
 **Usage:**
 ```bash
@@ -444,7 +444,7 @@ cursor-rules transform --from copilot-instr --to cursor
 
 ### `cursor-rules watch`
 
-Watch shared presets and auto-apply changes.
+Watch package presets and auto-apply changes.
 
 **Usage:**
 ```bash
@@ -461,13 +461,14 @@ cursor-rules watch
 
 # With custom config
 cursor-rules watch --config ~/.cursor/rules/config.yaml
+# or use $CURSOR_RULES_CONFIG_DIR/config.yaml
 ```
 
 ---
 
 ### `cursor-rules init`
 
-Initialize a new shared presets directory.
+Initialize a new package presets directory.
 
 **Usage:**
 ```bash
@@ -485,7 +486,7 @@ cursor-rules init ~/cursor-rules-shared
 
 ### `cursor-rules config init`
 
-Scaffold (or overwrite with `--force`) the `config.yaml` file inside your shared directory.
+Scaffold (or overwrite with `--force`) the `config.yaml` file inside your config directory.
 
 **Usage:**
 ```bash
@@ -510,7 +511,7 @@ cursor-rules config init --force
 
 ### Generate a default config
 
-Use the helper command to scaffold `config.yaml` inside your shared directory:
+Use the helper command to scaffold `config.yaml` inside your config directory:
 
 ```bash
 cursor-rules config init
@@ -524,13 +525,15 @@ If GNU `stow` is available on your PATH the generated file sets `enableStow: tru
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `CURSOR_RULES_DIR` | Shared presets directory | `~/.cursor/rules` |
+| `CURSOR_RULES_PACKAGE_DIR` | Package directory | `~/.cursor/rules` |
+| `CURSOR_RULES_CONFIG_DIR` | Config directory | `~/.cursor/rules` |
 | `CURSOR_RULES_SYMLINK` | Use symlinks instead of copies | `false` |
 
 **Set in shell:**
 ```bash
 # Bash/Zsh
-export CURSOR_RULES_DIR=~/cursor-rules-shared
+export CURSOR_RULES_PACKAGE_DIR=~/cursor-rules-shared
+export CURSOR_RULES_CONFIG_DIR=~/.cursor/rules
 export CURSOR_RULES_SYMLINK=1
 
 # Add to ~/.bashrc or ~/.zshrc for persistence
@@ -538,11 +541,11 @@ export CURSOR_RULES_SYMLINK=1
 
 ### Config File
 
-Create `~/.cursor/rules/config.yaml`:
+Create `~/.cursor/rules/config.yaml` (or override with `$CURSOR_RULES_CONFIG_DIR`):
 
 ```yaml
 # Shared presets directory
-sharedDir: ~/cursor-rules-shared
+packageDir: ~/cursor-rules-shared
 
 # Enable file watching
 watch: true
@@ -591,8 +594,8 @@ make install
 # List available presets
 cursor-rules list
 
-# Check shared directory
-ls $CURSOR_RULES_DIR
+# Check package directory
+ls $CURSOR_RULES_PACKAGE_DIR
 
 # Sync presets
 cursor-rules sync

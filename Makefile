@@ -10,11 +10,11 @@ DIST_DIR=dist
 
 .PHONY: build
 build:
-	@go build -ldflags "-X 'main.Version=$${VERSION:-dev}'" -o bin/$(BINARY) ./cmd/cursor-rules
+	@go build -ldflags "-X 'github.com/ZanzyTHEbar/cursor-rules/internal/cli.Version=$${VERSION:-dev}'" -o bin/$(BINARY) ./cmd/cursor-rules
 
 .PHONY: install
 install:
-	@go install -ldflags "-X 'main.Version=$${VERSION:-dev}'" ./cmd/cursor-rules
+	@go install -ldflags "-X 'github.com/ZanzyTHEbar/cursor-rules/internal/cli.Version=$${VERSION:-dev}'" ./cmd/cursor-rules
 
 .PHONY: run
 run:
@@ -227,7 +227,7 @@ release-binaries:
 		echo "Building $$os/$$arch version $$version"; \
 		out="$(DIST_DIR)/$(BINARY)_$${version}_$${os}_$${arch}"; \
 		[ "$$os" = "windows" ] && out="$$out.exe"; \
-		GOOS=$$os GOARCH=$$arch go build -ldflags "-s -w -X 'main.Version=$$version'" -o "$$out" ./cmd/$(BINARY); \
+		GOOS=$$os GOARCH=$$arch go build -ldflags "-s -w -X 'github.com/ZanzyTHEbar/cursor-rules/internal/cli.Version=$$version'" -o "$$out" ./cmd/$(BINARY); \
 	done
 
 .PHONY: help
