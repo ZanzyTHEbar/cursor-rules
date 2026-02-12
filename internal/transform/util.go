@@ -2,8 +2,8 @@ package transform
 
 import (
 	"bytes"
-	"fmt"
 
+	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 	"gopkg.in/yaml.v3"
 )
 
@@ -13,13 +13,13 @@ func SplitFrontmatter(data []byte) (*yaml.Node, string, error) {
 	// Split on --- delimiters
 	parts := bytes.SplitN(data, []byte("---"), 3)
 	if len(parts) < 3 {
-		return nil, "", fmt.Errorf("invalid frontmatter format: expected --- delimiters")
+		return nil, "", errors.New(errors.CodeInvalidArgument, "invalid frontmatter format: expected --- delimiters")
 	}
 
 	// Parse YAML frontmatter
 	var node yaml.Node
 	if err := yaml.Unmarshal(parts[1], &node); err != nil {
-		return nil, "", fmt.Errorf("parse YAML frontmatter: %w", err)
+		return nil, "", errors.Wrapf(err, errors.CodeInternal, "parse YAML frontmatter")
 	}
 
 	// Extract body (trim leading/trailing whitespace)
@@ -33,7 +33,7 @@ func MarshalMarkdown(frontmatter *yaml.Node, body string) ([]byte, error) {
 	// Marshal frontmatter to YAML
 	fmBytes, err := yaml.Marshal(frontmatter)
 	if err != nil {
-		return nil, fmt.Errorf("marshal frontmatter: %w", err)
+		return nil, errors.Wrapf(err, errors.CodeInternal, "marshal frontmatter")
 	}
 
 	// Combine with delimiters and body

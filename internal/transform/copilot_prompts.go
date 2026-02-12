@@ -1,8 +1,7 @@
 package transform
 
 import (
-	"fmt"
-
+	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 	"gopkg.in/yaml.v3"
 )
 
@@ -50,7 +49,7 @@ func (t *CopilotPromptsTransformer) Transform(node *yaml.Node, body string) (*ya
 	// Encode back to YAML node
 	out := &yaml.Node{}
 	if err := out.Encode(fm); err != nil {
-		return nil, "", fmt.Errorf("encode frontmatter: %w", err)
+		return nil, "", errors.Wrapf(err, errors.CodeInternal, "encode frontmatter")
 	}
 
 	return out, body, nil
@@ -65,17 +64,17 @@ func (t *CopilotPromptsTransformer) Validate(node *yaml.Node) error {
 
 	// Required fields for prompts
 	if _, ok := fm["description"]; !ok {
-		return fmt.Errorf("missing required field: description")
+		return errors.New(errors.CodeInvalidArgument, "missing required field: description")
 	}
 	if _, ok := fm["mode"]; !ok {
-		return fmt.Errorf("missing required field: mode")
+		return errors.New(errors.CodeInvalidArgument, "missing required field: mode")
 	}
 
 	// Validate mode enum
 	if mode, ok := fm["mode"].(string); ok {
 		validModes := map[string]bool{"agent": true, "edit": true, "chat": true}
 		if !validModes[mode] {
-			return fmt.Errorf("invalid mode: %s (must be agent, edit, or chat)", mode)
+			return errors.Newf(errors.CodeInvalidArgument, "invalid mode: %s (must be agent, edit, or chat)", mode)
 		}
 	}
 

@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 	"gopkg.in/yaml.v3"
 )
 
@@ -28,7 +29,7 @@ func NewCopilotInstructionsTransformer() *CopilotInstructionsTransformer {
 func (t *CopilotInstructionsTransformer) Transform(node *yaml.Node, body string) (*yaml.Node, string, error) {
 	var fm map[string]interface{}
 	if err := node.Decode(&fm); err != nil {
-		return nil, "", fmt.Errorf("decode frontmatter: %w", err)
+		return nil, "", errors.Wrapf(err, errors.CodeInternal, "decode frontmatter")
 	}
 
 	result := make(map[string]interface{})
@@ -52,10 +53,10 @@ func (t *CopilotInstructionsTransformer) Transform(node *yaml.Node, body string)
 	if t.ValidateGlobs {
 		applyToStr, ok := result["applyTo"].(string)
 		if !ok {
-			return nil, "", fmt.Errorf("applyTo is not a string")
+			return nil, "", errors.New(errors.CodeInvalidArgument, "applyTo is not a string")
 		}
 		if validateErr := t.validateGlobPattern(applyToStr); validateErr != nil {
-			return nil, "", fmt.Errorf("invalid glob: %w", validateErr)
+			return nil, "", errors.Wrapf(validateErr, errors.CodeInvalidArgument, "invalid glob")
 		}
 	}
 
@@ -65,7 +66,7 @@ func (t *CopilotInstructionsTransformer) Transform(node *yaml.Node, body string)
 	// 5. Encode back to YAML node
 	out := &yaml.Node{}
 	if err := out.Encode(result); err != nil {
-		return nil, "", fmt.Errorf("encode frontmatter: %w", err)
+		return nil, "", errors.Wrapf(err, errors.CodeInternal, "encode frontmatter")
 	}
 
 	return out, body, nil
@@ -103,7 +104,7 @@ func (t *CopilotInstructionsTransformer) validateGlobPattern(pattern string) err
 		p = strings.TrimSpace(p)
 		// Test with filepath.Match (basic validation)
 		if _, err := filepath.Match(p, "test.ts"); err != nil {
-			return fmt.Errorf("invalid pattern %q: %w", p, err)
+			return errors.Wrapf(err, errors.CodeInvalidArgument, "invalid pattern %q", p)
 		}
 	}
 	return nil
@@ -128,10 +129,10 @@ func (t *CopilotInstructionsTransformer) Validate(node *yaml.Node) error {
 
 	// Required fields
 	if _, ok := fm["description"]; !ok {
-		return fmt.Errorf("missing required field: description")
+		return errors.New(errors.CodeInvalidArgument, "missing required field: description")
 	}
 	if _, ok := fm["applyTo"]; !ok {
-		return fmt.Errorf("missing required field: applyTo")
+		return errors.New(errors.CodeInvalidArgument, "missing required field: applyTo")
 	}
 
 	return nil
