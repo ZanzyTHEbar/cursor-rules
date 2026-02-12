@@ -1,3 +1,5 @@
+github.com/ZanzyTHEbar/errbuilder-go v1.5.1 h1:G/oeWXcbSwEz4bdj6T+23VYzb1+/XhHfwj/jAcXpMHY=
+github.com/ZanzyTHEbar/errbuilder-go v1.5.1/go.mod h1:Zrmdx0mbbM7XhaOn7QIDu1AxNj230DiAFGfMOpZdPYg=
 github.com/ZanzyTHEbar/go-basetools v1.1.0 h1:4ADJSLuuH5N1gkoZKghpgFXJ1COLx9mITj+tNK1526I=
 github.com/ZanzyTHEbar/go-basetools v1.1.0/go.mod h1:7tVaERlkK3YnxUzN5VcW1bOcVLgAn6efuMeydjYBsD8=
 github.com/cpuguy83/go-md2man/v2 v2.0.6/go.mod h1:oOW0eioCTA6cOiMLiUPZOpcVxMig6NIQQ7OS05n1F4g=

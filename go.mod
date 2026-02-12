@@ -3,6 +3,7 @@ module github.com/ZanzyTHEbar/cursor-rules
 go 1.25
 
 require (
+	github.com/ZanzyTHEbar/errbuilder-go v1.5.1
 	github.com/ZanzyTHEbar/go-basetools v1.1.0
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/spf13/cobra v1.10.2
