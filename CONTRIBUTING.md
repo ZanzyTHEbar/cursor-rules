@@ -119,9 +119,17 @@ git commit --no-verify
 
 ### Error Handling
 
-- Always check errors; don't ignore them with `_`
-- Wrap errors with context using `fmt.Errorf("context: %w", err)`
-- Return errors early (guard clauses)
+We use [errbuilder-go](https://github.com/ZanzyTHEbar/errbuilder-go) via the **`internal/errors`** package for all error creation and wrapping. Do not use `fmt.Errorf` or ad-hoc error types for domain errors.
+
+- **Always check errors**; don't ignore them with `_`
+- **Create/wrap errors** through `internal/errors` only:
+  - `errors.Wrap(err, errors.CodeInternal, "message")` — wrap an underlying error with a code and message
+  - `errors.Wrapf(err, errors.CodeX, "format %s", arg)` — wrap with a formatted message
+  - `errors.New(errors.CodeInvalidArgument, "message")` — new error without a cause
+  - `errors.Newf(errors.CodeNotFound, "preset %q not found", name)` — new error with format
+- **Use appropriate codes** from `internal/errors`: `CodeInvalidArgument`, `CodeNotFound`, `CodeAlreadyExists`, `CodeInternal`, `CodeFailedPrecondition`, etc. (aligned with gRPC-style codes)
+- **Domain-specific helpers** live in `internal/errors` (e.g. `errors.ErrLegacyConfigKey("sharedDir", "packageDir")` for config). Add new helpers there when a pattern repeats.
+- **Return errors early** (guard clauses). Use `errors.Is` / `errors.As` (standard library) when checking for sentinel or wrapped errors (e.g. `security.ErrPathTraversal`).
 
 ### Testing
 
@@ -190,13 +198,14 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```
 cursor-rules/
-├── cli/              # CLI framework and app context
 ├── cmd/              # Command-line entry points
 │   └── cursor-rules/ # Main CLI application
-│       └── commands/ # Cobra commands
 ├── internal/         # Internal packages
+│   ├── app/          # Use-case API (install, list, sync, etc.)
+│   ├── cli/          # CLI framework, commands, display
 │   ├── config/       # Configuration management
 │   ├── core/         # Core business logic
+│   ├── errors/       # Error building (errbuilder-go) and domain helpers
 │   ├── manifest/     # Manifest parsing
 │   ├── security/     # Path validation and security
 │   ├── testutil/     # Test utilities
