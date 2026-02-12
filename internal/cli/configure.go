@@ -1,11 +1,11 @@
 package cli
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/ZanzyTHEbar/cursor-rules/internal/config"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/core"
+	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -42,17 +42,17 @@ func ConfigureRoot(root *cobra.Command, ctx *AppContext, postInit func(*viper.Vi
 		}
 		ctx.Viper.SetDefault("logLevel", "info")
 		if err := ctx.Viper.BindEnv("logLevel", "CURSOR_RULES_LOG_LEVEL"); err != nil {
-			return fmt.Errorf("binding log level env: %w", err)
+			return errors.Wrapf(err, errors.CodeInternal, "binding log level env")
 		}
 		if flag := cmd.PersistentFlags().Lookup("log-level"); flag != nil {
 			if err := ctx.Viper.BindPFlag("logLevel", flag); err != nil {
-				return fmt.Errorf("binding log level flag: %w", err)
+				return errors.Wrapf(err, errors.CodeInternal, "binding log level flag")
 			}
 		}
 		ctx.Viper.AutomaticEnv()
 		if err := ctx.Viper.ReadInConfig(); err != nil {
 			if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
-				return fmt.Errorf("reading config: %w", err)
+				return errors.Wrapf(err, errors.CodeInternal, "reading config")
 			}
 		}
 		ctx.SetMessenger(NewMessenger(cmd.OutOrStdout(), cmd.ErrOrStderr(), ctx.Viper.GetString("logLevel")))

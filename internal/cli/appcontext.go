@@ -1,10 +1,10 @@
 package cli
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/ZanzyTHEbar/cursor-rules/internal/app"
+	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/transform"
 	"github.com/spf13/viper"
 )
@@ -57,7 +57,7 @@ func (ctx *AppContext) RegisterTransformer(name string, t transform.Transformer)
 func (ctx *AppContext) Transformer(target string) (transform.Transformer, error) {
 	t, ok := ctx.transformers[target]
 	if !ok {
-		return nil, fmt.Errorf("unknown target: %s (available: cursor, copilot-instr, copilot-prompt)", target)
+		return nil, errors.Newf(errors.CodeInvalidArgument, "unknown target: %s (available: cursor, copilot-instr, copilot-prompt)", target)
 	}
 	return t, nil
 }

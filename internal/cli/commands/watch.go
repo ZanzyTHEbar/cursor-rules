@@ -2,7 +2,6 @@ package commands
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -10,6 +9,7 @@ import (
 	"github.com/ZanzyTHEbar/cursor-rules/internal/app"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/cli"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/cli/display"
+	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -25,7 +25,7 @@ func NewWatchCmd(ctx *cli.AppContext) *cobra.Command {
 
 			_, err := ctx.App().StartWatcher(ctxBG, app.WatchRequest{ConfigPath: cfgPath})
 			if err != nil {
-				return fmt.Errorf("failed to start watcher: %w", err)
+				return errors.Wrapf(err, errors.CodeInternal, "start watcher")
 			}
 
 			<-ctxBG.Done()
