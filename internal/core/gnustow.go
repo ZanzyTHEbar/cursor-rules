@@ -1,11 +1,12 @@
 package core
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 )
 
 // UseSymlink checks environment override to decide whether to create real symlinks
@@ -41,11 +42,11 @@ func UseGNUStow() bool {
 func CreateSymlink(src, dest string) error {
 	// Ensure source exists
 	if _, err := os.Stat(src); err != nil {
-		return fmt.Errorf("source not found: %s", src)
+		return errors.Newf(errors.CodeNotFound, "source not found: %s", src)
 	}
 
 	if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
-		return fmt.Errorf("failed to create parent dirs for %s: %w", dest, err)
+		return errors.Wrapf(err, errors.CodeInternal, "create parent dirs for %s", dest)
 	}
 
 	// If destination exists, check whether it points to src
@@ -60,12 +61,12 @@ func CreateSymlink(src, dest string) error {
 			_ = os.Remove(dest)
 		} else {
 			// file exists and is not a symlink - do not overwrite
-			return fmt.Errorf("destination exists and is not a symlink: %s", dest)
+			return errors.Newf(errors.CodeAlreadyExists, "destination exists and is not a symlink: %s", dest)
 		}
 	}
 
 	if err := os.Symlink(src, dest); err != nil {
-		return fmt.Errorf("failed to create symlink %s -> %s: %w", dest, src, err)
+		return errors.Wrapf(err, errors.CodeInternal, "create symlink %s -> %s", dest, src)
 	}
 	return nil
 }
@@ -82,7 +83,7 @@ func ApplyPresetWithOptionalSymlink(projectRoot, preset, packageDir string) (Ins
 
 	src := filepath.Join(packageDir, preset+".mdc")
 	if _, err := os.Stat(src); err != nil {
-		return StrategyUnknown, fmt.Errorf("source not found: %s", src)
+		return StrategyUnknown, errors.Newf(errors.CodeNotFound, "source not found: %s", src)
 	}
 
 	dest := filepath.Join(projectRoot, ".cursor", "rules", preset+".mdc")

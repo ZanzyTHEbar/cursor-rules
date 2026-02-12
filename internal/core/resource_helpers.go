@@ -1,7 +1,6 @@
 package core
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -9,6 +8,7 @@ import (
 	"text/template"
 
 	"github.com/ZanzyTHEbar/cursor-rules/internal/config"
+	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 )
 
 // DefaultPackageDirWithEnv returns a package dir path based on an env var or a default name under the user's home.
@@ -44,7 +44,7 @@ func InstallPackageGeneric(projectRoot, packageDir, packageName, destSubdir stri
 	pkgDir := filepath.Join(packageDir, packageName)
 	info, err := os.Stat(pkgDir)
 	if err != nil || !info.IsDir() {
-		return fmt.Errorf("package not found: %s", pkgDir)
+		return errors.Newf(errors.CodeNotFound, "package not found: %s", pkgDir)
 	}
 
 	// Read ignore file if present in package dir

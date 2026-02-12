@@ -1,10 +1,10 @@
 package core
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
+	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/security"
 	"gopkg.in/yaml.v3"
 )
@@ -16,7 +16,7 @@ func LoadWatcherMapping(packageDir string) (map[string][]string, error) {
 	// Safely construct mapping file path
 	mappingPath, err := security.SafeJoin(packageDir, "watcher-mapping.yaml")
 	if err != nil {
-		return nil, fmt.Errorf("invalid package directory path: %w", err)
+		return nil, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid package directory path")
 	}
 
 	if _, statErr := os.Stat(mappingPath); os.IsNotExist(statErr) {
@@ -26,7 +26,7 @@ func LoadWatcherMapping(packageDir string) (map[string][]string, error) {
 	// #nosec G304 - mappingPath is validated above and constructed from trusted packageDir
 	b, readErr := os.ReadFile(mappingPath)
 	if readErr != nil {
-		return nil, fmt.Errorf("failed to read watcher mapping: %w", readErr)
+		return nil, errors.Wrapf(readErr, errors.CodeInternal, "read watcher mapping")
 	}
 	// expected format:
 	// presets:
@@ -37,7 +37,7 @@ func LoadWatcherMapping(packageDir string) (map[string][]string, error) {
 		Presets map[string][]string `yaml:"presets"`
 	}
 	if err := yaml.Unmarshal(b, &raw); err != nil {
-		return nil, fmt.Errorf("failed to parse watcher mapping: %w", err)
+		return nil, errors.Wrapf(err, errors.CodeInternal, "parse watcher mapping")
 	}
 	if raw.Presets == nil {
 		return nil, nil
@@ -47,20 +47,20 @@ func LoadWatcherMapping(packageDir string) (map[string][]string, error) {
 	for preset, projects := range raw.Presets {
 		// Validate preset name
 		if validErr := security.ValidatePackageName(preset); validErr != nil {
-			return nil, fmt.Errorf("invalid preset name %q in mapping: %w", preset, validErr)
+			return nil, errors.Wrapf(validErr, errors.CodeInvalidArgument, "invalid preset name %q in mapping", preset)
 		}
 
 		for _, p := range projects {
 			// Validate path
 			if validErr := security.ValidatePath(p); validErr != nil {
-				return nil, fmt.Errorf("invalid project path %q for preset %q: %w", p, preset, validErr)
+				return nil, errors.Wrapf(validErr, errors.CodeInvalidArgument, "invalid project path %q for preset %q", p, preset)
 			}
 
 			if !filepath.IsAbs(p) {
 				// Safely join relative path with packageDir
 				absPath, joinErr := security.SafeJoin(packageDir, p)
 				if joinErr != nil {
-					return nil, fmt.Errorf("invalid relative path %q for preset %q: %w", p, preset, joinErr)
+					return nil, errors.Wrapf(joinErr, errors.CodeInvalidArgument, "invalid relative path %q for preset %q", p, preset)
 				}
 				p = absPath
 			}

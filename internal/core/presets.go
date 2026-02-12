@@ -1,7 +1,6 @@
 package core
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -9,6 +8,7 @@ import (
 	"text/template"
 
 	"github.com/ZanzyTHEbar/cursor-rules/internal/config"
+	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/security"
 )
 
@@ -29,13 +29,13 @@ func InstallPreset(projectRoot, preset string) error {
 
 	// Validate preset name for security (use package validation since presets can have nested paths)
 	if err := security.ValidatePackageName(normalizedPreset); err != nil {
-		return fmt.Errorf("invalid preset name: %w", err)
+		return errors.Wrapf(err, errors.CodeInvalidArgument, "invalid preset name")
 	}
 
 	// Safely construct source path
 	src, err := security.SafeJoin(packageDir, normalizedPreset+".mdc")
 	if err != nil {
-		return fmt.Errorf("invalid preset path: %w", err)
+		return errors.Wrapf(err, errors.CodeInvalidArgument, "invalid preset path")
 	}
 
 	// If preset file not found, allow package-style layout when stow is enabled
@@ -50,14 +50,14 @@ func InstallPreset(projectRoot, preset string) error {
 			}
 			return false
 		}()) {
-			return fmt.Errorf("preset not found: %s (expected %s)", preset, src)
+			return errors.Newf(errors.CodeNotFound, "preset not found: %s (expected %s)", preset, src)
 		}
 	}
 
 	// Safely construct rules directory path
 	rulesDir, err := security.SafeJoin(projectRoot, ".cursor", "rules")
 	if err != nil {
-		return fmt.Errorf("invalid project path: %w", err)
+		return errors.Wrapf(err, errors.CodeInvalidArgument, "invalid project path")
 	}
 	if err := os.MkdirAll(rulesDir, 0o755); err != nil {
 		return err
@@ -72,7 +72,7 @@ func InstallPreset(projectRoot, preset string) error {
 	// Safely construct destination path
 	dest, err := security.SafeJoin(rulesDir, normalizedPreset+".mdc")
 	if err != nil {
-		return fmt.Errorf("invalid destination path: %w", err)
+		return errors.Wrapf(err, errors.CodeInvalidArgument, "invalid destination path")
 	}
 
 	// Ensure destination directory exists (handles nested paths like emissium/behavior/)
@@ -112,23 +112,23 @@ func InstallPackage(projectRoot, packageName string, excludes []string, noFlatte
 func InstallPackageFromPackageDir(projectRoot, packageDir, packageName string, excludes []string, noFlatten bool) (InstallStrategy, error) {
 	// Validate package name for security
 	if err := security.ValidatePackageName(packageName); err != nil {
-		return StrategyUnknown, fmt.Errorf("invalid package name: %w", err)
+		return StrategyUnknown, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid package name")
 	}
 
 	// Safely construct package directory path
 	pkgDir, err := security.SafeJoin(packageDir, packageName)
 	if err != nil {
-		return StrategyUnknown, fmt.Errorf("invalid package path: %w", err)
+		return StrategyUnknown, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid package path")
 	}
 	info, statErr := os.Stat(pkgDir)
 	if statErr != nil || !info.IsDir() {
-		return StrategyUnknown, fmt.Errorf("package not found: %s", pkgDir)
+		return StrategyUnknown, errors.Newf(errors.CodeNotFound, "package not found: %s", pkgDir)
 	}
 
 	// Read .cursor-rules-ignore if present in package dir
 	ignorePath, err := security.SafeJoin(pkgDir, ".cursor-rules-ignore")
 	if err != nil {
-		return StrategyUnknown, fmt.Errorf("invalid ignore file path: %w", err)
+		return StrategyUnknown, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid ignore file path")
 	}
 	var ignorePatterns []string
 	if b, err := os.ReadFile(ignorePath); err == nil {
@@ -153,7 +153,7 @@ func InstallPackageFromPackageDir(projectRoot, packageDir, packageName string, e
 	// Walk package dir and install each .mdc file unless excluded
 	rulesDir, err := security.SafeJoin(projectRoot, ".cursor", "rules")
 	if err != nil {
-		return StrategyUnknown, fmt.Errorf("invalid rules directory path: %w", err)
+		return StrategyUnknown, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid rules directory path")
 	}
 	if err := os.MkdirAll(rulesDir, 0o755); err != nil {
 		return StrategyUnknown, err
@@ -179,7 +179,7 @@ func InstallPackageFromPackageDir(projectRoot, packageDir, packageName string, e
 
 		// Validate relative path for security
 		if validErr := security.ValidatePath(rel); validErr != nil {
-			return fmt.Errorf("invalid file path in package: %w", validErr)
+			return errors.Wrapf(validErr, errors.CodeInvalidArgument, "invalid file path in package")
 		}
 
 		// Check ignore patterns (simple glob match)
@@ -202,7 +202,7 @@ func InstallPackageFromPackageDir(projectRoot, packageDir, packageName string, e
 			dest, destErr = security.SafeJoin(rulesDir, destName)
 		}
 		if destErr != nil {
-			return fmt.Errorf("invalid destination path: %w", destErr)
+			return errors.Wrapf(destErr, errors.CodeInvalidArgument, "invalid destination path")
 		}
 		if mkdirErr := os.MkdirAll(filepath.Dir(dest), 0o755); mkdirErr != nil {
 			return mkdirErr

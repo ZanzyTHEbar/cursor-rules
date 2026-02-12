@@ -1,12 +1,13 @@
 package core
 
 import (
-	"fmt"
 	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 )
 
 // ListPackagePresets returns list of .mdc files found in packageDir.
@@ -78,7 +79,7 @@ func SyncPackageRepo(packageDir string) error {
 	cmd := exec.Command("git", "-C", packageDir, "pull", "--ff-only")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("git pull failed: %v: %s", err, string(output))
+		return errors.Wrapf(err, errors.CodeInternal, "git pull failed: %s", string(output))
 	}
 	return nil
 }

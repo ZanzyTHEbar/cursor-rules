@@ -1,11 +1,11 @@
 package core
 
 import (
-	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 
+	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/security"
 )
 
@@ -19,7 +19,7 @@ func ListProjectPresets(projectRoot string) ([]string, error) {
 	// Safely construct rules directory path
 	rulesDir, err := security.SafeJoin(projectRoot, ".cursor", "rules")
 	if err != nil {
-		return nil, fmt.Errorf("invalid project path: %w", err)
+		return nil, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid project path")
 	}
 
 	// Check if directory exists
@@ -48,7 +48,7 @@ func InitProject(projectRoot string) error {
 	// Safely construct rules directory path
 	rulesDir, err := security.SafeJoin(projectRoot, ".cursor", "rules")
 	if err != nil {
-		return fmt.Errorf("invalid project path: %w", err)
+		return errors.Wrapf(err, errors.CodeInvalidArgument, "invalid project path")
 	}
 	return os.MkdirAll(rulesDir, 0o755)
 }

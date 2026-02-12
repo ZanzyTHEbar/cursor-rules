@@ -1,13 +1,13 @@
 package core
 
 import (
-	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 
+	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/security"
 )
 
@@ -38,7 +38,7 @@ func BuildRulesTree(packageDir string) (*RulesTree, error) {
 		return nil, err
 	}
 	if !info.IsDir() {
-		return tree, fmt.Errorf("package dir is not a directory: %s", packageDir)
+		return tree, errors.Newf(errors.CodeFailedPrecondition, "package dir is not a directory: %s", packageDir)
 	}
 
 	presets, err := listRootRuleFiles(packageDir)
@@ -126,7 +126,7 @@ func collectPackageRuleFiles(packageDir, packageName string) ([]string, error) {
 			return relErr
 		}
 		if err := security.ValidatePath(rel); err != nil {
-			return fmt.Errorf("invalid file path in package %s: %w", packageName, err)
+			return errors.Wrapf(err, errors.CodeInvalidArgument, "invalid file path in package %s", packageName)
 		}
 
 		for _, pat := range ignorePatterns {

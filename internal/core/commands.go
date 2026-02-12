@@ -1,11 +1,12 @@
 package core
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
+
+	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 )
 
 var commandStubTmpl = `---
@@ -37,7 +38,7 @@ func InstallCommand(projectRoot, command string) error {
 	if _, err := os.Stat(src); os.IsNotExist(err) {
 		d := filepath.Join(sharedDir, normalized)
 		if info, err := os.Stat(d); err != nil || !info.IsDir() {
-			return fmt.Errorf("command not found: %s (expected %s)", command, src)
+			return errors.Newf(errors.CodeNotFound, "command not found: %s (expected %s)", command, src)
 		}
 	}
 
@@ -71,7 +72,7 @@ func ApplyCommandToProject(projectRoot, command, sourceDir string) error {
 	normalized := strings.TrimSuffix(command, ".md")
 	src := filepath.Join(sourceDir, normalized+".md")
 	if _, err := os.Stat(src); err != nil {
-		return fmt.Errorf("shared command not found: %s", src)
+		return errors.Newf(errors.CodeNotFound, "shared command not found: %s", src)
 	}
 	commandsDir := filepath.Join(projectRoot, ".cursor", "commands")
 	if err := os.MkdirAll(commandsDir, 0o755); err != nil {

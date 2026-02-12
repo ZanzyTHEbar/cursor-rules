@@ -1,10 +1,11 @@
 package core
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 )
 
 // ApplyPresetToProject copies a package preset file into the project's .cursor/rules as a stub (@file).
@@ -16,7 +17,7 @@ func ApplyPresetToProject(projectRoot, preset, packageDir string) (InstallStrate
 	// ensure source exists
 	src := filepath.Join(packageDir, normalizedPreset+".mdc")
 	if _, err := os.Stat(src); err != nil {
-		return StrategyUnknown, fmt.Errorf("package preset not found: %s", src)
+		return StrategyUnknown, errors.Newf(errors.CodeNotFound, "package preset not found: %s", src)
 	}
 	rulesDir := filepath.Join(projectRoot, ".cursor", "rules")
 	if err := os.MkdirAll(rulesDir, 0o755); err != nil {
