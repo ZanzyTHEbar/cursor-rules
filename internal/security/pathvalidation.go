@@ -2,9 +2,10 @@ package security
 
 import (
 	"errors"
-	"fmt"
 	"path/filepath"
 	"strings"
+
+	errs "github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 )
 
 var (
@@ -26,17 +27,17 @@ var (
 // - Invalid characters
 func ValidatePath(path string) error {
 	if path == "" {
-		return fmt.Errorf("%w: empty path", ErrInvalidPath)
+		return errs.Wrap(ErrInvalidPath, errs.CodeInvalidArgument, "empty path")
 	}
 
 	// Check for null bytes (security risk)
 	if strings.Contains(path, "\x00") {
-		return fmt.Errorf("%w: null byte in path", ErrInvalidPath)
+		return errs.Wrap(ErrInvalidPath, errs.CodeInvalidArgument, "null byte in path")
 	}
 
 	// Check for path traversal sequences
 	if strings.Contains(path, "..") {
-		return fmt.Errorf("%w: path contains '..'", ErrPathTraversal)
+		return errs.Wrap(ErrPathTraversal, errs.CodeInvalidArgument, "path contains '..'")
 	}
 
 	// Clean the path to normalize it
@@ -44,7 +45,7 @@ func ValidatePath(path string) error {
 
 	// After cleaning, check again for traversal
 	if strings.Contains(cleaned, "..") {
-		return fmt.Errorf("%w: path contains '..' after normalization", ErrPathTraversal)
+		return errs.Wrap(ErrPathTraversal, errs.CodeInvalidArgument, "path contains '..' after normalization")
 	}
 
 	return nil
@@ -61,23 +62,23 @@ func ValidatePathWithinBase(path, base string) error {
 	// Clean and make absolute
 	absBase, err := filepath.Abs(filepath.Clean(base))
 	if err != nil {
-		return fmt.Errorf("failed to resolve base path: %w", err)
+		return errs.Wrapf(err, errs.CodeInternal, "resolve base path")
 	}
 
 	absPath, err := filepath.Abs(filepath.Clean(path))
 	if err != nil {
-		return fmt.Errorf("failed to resolve path: %w", err)
+		return errs.Wrapf(err, errs.CodeInternal, "resolve path")
 	}
 
 	// Check if path is within base
 	rel, err := filepath.Rel(absBase, absPath)
 	if err != nil {
-		return fmt.Errorf("failed to compute relative path: %w", err)
+		return errs.Wrapf(err, errs.CodeInternal, "compute relative path")
 	}
 
 	// If relative path starts with "..", it's outside base
 	if strings.HasPrefix(rel, "..") {
-		return fmt.Errorf("%w: %s is outside %s", ErrPathOutsideBase, path, base)
+		return errs.Wrapf(ErrPathOutsideBase, errs.CodeInvalidArgument, "%s is outside %s", path, base)
 	}
 
 	return nil
@@ -88,13 +89,13 @@ func ValidatePathWithinBase(path, base string) error {
 func SafeJoin(base string, elem ...string) (string, error) {
 	// Validate base
 	if base == "" {
-		return "", fmt.Errorf("%w: empty base path", ErrInvalidPath)
+		return "", errs.Wrap(ErrInvalidPath, errs.CodeInvalidArgument, "empty base path")
 	}
 
 	// Validate each element
 	for i, e := range elem {
 		if err := ValidatePath(e); err != nil {
-			return "", fmt.Errorf("invalid element at index %d: %w", i, err)
+			return "", errs.Wrapf(err, errs.CodeInvalidArgument, "invalid element at index %d", i)
 		}
 	}
 
@@ -113,27 +114,27 @@ func SafeJoin(base string, elem ...string) (string, error) {
 // Preset names should be simple identifiers without path separators or special characters.
 func ValidatePresetName(name string) error {
 	if name == "" {
-		return fmt.Errorf("%w: empty preset name", ErrInvalidPath)
+		return errs.Wrap(ErrInvalidPath, errs.CodeInvalidArgument, "empty preset name")
 	}
 
 	// Check for null bytes
 	if strings.Contains(name, "\x00") {
-		return fmt.Errorf("%w: null byte in preset name", ErrInvalidPath)
+		return errs.Wrap(ErrInvalidPath, errs.CodeInvalidArgument, "null byte in preset name")
 	}
 
 	// Check for path separators (both Unix and Windows)
 	if strings.ContainsAny(name, "/\\") {
-		return fmt.Errorf("%w: preset name contains path separators", ErrInvalidPath)
+		return errs.Wrap(ErrInvalidPath, errs.CodeInvalidArgument, "preset name contains path separators")
 	}
 
 	// Check for path traversal
 	if strings.Contains(name, "..") {
-		return fmt.Errorf("%w: preset name contains '..'", ErrPathTraversal)
+		return errs.Wrap(ErrPathTraversal, errs.CodeInvalidArgument, "preset name contains '..'")
 	}
 
 	// Check for hidden files (starting with .)
 	if strings.HasPrefix(name, ".") {
-		return fmt.Errorf("%w: preset name starts with '.'", ErrInvalidPath)
+		return errs.Wrap(ErrInvalidPath, errs.CodeInvalidArgument, "preset name starts with '.'")
 	}
 
 	return nil
@@ -144,40 +145,40 @@ func ValidatePresetName(name string) error {
 // but should not contain path traversal sequences or other dangerous characters.
 func ValidatePackageName(name string) error {
 	if name == "" {
-		return fmt.Errorf("%w: empty package name", ErrInvalidPath)
+		return errs.Wrap(ErrInvalidPath, errs.CodeInvalidArgument, "empty package name")
 	}
 
 	// Check for null bytes
 	if strings.Contains(name, "\x00") {
-		return fmt.Errorf("%w: null byte in package name", ErrInvalidPath)
+		return errs.Wrap(ErrInvalidPath, errs.CodeInvalidArgument, "null byte in package name")
 	}
 
 	// Check for path traversal
 	if strings.Contains(name, "..") {
-		return fmt.Errorf("%w: package name contains '..'", ErrPathTraversal)
+		return errs.Wrap(ErrPathTraversal, errs.CodeInvalidArgument, "package name contains '..'")
 	}
 
 	// Check for backslashes (Windows path separator - not allowed in package names)
 	if strings.Contains(name, "\\") {
-		return fmt.Errorf("%w: package name contains backslashes", ErrInvalidPath)
+		return errs.Wrap(ErrInvalidPath, errs.CodeInvalidArgument, "package name contains backslashes")
 	}
 
 	// Check for absolute paths
 	if filepath.IsAbs(name) {
-		return fmt.Errorf("%w: package name is absolute path", ErrInvalidPath)
+		return errs.Wrap(ErrInvalidPath, errs.CodeInvalidArgument, "package name is absolute path")
 	}
 
 	// Validate each component
 	parts := strings.Split(name, "/")
 	for i, part := range parts {
 		if part == "" {
-			return fmt.Errorf("%w: empty component at index %d", ErrInvalidPath, i)
+			return errs.Wrapf(ErrInvalidPath, errs.CodeInvalidArgument, "empty component at index %d", i)
 		}
 		if part == "." || part == ".." {
-			return fmt.Errorf("%w: invalid component '%s' at index %d", ErrInvalidPath, part, i)
+			return errs.Wrapf(ErrInvalidPath, errs.CodeInvalidArgument, "invalid component %q at index %d", part, i)
 		}
 		if strings.HasPrefix(part, ".") {
-			return fmt.Errorf("%w: component starts with '.' at index %d", ErrInvalidPath, i)
+			return errs.Wrapf(ErrInvalidPath, errs.CodeInvalidArgument, "component starts with '.' at index %d", i)
 		}
 	}
 
