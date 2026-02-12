@@ -5,6 +5,7 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 	"github.com/spf13/viper"
 )
 
@@ -52,6 +53,10 @@ func LoadConfig(cfgFile string) (*Config, error) {
 		}
 		enableStowIfRequested(cfg)
 		return cfg, nil
+	}
+
+	if v.IsSet("sharedDir") {
+		return nil, errors.ErrLegacyConfigKey("sharedDir", "packageDir")
 	}
 
 	cfg := &Config{
