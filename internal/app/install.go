@@ -2,12 +2,12 @@ package app
 
 import (
 	"bytes"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/ZanzyTHEbar/cursor-rules/internal/core"
+	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/manifest"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/transform"
 )
@@ -67,7 +67,7 @@ func (a *App) Install(req *InstallRequest) (*InstallResponse, error) {
 	if packageDir == "" {
 		cfg, _, err := a.LoadConfig("")
 		if err != nil {
-			return nil, fmt.Errorf("load config: %w", err)
+			return nil, errors.Wrapf(err, errors.CodeInternal, "load config")
 		}
 		packageDir = a.ResolvePackageDir(cfg)
 	}
@@ -100,14 +100,14 @@ func (a *App) InstallAll(req *InstallAllRequest) (*InstallAllResponse, error) {
 	if packageDir == "" {
 		cfg, _, err := a.LoadConfig("")
 		if err != nil {
-			return nil, fmt.Errorf("load config: %w", err)
+			return nil, errors.Wrapf(err, errors.CodeInternal, "load config")
 		}
 		packageDir = a.ResolvePackageDir(cfg)
 	}
 
 	pkgs, err := core.ListPackageDirs(packageDir)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list packages: %w", err)
+		return nil, errors.Wrapf(err, errors.CodeInternal, "list packages")
 	}
 
 	resp := &InstallAllResponse{
@@ -152,7 +152,7 @@ type installInternalRequest struct {
 
 func (a *App) installInternal(req *installInternalRequest) ([]InstallResult, error) {
 	if req.Name == "" {
-		return nil, fmt.Errorf("missing preset or package name")
+		return nil, errors.New(errors.CodeInvalidArgument, "missing preset or package name")
 	}
 
 	pkgPath := filepath.Join(req.PackageDir, req.Name)
@@ -193,18 +193,18 @@ func (a *App) installInternal(req *installInternalRequest) ([]InstallResult, err
 			if transformer.Target() == "cursor" && (core.UseSymlink() || core.WantGNUStow()) {
 				strategy, err = core.InstallPackageFromPackageDir(req.Workdir, req.PackageDir, req.Name, effectiveExcludes, req.NoFlatten)
 				if err != nil {
-					return nil, fmt.Errorf("install to %s failed: %w", tgt, err)
+					return nil, errors.Wrapf(err, errors.CodeInternal, "install to %s failed", tgt)
 				}
 			} else {
 				strategy, err = installPackageWithTransformer(req.Workdir, pkgPath, req.Name, transformer, effectiveExcludes, req.NoFlatten)
 				if err != nil {
-					return nil, fmt.Errorf("install to %s failed: %w", tgt, err)
+					return nil, errors.Wrapf(err, errors.CodeInternal, "install to %s failed", tgt)
 				}
 			}
 		} else {
 			strategy, err = installPresetWithTransformer(req.Workdir, pkgPath, req.Name, transformer, req.PackageDir)
 			if err != nil {
-				return nil, fmt.Errorf("install to %s failed: %w", tgt, err)
+				return nil, errors.Wrapf(err, errors.CodeInternal, "install to %s failed", tgt)
 			}
 		}
 
@@ -222,7 +222,7 @@ func (a *App) installInternal(req *installInternalRequest) ([]InstallResult, err
 
 func (a *App) transformer(target string) (transform.Transformer, error) {
 	if a == nil || a.Transformers == nil {
-		return nil, fmt.Errorf("no transformers configured")
+		return nil, errors.New(errors.CodeFailedPrecondition, "no transformers configured")
 	}
 	return a.Transformers.Transformer(target)
 }
@@ -236,12 +236,12 @@ func installPackageWithTransformer(
 ) (core.InstallStrategy, error) {
 	outDir := filepath.Join(workDir, transformer.OutputDir())
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
-		return core.StrategyUnknown, fmt.Errorf("create output dir for package %q: %w", presetName, err)
+		return core.StrategyUnknown, errors.Wrapf(err, errors.CodeInternal, "create output dir for package %q", presetName)
 	}
 
 	if err := filepath.Walk(pkgPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return fmt.Errorf("walk package %q: %w", presetName, err)
+			return errors.Wrapf(err, errors.CodeInternal, "walk package %q", presetName)
 		}
 		if info.IsDir() || !strings.HasSuffix(info.Name(), ".mdc") {
 			return nil
@@ -249,13 +249,13 @@ func installPackageWithTransformer(
 
 		relPath, err := filepath.Rel(pkgPath, path)
 		if err != nil {
-			return fmt.Errorf("failed to get relative path: %w", err)
+			return errors.Wrapf(err, errors.CodeInternal, "get relative path")
 		}
 		if shouldExclude(relPath, excludes) {
 			return nil
 		}
 		if err := transformAndWriteFile(path, relPath, outDir, transformer, noFlatten); err != nil {
-			return fmt.Errorf("install file from package %q: %w", presetName, err)
+			return errors.Wrapf(err, errors.CodeInternal, "install file from package %q", presetName)
 		}
 		return nil
 	}); err != nil {
@@ -274,7 +274,7 @@ func installPresetWithTransformer(
 		presetPath += ".mdc"
 	}
 	if _, err := os.Stat(presetPath); os.IsNotExist(err) {
-		return core.StrategyUnknown, fmt.Errorf("preset %q not found: %s", presetName, presetPath)
+		return core.StrategyUnknown, errors.Newf(errors.CodeNotFound, "preset %q not found: %s", presetName, presetPath)
 	}
 
 	if transformer.Target() == "cursor" {
@@ -289,11 +289,11 @@ func installPresetWithTransformer(
 
 	outDir := filepath.Join(workDir, transformer.OutputDir())
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
-		return core.StrategyUnknown, fmt.Errorf("create output dir for preset %q: %w", presetName, err)
+		return core.StrategyUnknown, errors.Wrapf(err, errors.CodeInternal, "create output dir for preset %q", presetName)
 	}
 
 	if err := transformAndWriteFile(presetPath, filepath.Base(presetPath), outDir, transformer, false); err != nil {
-		return core.StrategyUnknown, fmt.Errorf("install preset %q: %w", presetName, err)
+		return core.StrategyUnknown, errors.Wrapf(err, errors.CodeInternal, "install preset %q", presetName)
 	}
 	return core.StrategyCopy, nil
 }
@@ -306,21 +306,21 @@ func transformAndWriteFile(
 ) error {
 	data, err := os.ReadFile(srcPath)
 	if err != nil {
-		return fmt.Errorf("read %s: %w", srcPath, err)
+		return errors.Wrapf(err, errors.CodeInternal, "read %s", srcPath)
 	}
 
 	frontmatter, body, err := transform.SplitFrontmatter(data)
 	if err != nil {
-		return fmt.Errorf("parse %s: %w", srcPath, err)
+		return errors.Wrapf(err, errors.CodeInternal, "parse %s", srcPath)
 	}
 
 	transformedFM, transformedBody, err := transformer.Transform(frontmatter, body)
 	if err != nil {
-		return fmt.Errorf("transform %s: %w", srcPath, err)
+		return errors.Wrapf(err, errors.CodeInternal, "transform %s", srcPath)
 	}
 
 	if validateErr := transformer.Validate(transformedFM); validateErr != nil {
-		return fmt.Errorf("validate %s: %w", srcPath, validateErr)
+		return errors.Wrapf(validateErr, errors.CodeInvalidArgument, "validate %s", srcPath)
 	}
 
 	var outPath string
@@ -333,13 +333,13 @@ func transformAndWriteFile(
 
 	output, err := transform.MarshalMarkdown(transformedFM, transformedBody)
 	if err != nil {
-		return fmt.Errorf("marshal %s: %w", srcPath, err)
+		return errors.Wrapf(err, errors.CodeInternal, "marshal %s", srcPath)
 	}
 
 	if info, statErr := os.Lstat(outPath); statErr == nil {
 		if info.Mode()&os.ModeSymlink != 0 {
 			if rmErr := os.Remove(outPath); rmErr != nil {
-				return fmt.Errorf("remove existing symlink %s: %w", outPath, rmErr)
+				return errors.Wrapf(rmErr, errors.CodeInternal, "remove existing symlink %s", outPath)
 			}
 		}
 	}

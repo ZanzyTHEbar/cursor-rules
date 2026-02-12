@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/ZanzyTHEbar/cursor-rules/internal/core"
+	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 )
 
 // EffectiveRequest describes an effective rules request.
@@ -77,7 +78,7 @@ func (a *App) EffectiveRules(req EffectiveRequest) (*EffectiveResponse, error) {
 		}
 		return nil
 	}); err != nil {
-		return nil, fmt.Errorf("failed to walk rules directory: %w", err)
+		return nil, errors.Wrapf(err, errors.CodeInternal, "walk rules directory")
 	}
 
 	if len(files) == 0 {

@@ -2,9 +2,9 @@ package app
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/ZanzyTHEbar/cursor-rules/internal/core"
+	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 )
 
 // WatchRequest describes a watcher start request.
@@ -25,7 +25,7 @@ func (a *App) StartWatcher(ctx context.Context, req WatchRequest) (*WatchRespons
 		return nil, err
 	}
 	if cfg == nil {
-		return nil, fmt.Errorf("no config found")
+		return nil, errors.New(errors.CodeFailedPrecondition, "no config found")
 	}
 	cfg.PackageDir = a.ResolvePackageDir(cfg)
 	if err := core.StartWatcher(ctx, cfg.PackageDir, cfg.AutoApply); err != nil {

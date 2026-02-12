@@ -1,10 +1,10 @@
 package app
 
 import (
-	"fmt"
 	"path/filepath"
 
 	"github.com/ZanzyTHEbar/cursor-rules/internal/core"
+	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 )
 
 // SyncRequest describes a sync request.
@@ -39,7 +39,7 @@ type SyncResponse struct {
 func (a *App) Sync(req SyncRequest) (*SyncResponse, error) {
 	cfg, _, err := a.LoadConfig(req.ConfigPath)
 	if err != nil {
-		return nil, fmt.Errorf("load config: %w", err)
+		return nil, errors.Wrapf(err, errors.CodeInternal, "load config")
 	}
 	packageDir := a.ResolvePackageDir(cfg)
 
@@ -52,7 +52,7 @@ func (a *App) Sync(req SyncRequest) (*SyncResponse, error) {
 	}
 	commands, err := core.ListSharedCommands(packageDir)
 	if err != nil {
-		return nil, fmt.Errorf("list shared commands: %w", err)
+		return nil, errors.Wrapf(err, errors.CodeInternal, "list shared commands")
 	}
 
 	resp := &SyncResponse{

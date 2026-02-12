@@ -1,11 +1,11 @@
 package app
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
 
+	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/transform"
 )
 
@@ -14,7 +14,7 @@ type staticProvider map[string]transform.Transformer
 func (p staticProvider) Transformer(target string) (transform.Transformer, error) {
 	t, ok := p[target]
 	if !ok {
-		return nil, fmt.Errorf("unknown target: %s", target)
+		return nil, errors.Newf(errors.CodeInvalidArgument, "unknown target: %s", target)
 	}
 	return t, nil
 }

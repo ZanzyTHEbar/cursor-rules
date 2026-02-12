@@ -1,9 +1,8 @@
 package app
 
 import (
-	"fmt"
-
 	"github.com/ZanzyTHEbar/cursor-rules/internal/core"
+	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 )
 
 // ListRequest describes a rules listing request.
@@ -21,7 +20,7 @@ type ListResponse struct {
 func (a *App) ListRules(req ListRequest) (*ListResponse, error) {
 	cfg, _, err := a.LoadConfig(req.ConfigPath)
 	if err != nil {
-		return nil, fmt.Errorf("load config: %w", err)
+		return nil, errors.Wrapf(err, errors.CodeInternal, "load config")
 	}
 	packageDir := a.ResolvePackageDir(cfg)
 	tree, err := core.BuildRulesTree(packageDir)

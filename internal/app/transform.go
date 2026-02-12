@@ -1,11 +1,11 @@
 package app
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/transform"
 )
 
@@ -36,7 +36,7 @@ type TransformResponse struct {
 // TransformPreview performs a dry-run transform for a preset or package.
 func (a *App) TransformPreview(req TransformRequest) (*TransformResponse, error) {
 	if req.Name == "" {
-		return nil, fmt.Errorf("missing preset name")
+		return nil, errors.New(errors.CodeInvalidArgument, "missing preset name")
 	}
 
 	transformer, err := a.transformer(req.Target)
@@ -48,7 +48,7 @@ func (a *App) TransformPreview(req TransformRequest) (*TransformResponse, error)
 	if packageDir == "" {
 		cfg, _, err := a.LoadConfig("")
 		if err != nil {
-			return nil, fmt.Errorf("load config: %w", err)
+			return nil, errors.Wrapf(err, errors.CodeInternal, "load config")
 		}
 		packageDir = a.ResolvePackageDir(cfg)
 	}
@@ -59,7 +59,7 @@ func (a *App) TransformPreview(req TransformRequest) (*TransformResponse, error)
 		pkgPath += ".mdc"
 		info, err = os.Stat(pkgPath)
 		if err != nil {
-			return nil, fmt.Errorf("preset not found: %s", req.Name)
+			return nil, errors.Newf(errors.CodeNotFound, "preset not found: %s", req.Name)
 		}
 	}
 
