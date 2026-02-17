@@ -22,7 +22,7 @@ While Cursor has a built-in feature to manage rules, it's not very flexible.
 
 I wanted a centralized way to manage rules that would be easy to maintain and share with others, while also being able to override rules for a specific project without all of the copy-pasting between projects.
 
-**New:** Now supports installing rules as GitHub Copilot instructions (`.github/instructions/`) and prompts (`.github/prompts/`) for seamless multi-tool workflows.
+**New:** Now supports installing rules as GitHub Copilot instructions (`.github/instructions/`) and prompts (`.github/prompts/`) for seamless multi-tool workflows. It also manages **Cursor skills**, **commands**, **subagents (agents)**, and **hooks** from a single package directory.
 
 #### How
 
@@ -158,6 +158,20 @@ Override with `$CURSOR_RULES_PACKAGE_DIR` or `packageDir` in `config.yaml`.
 The config file lives in the config directory (default: `~/.cursor/rules/`), which can be
 overridden with `$CURSOR_RULES_CONFIG_DIR` or `--config`.
 
+### Directories and destination
+
+Three concepts control where content lives:
+
+| Concept | Primary | Override / shorthand |
+|--------|---------|----------------------|
+| **Source** (package + config) | `CURSOR_RULES_PACKAGE_DIR` (package dir; when set, config dir defaults to its parent for one-root) | `CURSOR_RULES_CONFIG_DIR` |
+| **Destination** (where install/list/remove operate) | `--dir <path\|user>` | `--workdir` / `-w` (path), `--global` (user) |
+| **User/global base** | `CURSOR_USER_DIR` (default `~/.cursor`) | `CURSOR_RULES_DIR`, `CURSOR_COMMANDS_DIR`, … (per-feature overrides) |
+
+- **Source:** Where shared packages and config are read from. Set `CURSOR_RULES_PACKAGE_DIR` to your package directory (e.g. `~/cursor-rules/rules`); config dir is then the parent by default (e.g. `~/cursor-rules`), or set `CURSOR_RULES_CONFIG_DIR` to override.
+- **Destination:** Either a project path (e.g. `.` or `--workdir /path`) or user dirs (`--dir user` or `--global`). Use `-w`/`--workdir` for a path, or `--global` for user.
+- **User base:** When using `--global` or `--dir user`, rules/commands/skills/agents/hooks live under `CURSOR_USER_DIR` unless overridden by `CURSOR_RULES_DIR`, etc.
+
 ### Generate a default config
 
 ```bash
@@ -208,10 +222,15 @@ Logger integration:
 
 Environment variables:
 
--   `CURSOR_RULES_PACKAGE_DIR`: override the default package directory (default: `~/.cursor/rules`).
+-   `CURSOR_RULES_PACKAGE_DIR`: package directory (default: `~/.cursor/rules`). When set, config dir defaults to its parent so one var gives one root.
 -   `CURSOR_RULES_CONFIG_DIR`: override the config directory (default: `~/.cursor/rules`).
 -   `CURSOR_RULES_SYMLINK=1`: when set, `install`/`apply` operations will create real filesystem symlinks instead of writing stub `.mdc` files. Use with caution.
 -   `CURSOR_RULES_USE_GNUSTOW=1`: when set and GNU `stow` is available in PATH, the tool will attempt to use `stow` to manage symlinks from the package directory into project targets. This is best-effort and will fall back to symlinks or stubs if stow fails.
+
+**User/global dirs and custom directories:**
+
+-   `CURSOR_USER_DIR`: base for user/global context (default: `~/.cursor`). Used with `--global` or `--dir user` for install, list, remove.
+-   `CURSOR_RULES_DIR`, `CURSOR_COMMANDS_DIR`, `CURSOR_SKILLS_DIR`, `CURSOR_AGENTS_DIR`, `CURSOR_HOOKS_DIR`, `CURSOR_HOOKS_JSON`: override where user-level rules, commands, skills, agents, hooks, and `hooks.json` live (default: `<CURSOR_USER_DIR>/rules`, etc.). Set these to point at custom dirs, then run `cursor-rules config link` to create symlinks from `~/.cursor/rules` (etc.) to those dirs so Cursor sees them as user globals.
 
 Watcher mapping (auto-apply):
 
@@ -252,6 +271,11 @@ cursor-rules install frontend --target copilot-prompt
 
 # Install to all targets defined in package manifest
 cursor-rules install frontend --all-targets
+
+# Install Cursor skills, agents, or hook presets from package dir into project
+cursor-rules install my-skill --target cursor-skills
+cursor-rules install my-agent --target cursor-agents
+cursor-rules install my-hooks --target cursor-hooks
 ```
 
 ### Frontmatter transformation
@@ -366,6 +390,26 @@ cursor-rules effective --target copilot-prompt
    - Ask: "Generate a React component" (should follow instructions)
 
 For detailed examples and best practices, see [docs/copilot-integration.md](docs/copilot-integration.md).
+
+## Cursor context: rules, commands, skills, agents, hooks
+
+The package directory (default `~/.cursor/rules`) can hold all five Cursor context types:
+
+| Type      | Package dir layout              | Project location              | Install target      |
+|-----------|----------------------------------|-------------------------------|---------------------|
+| **Rules** | `*.mdc`, `<pkg>/*.mdc`           | `.cursor/rules/`              | `cursor`, `copilot-*` |
+| **Commands** | `*.md` or `commands/<name>/` | `.cursor/commands/`           | `cursor-commands`   |
+| **Skills**   | `skills/<name>/SKILL.md`     | `.cursor/skills/<name>/`      | `cursor-skills`     |
+| **Agents**   | `agents/<name>.md`           | `.cursor/agents/<name>.md`    | `cursor-agents`     |
+| **Hooks**    | `hooks/<preset>/hooks.json` + scripts | `.cursor/hooks.json`, `.cursor/hooks/` | `cursor-hooks` |
+
+- **init** creates `.cursor/rules`, `.cursor/commands`, `.cursor/skills`, `.cursor/agents`, and `.cursor/hooks`.
+- **list** and **sync** show presets, commands, skills, agents, and hook presets from the package dir.
+- **install** with `--target cursor-commands`, `cursor-skills`, `cursor-agents`, or `cursor-hooks` installs from the package dir into the project.
+- **remove** supports `--type rule|command|skill|agent|hooks` (e.g. `remove my-skill --type skill`, `remove --type hooks`).
+- **install**, **list**, and **remove** support `--global` (or `--dir user`) to operate on user dirs (`~/.cursor/...`) instead of the project. Destination can be set with persistent `--dir`, `--workdir`/`-w`, or `--global`. Override the user base with `CURSOR_USER_DIR` or per-feature with `CURSOR_RULES_DIR`, `CURSOR_COMMANDS_DIR`, etc. Run `cursor-rules config link` to create symlinks from `~/.cursor` to your custom dirs when those env vars are set.
+
+**Hooks:** Installing a hook preset replaces the project’s `.cursor/hooks.json` and populates `.cursor/hooks/` with scripts; script paths in the preset are rewritten to `.cursor/hooks/<name>`. Installing a second hook preset replaces the first unless merge support is added later.
 
 ## Packages
 
