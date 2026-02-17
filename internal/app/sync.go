@@ -29,6 +29,9 @@ type SyncResponse struct {
 	PackageDir        string
 	Presets           []string
 	Commands          []string
+	Skills            []string
+	Agents            []string
+	Hooks             []string
 	Applied           []SyncApplyResult
 	ApplySkipped      bool
 	Workdir           string
@@ -54,11 +57,17 @@ func (a *App) Sync(req SyncRequest) (*SyncResponse, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, errors.CodeInternal, "list shared commands")
 	}
+	skills, _ := core.ListSkillDirs(packageDir, cfg.SkillsSubdir)
+	agents, _ := core.ListAgentFiles(packageDir, cfg.AgentsSubdir)
+	hooks, _ := core.ListHookPresets(packageDir, cfg.HooksSubdir)
 
 	resp := &SyncResponse{
 		PackageDir: packageDir,
 		Presets:    presets,
 		Commands:   commands,
+		Skills:     skills,
+		Agents:     agents,
+		Hooks:      hooks,
 	}
 
 	if !req.Apply {

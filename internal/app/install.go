@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ZanzyTHEbar/cursor-rules/internal/config"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/core"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/manifest"
@@ -17,6 +18,7 @@ type InstallRequest struct {
 	Name              string
 	PackageDir        string
 	Workdir           string
+	Global            bool // if true, install to user dirs (~/.cursor/...) instead of project
 	Excludes          []string
 	NoFlatten         bool
 	Target            string
@@ -28,6 +30,7 @@ type InstallRequest struct {
 type InstallAllRequest struct {
 	PackageDir             string
 	Workdir                string
+	Global                 bool // if true, install to user dirs (~/.cursor/...) instead of project
 	Excludes               []string
 	NoFlatten              bool
 	Target                 string
@@ -62,13 +65,16 @@ func (a *App) Install(req *InstallRequest) (*InstallResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+	if req.Global {
+		wd = config.GlobalProjectRoot()
+	}
 
+	cfg, _, err := a.LoadConfig("")
+	if err != nil {
+		return nil, errors.Wrapf(err, errors.CodeInternal, "load config")
+	}
 	packageDir := strings.TrimSpace(req.PackageDir)
 	if packageDir == "" {
-		cfg, _, err := a.LoadConfig("")
-		if err != nil {
-			return nil, errors.Wrapf(err, errors.CodeInternal, "load config")
-		}
 		packageDir = a.ResolvePackageDir(cfg)
 	}
 
@@ -81,6 +87,9 @@ func (a *App) Install(req *InstallRequest) (*InstallResponse, error) {
 		Target:            req.Target,
 		AllTargets:        req.AllTargets,
 		ShowInstallMethod: req.ShowInstallMethod,
+		SkillsSubdir:      cfg.SkillsSubdir,
+		AgentsSubdir:      cfg.AgentsSubdir,
+		HooksSubdir:       cfg.HooksSubdir,
 	})
 	if err != nil {
 		return nil, err
@@ -95,13 +104,16 @@ func (a *App) InstallAll(req *InstallAllRequest) (*InstallAllResponse, error) {
 	if err != nil {
 		return nil, err
 	}
+	if req.Global {
+		wd = config.GlobalProjectRoot()
+	}
 
+	cfg, _, err := a.LoadConfig("")
+	if err != nil {
+		return nil, errors.Wrapf(err, errors.CodeInternal, "load config")
+	}
 	packageDir := strings.TrimSpace(req.PackageDir)
 	if packageDir == "" {
-		cfg, _, err := a.LoadConfig("")
-		if err != nil {
-			return nil, errors.Wrapf(err, errors.CodeInternal, "load config")
-		}
 		packageDir = a.ResolvePackageDir(cfg)
 	}
 
@@ -129,6 +141,9 @@ func (a *App) InstallAll(req *InstallAllRequest) (*InstallAllResponse, error) {
 			Target:            req.Target,
 			AllTargets:        req.AllTargets,
 			ShowInstallMethod: show,
+			SkillsSubdir:      cfg.SkillsSubdir,
+			AgentsSubdir:      cfg.AgentsSubdir,
+			HooksSubdir:       cfg.HooksSubdir,
 		})
 		if err != nil {
 			return nil, err
@@ -148,6 +163,9 @@ type installInternalRequest struct {
 	Target            string
 	AllTargets        bool
 	ShowInstallMethod bool
+	SkillsSubdir      string
+	AgentsSubdir      string
+	HooksSubdir       string
 }
 
 func (a *App) installInternal(req *installInternalRequest) ([]InstallResult, error) {
@@ -183,6 +201,66 @@ func (a *App) installInternal(req *installInternalRequest) ([]InstallResult, err
 
 	results := make([]InstallResult, 0, len(targets))
 	for _, tgt := range targets {
+		switch tgt {
+		case "cursor-commands":
+			var err error
+			if isPackage {
+				err = core.InstallCommandPackageFromDir(req.Workdir, req.PackageDir, req.Name, effectiveExcludes, req.NoFlatten)
+			} else {
+				err = core.ApplyCommandToProject(req.Workdir, req.Name, req.PackageDir)
+			}
+			if err != nil {
+				return nil, errors.Wrapf(err, errors.CodeInternal, "install to cursor-commands failed")
+			}
+			results = append(results, InstallResult{
+				Name:       req.Name,
+				Target:     "cursor-commands",
+				OutputDir:  ".cursor/commands",
+				Strategy:   core.StrategyCopy,
+				ShowMethod: req.ShowInstallMethod,
+			})
+			continue
+		case "cursor-skills":
+			strategy, err := core.InstallSkillToProject(req.Workdir, req.PackageDir, req.Name, req.SkillsSubdir)
+			if err != nil {
+				return nil, errors.Wrapf(err, errors.CodeInternal, "install to cursor-skills failed")
+			}
+			results = append(results, InstallResult{
+				Name:       req.Name,
+				Target:     "cursor-skills",
+				OutputDir:  ".cursor/skills",
+				Strategy:   strategy,
+				ShowMethod: req.ShowInstallMethod,
+			})
+			continue
+		case "cursor-agents":
+			strategy, err := core.InstallAgentToProject(req.Workdir, req.PackageDir, req.Name, req.AgentsSubdir)
+			if err != nil {
+				return nil, errors.Wrapf(err, errors.CodeInternal, "install to cursor-agents failed")
+			}
+			results = append(results, InstallResult{
+				Name:       req.Name,
+				Target:     "cursor-agents",
+				OutputDir:  ".cursor/agents",
+				Strategy:   strategy,
+				ShowMethod: req.ShowInstallMethod,
+			})
+			continue
+		case "cursor-hooks":
+			strategy, err := core.InstallHookPresetToProject(req.Workdir, req.PackageDir, req.Name, req.HooksSubdir)
+			if err != nil {
+				return nil, errors.Wrapf(err, errors.CodeInternal, "install to cursor-hooks failed")
+			}
+			results = append(results, InstallResult{
+				Name:       req.Name,
+				Target:     "cursor-hooks",
+				OutputDir:  ".cursor/hooks",
+				Strategy:   strategy,
+				ShowMethod: req.ShowInstallMethod,
+			})
+			continue
+		}
+
 		transformer, err := a.transformer(tgt)
 		if err != nil {
 			return nil, err
