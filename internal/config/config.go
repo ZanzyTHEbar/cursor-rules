@@ -10,12 +10,15 @@ import (
 )
 
 type Config struct {
-	PackageDir string
-	Watch      bool
-	AutoApply  bool
-	EnableStow bool
-	Presets    []string
-	LogLevel   string
+	PackageDir   string
+	SkillsSubdir string // default "skills"
+	AgentsSubdir string // default "agents"
+	HooksSubdir  string // default "hooks"
+	Watch        bool
+	AutoApply    bool
+	EnableStow   bool
+	Presets      []string
+	LogLevel     string
 }
 
 const defaultLogLevel = "info"
@@ -35,6 +38,9 @@ func LoadConfig(cfgFile string) (*Config, error) {
 
 	// defaults
 	v.SetDefault("packageDir", DefaultPackageDir())
+	v.SetDefault("skillsSubdir", "skills")
+	v.SetDefault("agentsSubdir", "agents")
+	v.SetDefault("hooksSubdir", "hooks")
 	v.SetDefault("watch", false)
 	v.SetDefault("autoApply", false)
 	v.SetDefault("enableStow", false)
@@ -44,12 +50,15 @@ func LoadConfig(cfgFile string) (*Config, error) {
 	if err := v.ReadInConfig(); err != nil {
 		// if not found, return defaults
 		cfg := &Config{
-			PackageDir: v.GetString("packageDir"),
-			Watch:      v.GetBool("watch"),
-			AutoApply:  v.GetBool("autoApply"),
-			EnableStow: v.GetBool("enableStow"),
-			Presets:    v.GetStringSlice("presets"),
-			LogLevel:   NormalizeLogLevel(v.GetString("logLevel")),
+			PackageDir:   v.GetString("packageDir"),
+			SkillsSubdir: resolveSubdir(v.GetString("skillsSubdir"), "skills"),
+			AgentsSubdir: resolveSubdir(v.GetString("agentsSubdir"), "agents"),
+			HooksSubdir:  resolveSubdir(v.GetString("hooksSubdir"), "hooks"),
+			Watch:        v.GetBool("watch"),
+			AutoApply:    v.GetBool("autoApply"),
+			EnableStow:   v.GetBool("enableStow"),
+			Presets:      v.GetStringSlice("presets"),
+			LogLevel:     NormalizeLogLevel(v.GetString("logLevel")),
 		}
 		enableStowIfRequested(cfg)
 		return cfg, nil
@@ -60,15 +69,26 @@ func LoadConfig(cfgFile string) (*Config, error) {
 	}
 
 	cfg := &Config{
-		PackageDir: v.GetString("packageDir"),
-		Watch:      v.GetBool("watch"),
-		AutoApply:  v.GetBool("autoApply"),
-		EnableStow: v.GetBool("enableStow"),
-		Presets:    v.GetStringSlice("presets"),
-		LogLevel:   NormalizeLogLevel(v.GetString("logLevel")),
+		PackageDir:   v.GetString("packageDir"),
+		SkillsSubdir: resolveSubdir(v.GetString("skillsSubdir"), "skills"),
+		AgentsSubdir: resolveSubdir(v.GetString("agentsSubdir"), "agents"),
+		HooksSubdir:  resolveSubdir(v.GetString("hooksSubdir"), "hooks"),
+		Watch:        v.GetBool("watch"),
+		AutoApply:    v.GetBool("autoApply"),
+		EnableStow:   v.GetBool("enableStow"),
+		Presets:      v.GetStringSlice("presets"),
+		LogLevel:     NormalizeLogLevel(v.GetString("logLevel")),
 	}
 	enableStowIfRequested(cfg)
 	return cfg, nil
+}
+
+// resolveSubdir returns the subdir name, or default if empty.
+func resolveSubdir(configured, defaultVal string) string {
+	if s := strings.TrimSpace(configured); s != "" {
+		return s
+	}
+	return defaultVal
 }
 
 func enableStowIfRequested(cfg *Config) {
