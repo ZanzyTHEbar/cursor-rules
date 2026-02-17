@@ -28,9 +28,13 @@ Use strict mode.`
 		t.Fatalf("Failed to create test rule: %v", err)
 	}
 
-	// Set environment
+	// Set environment (config dir empty so no user config with sharedDir)
 	os.Setenv("CURSOR_RULES_PACKAGE_DIR", tmpShared)
-	defer os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
+	os.Setenv("CURSOR_RULES_CONFIG_DIR", t.TempDir())
+	defer func() {
+		os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
+		os.Unsetenv("CURSOR_RULES_CONFIG_DIR")
+	}()
 
 	tests := []struct {
 		name       string
@@ -130,7 +134,11 @@ Content`
 	}
 
 	os.Setenv("CURSOR_RULES_PACKAGE_DIR", tmpShared)
-	defer os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
+	os.Setenv("CURSOR_RULES_CONFIG_DIR", t.TempDir())
+	defer func() {
+		os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
+		os.Unsetenv("CURSOR_RULES_CONFIG_DIR")
+	}()
 
 	ctx := cli.NewAppContext(nil, nil)
 	ctx.Viper.Set("workdir", tmpProject)
@@ -208,7 +216,11 @@ Content 2`,
 	}
 
 	os.Setenv("CURSOR_RULES_PACKAGE_DIR", tmpShared)
-	defer os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
+	os.Setenv("CURSOR_RULES_CONFIG_DIR", t.TempDir())
+	defer func() {
+		os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
+		os.Unsetenv("CURSOR_RULES_CONFIG_DIR")
+	}()
 
 	ctx := cli.NewAppContext(nil, nil)
 	ctx.Viper.Set("workdir", tmpProject)
@@ -261,7 +273,11 @@ Content`,
 	}
 
 	os.Setenv("CURSOR_RULES_PACKAGE_DIR", tmpShared)
-	defer os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
+	os.Setenv("CURSOR_RULES_CONFIG_DIR", t.TempDir())
+	defer func() {
+		os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
+		os.Unsetenv("CURSOR_RULES_CONFIG_DIR")
+	}()
 
 	ctx := cli.NewAppContext(nil, nil)
 	ctx.Viper.Set("workdir", tmpProject)
@@ -285,6 +301,105 @@ Content`,
 	if _, err := os.Stat(excludePath); !os.IsNotExist(err) {
 		t.Error("Excluded file was installed")
 	}
+}
+
+// TestInstallCursorSkillsAgentsHooks tests install --target cursor-skills, cursor-agents, cursor-hooks
+func TestInstallCursorSkillsAgentsHooks(t *testing.T) {
+	tmpShared := t.TempDir()
+	tmpProject := t.TempDir()
+
+	os.Setenv("CURSOR_RULES_PACKAGE_DIR", tmpShared)
+	os.Setenv("CURSOR_RULES_CONFIG_DIR", t.TempDir())
+	os.Setenv("CURSOR_RULES_USE_GNUSTOW", "") // use copy/symlink so .cursor/skills/<name>/ layout is preserved
+	defer func() {
+		os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
+		os.Unsetenv("CURSOR_RULES_CONFIG_DIR")
+		os.Unsetenv("CURSOR_RULES_USE_GNUSTOW")
+	}()
+
+	// Skill: skills/my-skill/SKILL.md
+	skillDir := filepath.Join(tmpShared, "skills", "my-skill")
+	if err := os.MkdirAll(skillDir, 0755); err != nil {
+		t.Fatalf("create skill dir: %v", err)
+	}
+	skillMD := `---
+name: my-skill
+description: Test skill
+---
+Use this skill for testing.`
+	if err := os.WriteFile(filepath.Join(skillDir, "SKILL.md"), []byte(skillMD), 0644); err != nil {
+		t.Fatalf("write SKILL.md: %v", err)
+	}
+
+	// Agent: agents/my-agent.md
+	agentsDir := filepath.Join(tmpShared, "agents")
+	if err := os.MkdirAll(agentsDir, 0755); err != nil {
+		t.Fatalf("create agents dir: %v", err)
+	}
+	agentMD := `---
+name: my-agent
+description: Test agent
+---
+You are a test agent.`
+	if err := os.WriteFile(filepath.Join(agentsDir, "my-agent.md"), []byte(agentMD), 0644); err != nil {
+		t.Fatalf("write agent: %v", err)
+	}
+
+	// Hooks: hooks/my-hooks/hooks.json + script
+	hookDir := filepath.Join(tmpShared, "hooks", "my-hooks")
+	if err := os.MkdirAll(hookDir, 0755); err != nil {
+		t.Fatalf("create hook dir: %v", err)
+	}
+	hookJSON := `{"version":1,"hooks":{"sessionStart":[{"command":"./format.sh"}]}}`
+	if err := os.WriteFile(filepath.Join(hookDir, "hooks.json"), []byte(hookJSON), 0644); err != nil {
+		t.Fatalf("write hooks.json: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(hookDir, "format.sh"), []byte("#!/bin/sh\nexit 0\n"), 0755); err != nil {
+		t.Fatalf("write format.sh: %v", err)
+	}
+
+	ctx := cli.NewAppContext(nil, nil)
+	ctx.Viper.Set("workdir", tmpProject)
+
+	t.Run("cursor-skills", func(t *testing.T) {
+		cmd := commands.NewInstallCmd(ctx)
+		cmd.SetArgs([]string{"my-skill", "--target", "cursor-skills"})
+		if err := cmd.Execute(); err != nil {
+			t.Fatalf("install skill: %v", err)
+		}
+		skillDest := filepath.Join(tmpProject, ".cursor", "skills", "my-skill", "SKILL.md")
+		if _, err := os.Stat(skillDest); err != nil {
+			t.Errorf("skill not installed at %s: %v", skillDest, err)
+		}
+	})
+
+	t.Run("cursor-agents", func(t *testing.T) {
+		cmd := commands.NewInstallCmd(ctx)
+		cmd.SetArgs([]string{"my-agent", "--target", "cursor-agents"})
+		if err := cmd.Execute(); err != nil {
+			t.Fatalf("install agent: %v", err)
+		}
+		agentDest := filepath.Join(tmpProject, ".cursor", "agents", "my-agent.md")
+		if _, err := os.Stat(agentDest); err != nil {
+			t.Errorf("agent not installed at %s: %v", agentDest, err)
+		}
+	})
+
+	t.Run("cursor-hooks", func(t *testing.T) {
+		cmd := commands.NewInstallCmd(ctx)
+		cmd.SetArgs([]string{"my-hooks", "--target", "cursor-hooks"})
+		if err := cmd.Execute(); err != nil {
+			t.Fatalf("install hooks: %v", err)
+		}
+		hooksJSON := filepath.Join(tmpProject, ".cursor", "hooks.json")
+		hooksScript := filepath.Join(tmpProject, ".cursor", "hooks", "format.sh")
+		if _, err := os.Stat(hooksJSON); err != nil {
+			t.Errorf("hooks.json not installed at %s: %v", hooksJSON, err)
+		}
+		if _, err := os.Stat(hooksScript); err != nil {
+			t.Errorf("hook script not installed at %s: %v", hooksScript, err)
+		}
+	})
 }
 
 // Helper function

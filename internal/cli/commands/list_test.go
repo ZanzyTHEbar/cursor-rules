@@ -13,8 +13,13 @@ import (
 
 func TestListCommandShowsRulesTree(t *testing.T) {
 	shared := t.TempDir()
+	configDir := t.TempDir() // empty so LoadConfig uses defaults
 	os.Setenv("CURSOR_RULES_PACKAGE_DIR", shared)
-	defer os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
+	os.Setenv("CURSOR_RULES_CONFIG_DIR", configDir)
+	defer func() {
+		os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
+		os.Unsetenv("CURSOR_RULES_CONFIG_DIR")
+	}()
 
 	writeFile(t, filepath.Join(shared, "base.mdc"), "base")
 	writeFile(t, filepath.Join(shared, "pkg", "rule.mdc"), "pkg rule")

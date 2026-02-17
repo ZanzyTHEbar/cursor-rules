@@ -3,16 +3,26 @@ package commands
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/ZanzyTHEbar/cursor-rules/internal/cli"
 	"github.com/spf13/viper"
 )
 
+// quoteYAML double-quotes a string for use in YAML (escapes \ and ").
+func quoteYAML(s string) string {
+	return `"` + strings.ReplaceAll(strings.ReplaceAll(s, `\`, `\\`), `"`, `\"`) + `"`
+}
+
 func TestInstallAllInstallsAllPackages(t *testing.T) {
 	packageDir := t.TempDir()
 	os.Setenv("CURSOR_RULES_PACKAGE_DIR", packageDir)
-	defer os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
+	os.Setenv("CURSOR_RULES_CONFIG_DIR", t.TempDir())
+	defer func() {
+		os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
+		os.Unsetenv("CURSOR_RULES_CONFIG_DIR")
+	}()
 
 	// pkgA
 	if err := os.MkdirAll(filepath.Join(packageDir, "pkgA"), 0o755); err != nil {
@@ -65,7 +75,15 @@ func TestInstallAllInstallsAllPackages(t *testing.T) {
 
 func TestInstallAllRespectsViperPackageDirWhenEnvUnset(t *testing.T) {
 	packageDir := t.TempDir()
+	configDir := t.TempDir()
 	os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
+	// Config file so LoadConfig uses this packageDir (no sharedDir)
+	configPath := filepath.Join(configDir, "config.yaml")
+	if err := os.WriteFile(configPath, []byte("packageDir: "+quoteYAML(packageDir)+"\n"), 0o644); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+	os.Setenv("CURSOR_RULES_CONFIG_DIR", configDir)
+	defer os.Unsetenv("CURSOR_RULES_CONFIG_DIR")
 
 	// pkgA
 	if err := os.MkdirAll(filepath.Join(packageDir, "pkgA"), 0o755); err != nil {

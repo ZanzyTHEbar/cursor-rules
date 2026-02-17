@@ -64,9 +64,13 @@ func TestInstallCommandErrors(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			shared, project := tt.setup(t)
 
-			// Set environment
+			// Set environment (config dir empty so no user config with sharedDir)
 			os.Setenv("CURSOR_RULES_PACKAGE_DIR", shared)
-			defer os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
+			os.Setenv("CURSOR_RULES_CONFIG_DIR", t.TempDir())
+			defer func() {
+				os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
+				os.Unsetenv("CURSOR_RULES_CONFIG_DIR")
+			}()
 
 			// Create context
 			v := viper.New()
@@ -133,9 +137,13 @@ func TestTransformCommandErrors(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			shared, presetName := tt.setup(t)
 
-			// Set environment
+			// Set environment (config dir empty so no user config with sharedDir)
 			os.Setenv("CURSOR_RULES_PACKAGE_DIR", shared)
-			defer os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
+			os.Setenv("CURSOR_RULES_CONFIG_DIR", t.TempDir())
+			defer func() {
+				os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
+				os.Unsetenv("CURSOR_RULES_CONFIG_DIR")
+			}()
 
 			// Create context
 			ctx := cli.NewAppContext(nil, nil)
@@ -319,7 +327,11 @@ func TestListCommandErrors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			workdir := tt.setup(t)
-			defer os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
+			os.Setenv("CURSOR_RULES_CONFIG_DIR", t.TempDir())
+			defer func() {
+				os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
+				os.Unsetenv("CURSOR_RULES_CONFIG_DIR")
+			}()
 
 			// Create context
 			v := viper.New()

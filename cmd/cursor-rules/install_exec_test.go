@@ -40,11 +40,17 @@ apply_to: "**/*.ts"
 	if err := os.WriteFile(presetFile, []byte(presetContent), 0o644); err != nil {
 		t.Fatalf("write preset: %v", err)
 	}
-	// set env so core.DefaultPackageDir() will pick this up
+	// set env so config and package dir are under test control (no user config with sharedDir)
 	if err := os.Setenv("CURSOR_RULES_PACKAGE_DIR", packageDir); err != nil {
 		t.Fatalf("setenv: %v", err)
 	}
-	t.Cleanup(func() { _ = os.Unsetenv("CURSOR_RULES_PACKAGE_DIR") })
+	if err := os.Setenv("CURSOR_RULES_CONFIG_DIR", t.TempDir()); err != nil {
+		t.Fatalf("setenv config: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
+		_ = os.Unsetenv("CURSOR_RULES_CONFIG_DIR")
+	})
 
 	// prepare project workdir
 	project := t.TempDir()
@@ -86,6 +92,7 @@ hello
 	}
 
 	t.Setenv("CURSOR_RULES_PACKAGE_DIR", packageDir)
+	t.Setenv("CURSOR_RULES_CONFIG_DIR", t.TempDir())
 	t.Setenv("CURSOR_RULES_USE_GNUSTOW", "")
 
 	project := t.TempDir()

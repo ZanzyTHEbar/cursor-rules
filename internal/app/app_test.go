@@ -29,7 +29,9 @@ func (p staticProvider) AvailableTargets() []string {
 
 func TestListRulesUsesPackageDir(t *testing.T) {
 	packageDir := t.TempDir()
+	configDir := t.TempDir() // empty so no config file; LoadConfig returns defaults
 	t.Setenv("CURSOR_RULES_PACKAGE_DIR", packageDir)
+	t.Setenv("CURSOR_RULES_CONFIG_DIR", configDir)
 	if err := os.WriteFile(filepath.Join(packageDir, "example.mdc"), []byte("content"), 0o644); err != nil {
 		t.Fatalf("write preset: %v", err)
 	}
@@ -49,7 +51,9 @@ func TestListRulesUsesPackageDir(t *testing.T) {
 
 func TestTransformPreviewSingleFile(t *testing.T) {
 	packageDir := t.TempDir()
+	configDir := t.TempDir()
 	t.Setenv("CURSOR_RULES_PACKAGE_DIR", packageDir)
+	t.Setenv("CURSOR_RULES_CONFIG_DIR", configDir)
 	content := `---
 description: "Example"
 apply_to: "**/*.ts"
