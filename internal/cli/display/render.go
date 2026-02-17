@@ -35,12 +35,36 @@ func renderInstallResults(p Printer, results []app.InstallResult) {
 	}
 }
 
-// RenderListResponse writes list output.
+// RenderListResponse writes list output (rules tree plus commands, skills, agents, hooks).
 func RenderListResponse(p Printer, resp *app.ListResponse) {
 	if resp == nil {
 		return
 	}
 	p.Info("%s\n", FormatRulesTree(resp.Tree))
+	if len(resp.Commands) > 0 {
+		p.Info("commands:\n")
+		for _, c := range resp.Commands {
+			p.Info("  - %s\n", c)
+		}
+	}
+	if len(resp.Skills) > 0 {
+		p.Info("skills:\n")
+		for _, s := range resp.Skills {
+			p.Info("  - %s\n", s)
+		}
+	}
+	if len(resp.Agents) > 0 {
+		p.Info("agents:\n")
+		for _, a := range resp.Agents {
+			p.Info("  - %s\n", a)
+		}
+	}
+	if len(resp.Hooks) > 0 {
+		p.Info("hook presets:\n")
+		for _, h := range resp.Hooks {
+			p.Info("  - %s\n", h)
+		}
+	}
 }
 
 // RenderSyncResponse writes sync output.
@@ -56,6 +80,24 @@ func RenderSyncResponse(p Printer, resp *app.SyncResponse) {
 		p.Info("commands in package dir:\n")
 		for _, cmd := range resp.Commands {
 			p.Info("- %s\n", cmd)
+		}
+	}
+	if len(resp.Skills) > 0 {
+		p.Info("skills:\n")
+		for _, s := range resp.Skills {
+			p.Info("- %s\n", s)
+		}
+	}
+	if len(resp.Agents) > 0 {
+		p.Info("agents:\n")
+		for _, a := range resp.Agents {
+			p.Info("- %s\n", a)
+		}
+	}
+	if len(resp.Hooks) > 0 {
+		p.Info("hook presets:\n")
+		for _, h := range resp.Hooks {
+			p.Info("- %s\n", h)
 		}
 	}
 
@@ -135,6 +177,18 @@ func RenderRemoveResponse(p Printer, resp *app.RemoveResponse) {
 	}
 	if resp.RemovedCommand {
 		p.Success("Removed command %q from %s/.cursor/commands/\n", resp.Name, resp.Workdir)
+		return
+	}
+	if resp.RemovedSkill {
+		p.Success("Removed skill %q from %s/.cursor/skills/\n", resp.Name, resp.Workdir)
+		return
+	}
+	if resp.RemovedAgent {
+		p.Success("Removed agent %q from %s/.cursor/agents/\n", resp.Name, resp.Workdir)
+		return
+	}
+	if resp.RemovedHooks {
+		p.Success("Removed hooks from %s/.cursor/\n", resp.Workdir)
 	}
 }
 
@@ -147,4 +201,19 @@ func RenderConfigInitResponse(p Printer, resp *app.ConfigInitResponse) {
 		p.Info("Existing config backed up to %s\n", resp.BackupPath)
 	}
 	p.Info("Config written to %s (enableStow=%t)\n", resp.ConfigPath, resp.EnableStow)
+}
+
+// RenderLinkGlobalResponse writes link-global output.
+func RenderLinkGlobalResponse(p Printer, resp *app.LinkGlobalResponse) {
+	if resp == nil {
+		return
+	}
+	p.Info("Base dir: %s\n", resp.BaseDir)
+	for _, r := range resp.Results {
+		if r.Error != "" {
+			p.Error("  %s -> %s: %s\n", r.Link, r.Target, r.Error)
+			continue
+		}
+		p.Success("  %s -> %s\n", r.Link, r.Target)
+	}
 }

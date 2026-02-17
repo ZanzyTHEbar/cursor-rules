@@ -39,10 +39,14 @@ Examples:
   cursor-rules install frontend --all-targets`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workdir := cli.GetOptionalFlag(cmd, "workdir")
+			workdir, isUser, err := cli.ResolveDestination(ctx.App(), cmd)
+			if err != nil {
+				return err
+			}
 			req := &app.InstallRequest{
 				Name:              args[0],
 				Workdir:           workdir,
+				Global:            isUser,
 				Excludes:          excludeFlag,
 				NoFlatten:         noFlattenFlag,
 				Target:            targetFlag,
@@ -61,7 +65,7 @@ Examples:
 
 	cmd.Flags().StringArrayVar(&excludeFlag, "exclude", []string{}, "patterns to exclude when installing a package (can be repeated)")
 	cmd.Flags().BoolVarP(&noFlattenFlag, "no-flatten", "n", false, "preserve package directory structure")
-	cmd.Flags().StringVar(&targetFlag, "target", "cursor", "output target: cursor|copilot-instr|copilot-prompt")
+	cmd.Flags().StringVar(&targetFlag, "target", "cursor", "output target: cursor|copilot-instr|copilot-prompt|cursor-commands|cursor-skills|cursor-agents|cursor-hooks")
 	cmd.Flags().BoolVar(&allTargetsFlag, "all-targets", false, "install to all targets in manifest")
 
 	allCmd := &cobra.Command{
@@ -69,9 +73,13 @@ Examples:
 		Short: "Install all packages from the package directory",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			workdir := cli.GetOptionalFlag(cmd, "workdir")
+			workdir, isUser, err := cli.ResolveDestination(ctx.App(), cmd)
+			if err != nil {
+				return err
+			}
 			req := &app.InstallAllRequest{
 				Workdir:                workdir,
+				Global:                 isUser,
 				Excludes:               excludeAllFlag,
 				NoFlatten:              noFlattenAllFlag,
 				Target:                 targetAllFlag,
@@ -90,7 +98,7 @@ Examples:
 
 	allCmd.Flags().StringArrayVar(&excludeAllFlag, "exclude", []string{}, "patterns to exclude when installing a package (can be repeated)")
 	allCmd.Flags().BoolVarP(&noFlattenAllFlag, "no-flatten", "n", false, "preserve package directory structure")
-	allCmd.Flags().StringVar(&targetAllFlag, "target", "cursor", "output target: cursor|copilot-instr|copilot-prompt")
+	allCmd.Flags().StringVar(&targetAllFlag, "target", "cursor", "output target: cursor|copilot-instr|copilot-prompt|cursor-commands|cursor-skills|cursor-agents|cursor-hooks")
 	allCmd.Flags().BoolVar(&allTargetsAllFlag, "all-targets", false, "install to all targets in manifest")
 
 	cmd.AddCommand(allCmd)

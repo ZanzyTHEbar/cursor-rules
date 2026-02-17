@@ -39,6 +39,8 @@ func BuildRoot(ctx *AppContext) *cobra.Command {
 	root := NewRoot(ctx, DefaultPalette)
 	root.Version = Version
 	root.PersistentFlags().StringP("workdir", "w", "", "workspace root (defaults to current directory)")
+	root.PersistentFlags().String("dir", "", "destination: path or 'user' (shorthand: -w/--workdir for path, --global for user)")
+	root.PersistentFlags().Bool("global", false, "use user dirs (~/.cursor/...) as destination (same as --dir user)")
 
 	// postInit loads config into the application and may start background services
 	postInit := func(v *viper.Viper) error {

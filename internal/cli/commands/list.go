@@ -13,8 +13,11 @@ func NewListCmd(ctx *cli.AppContext) *cobra.Command {
 		Use:   "list",
 		Short: "List rules in the configured package directory",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			appCtx := ctx.App()
-			resp, err := appCtx.ListRules(app.ListRequest{})
+			_, isUser, err := cli.ResolveDestination(ctx.App(), cmd)
+			if err != nil {
+				return err
+			}
+			resp, err := ctx.App().ListRules(app.ListRequest{Global: isUser})
 			if err != nil {
 				return err
 			}

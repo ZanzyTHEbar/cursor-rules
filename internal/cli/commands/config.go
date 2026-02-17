@@ -15,6 +15,25 @@ func NewConfigCmd(ctx *cli.AppContext) *cobra.Command {
 	}
 
 	cmd.AddCommand(newConfigInitCmd(ctx))
+	cmd.AddCommand(newConfigLinkCmd(ctx))
+	return cmd
+}
+
+func newConfigLinkCmd(ctx *cli.AppContext) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "link",
+		Short: "Create symlinks from ~/.cursor to CURSOR_*_DIR custom dirs",
+		Long:  `When CURSOR_RULES_DIR, CURSOR_COMMANDS_DIR, etc. are set, creates symlinks at ~/.cursor/rules, ~/.cursor/commands, etc. so Cursor sees your custom dirs as user globals.`,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			resp, err := ctx.App().LinkGlobal(app.LinkGlobalRequest{})
+			if err != nil {
+				return err
+			}
+			p := display.NewPrinter(ctx.Messenger(), cmd.OutOrStdout(), cmd.ErrOrStderr())
+			display.RenderLinkGlobalResponse(p, resp)
+			return nil
+		},
+	}
 	return cmd
 }
 

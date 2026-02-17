@@ -11,7 +11,7 @@ import (
 func NewInitCmd(ctx *cli.AppContext) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "init",
-		Short: "Initialize a project with .cursor/rules/ directory",
+		Short: "Initialize project with .cursor/rules, commands, skills, agents, and hooks",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			workdir := cli.GetOptionalFlag(cmd, "workdir")
 			resp, err := ctx.App().InitProject(app.InitRequest{Workdir: workdir})
