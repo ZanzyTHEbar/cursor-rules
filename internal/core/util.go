@@ -43,14 +43,20 @@ func ListProjectPresets(projectRoot string) ([]string, error) {
 	return out, nil
 }
 
-// InitProject ensures the .cursor/rules directory exists for a project.
+// InitProject ensures .cursor/rules, .cursor/commands, .cursor/skills, .cursor/agents,
+// and .cursor/hooks directories exist for a project.
 func InitProject(projectRoot string) error {
-	// Safely construct rules directory path
-	rulesDir, err := security.SafeJoin(projectRoot, ".cursor", "rules")
-	if err != nil {
-		return errors.Wrapf(err, errors.CodeInvalidArgument, "invalid project path")
+	dirs := []string{"rules", "commands", "skills", "agents", "hooks"}
+	for _, sub := range dirs {
+		dir, err := security.SafeJoin(projectRoot, ".cursor", sub)
+		if err != nil {
+			return errors.Wrapf(err, errors.CodeInvalidArgument, "invalid project path for .cursor/%s", sub)
+		}
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return err
+		}
 	}
-	return os.MkdirAll(rulesDir, 0o755)
+	return nil
 }
 
 // ListProjectCommands lists files in project's .cursor/commands directory (returns file names).

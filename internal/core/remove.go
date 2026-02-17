@@ -24,3 +24,21 @@ func RemoveCommand(projectRoot, command string) error {
 	}
 	return os.Remove(target)
 }
+
+// RemoveSkill removes a skill directory from the project's .cursor/skills
+func RemoveSkill(projectRoot, skillName string) error {
+	skillDir := filepath.Join(projectRoot, ".cursor", "skills", skillName)
+	if _, err := os.Stat(skillDir); os.IsNotExist(err) {
+		return nil
+	}
+	return os.RemoveAll(skillDir)
+}
+
+// RemoveAgent removes an agent file from the project's .cursor/agents
+func RemoveAgent(projectRoot, agentName string) error {
+	agentPath := filepath.Join(projectRoot, ".cursor", "agents", agentName+".md")
+	if _, err := os.Stat(agentPath); os.IsNotExist(err) {
+		return nil
+	}
+	return os.Remove(agentPath)
+}

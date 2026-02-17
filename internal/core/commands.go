@@ -132,5 +132,10 @@ func ListSharedCommands(commandsDir string) ([]string, error) {
 // By default, packages are flattened into .cursor/commands/. Use noFlatten=true to preserve structure.
 func InstallCommandPackage(projectRoot, packageName string, excludes []string, noFlatten bool) error {
 	sharedDir := DefaultSharedCommandsDir()
-	return InstallPackageGeneric(projectRoot, sharedDir, packageName, "commands", []string{".md"}, ".cursor-commands-ignore", excludes, noFlatten)
+	return InstallCommandPackageFromDir(projectRoot, sharedDir, packageName, excludes, noFlatten)
+}
+
+// InstallCommandPackageFromDir installs a command package from sourceDir into the project's .cursor/commands.
+func InstallCommandPackageFromDir(projectRoot, sourceDir, packageName string, excludes []string, noFlatten bool) error {
+	return InstallPackageGeneric(projectRoot, sourceDir, packageName, "commands", []string{".md"}, ".cursor-commands-ignore", excludes, noFlatten)
 }
