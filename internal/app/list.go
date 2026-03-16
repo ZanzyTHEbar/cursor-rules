@@ -1,8 +1,6 @@
 package app
 
 import (
-	"path/filepath"
-
 	"github.com/ZanzyTHEbar/cursor-rules/internal/config"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/core"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
@@ -22,6 +20,9 @@ type ListResponse struct {
 	Skills     []string
 	Agents     []string
 	Hooks      []string
+	// Errors holds partial failures from providers (e.g. permissions, missing dirs).
+	// When using structured/JSON output, include this field so callers can surface warnings.
+	Errors []string
 }
 
 // ListRules returns the rules tree and available commands, skills, agents, and hooks for the configured package directory or user dirs when Global is true.
@@ -32,9 +33,8 @@ func (a *App) ListRules(req ListRequest) (*ListResponse, error) {
 	}
 	var packageDir string
 	if req.Global {
-		packageDir = config.UserCursorDir()
-		// List from user dirs: rules tree from UserCursorRulesDir(), commands from UserCursorCommandsDir(), etc.
-		tree, err := core.BuildRulesTree(config.UserCursorRulesDir())
+		packageDir = a.ResolvePackageDir(cfg)
+		tree, err := core.BuildRulesTree(config.EffectiveUserRulesDir(cfg))
 		if err != nil {
 			return nil, err
 		}
@@ -42,23 +42,14 @@ func (a *App) ListRules(req ListRequest) (*ListResponse, error) {
 			PackageDir: packageDir,
 			Tree:       tree,
 		}
-		if cmds, err := core.ListSharedCommands(config.UserCursorCommandsDir()); err == nil {
-			resp.Commands = cmds
-		}
-		skillsParent := filepath.Dir(config.UserCursorSkillsDir())
-		skillsSubdir := filepath.Base(config.UserCursorSkillsDir())
-		if skills, err := core.ListSkillDirs(skillsParent, skillsSubdir); err == nil {
-			resp.Skills = skills
-		}
-		agentsParent := filepath.Dir(config.UserCursorAgentsDir())
-		agentsSubdir := filepath.Base(config.UserCursorAgentsDir())
-		if agents, err := core.ListAgentFiles(agentsParent, agentsSubdir); err == nil {
-			resp.Agents = agents
-		}
-		hooksParent := filepath.Dir(config.UserCursorHooksDir())
-		hooksSubdir := filepath.Base(config.UserCursorHooksDir())
-		if hooks, err := core.ListHookPresets(hooksParent, hooksSubdir); err == nil {
-			resp.Hooks = hooks
+		projectRoot := config.GlobalProjectRoot(cfg)
+		for _, provider := range a.resourceRegistry().providers() {
+			items, err := provider.ListInstalled(projectRoot, cfg, true)
+			if err != nil {
+				resp.Errors = append(resp.Errors, provider.Kind()+": "+err.Error())
+				continue
+			}
+			assignProviderItems(resp, provider.Kind(), items)
 		}
 		return resp, nil
 	}
@@ -71,17 +62,29 @@ func (a *App) ListRules(req ListRequest) (*ListResponse, error) {
 		PackageDir: packageDir,
 		Tree:       tree,
 	}
-	if cmds, err := core.ListSharedCommands(packageDir); err == nil {
-		resp.Commands = cmds
-	}
-	if skills, err := core.ListSkillDirs(packageDir, cfg.SkillsSubdir); err == nil {
-		resp.Skills = skills
-	}
-	if agents, err := core.ListAgentFiles(packageDir, cfg.AgentsSubdir); err == nil {
-		resp.Agents = agents
-	}
-	if hooks, err := core.ListHookPresets(packageDir, cfg.HooksSubdir); err == nil {
-		resp.Hooks = hooks
+	for _, provider := range a.resourceRegistry().providers() {
+		items, err := provider.ListAvailable(packageDir, cfg)
+		if err != nil {
+			resp.Errors = append(resp.Errors, provider.Kind()+": "+err.Error())
+			continue
+		}
+		assignProviderItems(resp, provider.Kind(), items)
 	}
 	return resp, nil
+}
+
+func assignProviderItems(resp *ListResponse, kind string, items []string) {
+	if resp == nil {
+		return
+	}
+	switch kind {
+	case resourceKindCommand:
+		resp.Commands = items
+	case resourceKindSkill:
+		resp.Skills = items
+	case resourceKindAgent:
+		resp.Agents = items
+	case resourceKindHooks:
+		resp.Hooks = items
+	}
 }

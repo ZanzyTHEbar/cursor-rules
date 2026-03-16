@@ -20,11 +20,16 @@ type TransformerProvider interface {
 type App struct {
 	Viper        *viper.Viper
 	Transformers TransformerProvider
+	Resources    *nativeResourceRegistry
 }
 
 // New returns an App instance configured with Viper and transformers.
 func New(v *viper.Viper, t TransformerProvider) *App {
-	return &App{Viper: v, Transformers: t}
+	return &App{
+		Viper:        v,
+		Transformers: t,
+		Resources:    newNativeResourceRegistry(t),
+	}
 }
 
 // ResolveConfigPath returns the explicit config path or the discovered default.
@@ -81,4 +86,14 @@ func (a *App) ResolveWorkdir(explicit string, allowDefault bool) (string, error)
 		return "", nil
 	}
 	return core.WorkingDir()
+}
+
+func (a *App) resourceRegistry() *nativeResourceRegistry {
+	if a == nil {
+		panic("app.resourceRegistry called on nil App")
+	}
+	if a.Resources == nil {
+		a.Resources = newNativeResourceRegistry(a.Transformers)
+	}
+	return a.Resources
 }

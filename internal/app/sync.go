@@ -53,21 +53,19 @@ func (a *App) Sync(req SyncRequest) (*SyncResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	commands, err := core.ListSharedCommands(packageDir)
-	if err != nil {
-		return nil, errors.Wrapf(err, errors.CodeInternal, "list shared commands")
-	}
-	skills, _ := core.ListSkillDirs(packageDir, cfg.SkillsSubdir)
-	agents, _ := core.ListAgentFiles(packageDir, cfg.AgentsSubdir)
-	hooks, _ := core.ListHookPresets(packageDir, cfg.HooksSubdir)
-
 	resp := &SyncResponse{
 		PackageDir: packageDir,
 		Presets:    presets,
-		Commands:   commands,
-		Skills:     skills,
-		Agents:     agents,
-		Hooks:      hooks,
+	}
+	for _, provider := range a.resourceRegistry().providers() {
+		items, listErr := provider.ListAvailable(packageDir, cfg)
+		if listErr != nil {
+			if provider.Kind() == resourceKindCommand {
+				return nil, errors.Wrapf(listErr, errors.CodeInternal, "list shared commands")
+			}
+			continue
+		}
+		assignSyncItems(resp, provider.Kind(), items)
 	}
 
 	if !req.Apply {
@@ -117,4 +115,20 @@ func (a *App) Sync(req SyncRequest) (*SyncResponse, error) {
 	}
 
 	return resp, nil
+}
+
+func assignSyncItems(resp *SyncResponse, kind string, items []string) {
+	if resp == nil {
+		return
+	}
+	switch kind {
+	case resourceKindCommand:
+		resp.Commands = items
+	case resourceKindSkill:
+		resp.Skills = items
+	case resourceKindAgent:
+		resp.Agents = items
+	case resourceKindHooks:
+		resp.Hooks = items
+	}
 }

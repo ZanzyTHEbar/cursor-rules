@@ -59,19 +59,24 @@ type InstallAllResponse struct {
 	Results    []InstallResult
 }
 
+type installAllEntry struct {
+	Name   string
+	Target string
+	Label  string
+}
+
 // Install installs a preset or package according to the request.
 func (a *App) Install(req *InstallRequest) (*InstallResponse, error) {
+	cfg, _, err := a.LoadConfig("")
+	if err != nil {
+		return nil, errors.Wrapf(err, errors.CodeInternal, "load config")
+	}
 	wd, err := a.ResolveWorkdir(req.Workdir, true)
 	if err != nil {
 		return nil, err
 	}
 	if req.Global {
-		wd = config.GlobalProjectRoot()
-	}
-
-	cfg, _, err := a.LoadConfig("")
-	if err != nil {
-		return nil, errors.Wrapf(err, errors.CodeInternal, "load config")
+		wd = config.GlobalProjectRoot(cfg)
 	}
 	packageDir := strings.TrimSpace(req.PackageDir)
 	if packageDir == "" {
@@ -90,6 +95,7 @@ func (a *App) Install(req *InstallRequest) (*InstallResponse, error) {
 		SkillsSubdir:      cfg.SkillsSubdir,
 		AgentsSubdir:      cfg.AgentsSubdir,
 		HooksSubdir:       cfg.HooksSubdir,
+		IsUser:            req.Global,
 	})
 	if err != nil {
 		return nil, err
@@ -100,50 +106,50 @@ func (a *App) Install(req *InstallRequest) (*InstallResponse, error) {
 
 // InstallAll installs all packages in the resolved package directory.
 func (a *App) InstallAll(req *InstallAllRequest) (*InstallAllResponse, error) {
+	cfg, _, err := a.LoadConfig("")
+	if err != nil {
+		return nil, errors.Wrapf(err, errors.CodeInternal, "load config")
+	}
 	wd, err := a.ResolveWorkdir(req.Workdir, true)
 	if err != nil {
 		return nil, err
 	}
 	if req.Global {
-		wd = config.GlobalProjectRoot()
-	}
-
-	cfg, _, err := a.LoadConfig("")
-	if err != nil {
-		return nil, errors.Wrapf(err, errors.CodeInternal, "load config")
+		wd = config.GlobalProjectRoot(cfg)
 	}
 	packageDir := strings.TrimSpace(req.PackageDir)
 	if packageDir == "" {
 		packageDir = a.ResolvePackageDir(cfg)
 	}
 
-	pkgs, err := core.ListPackageDirs(packageDir)
+	entries, err := a.planInstallAllEntries(packageDir, cfg, req.Target)
 	if err != nil {
-		return nil, errors.Wrapf(err, errors.CodeInternal, "list packages")
+		return nil, errors.Wrapf(err, errors.CodeInternal, "plan install-all entries")
 	}
 
 	resp := &InstallAllResponse{
 		PackageDir: packageDir,
-		Packages:   pkgs,
+		Packages:   installAllLabels(entries),
 	}
-	if len(pkgs) == 0 {
+	if len(entries) == 0 {
 		return resp, nil
 	}
 
-	for idx, name := range pkgs {
+	for idx, entry := range entries {
 		show := req.ShowInstallMethodFirst && idx == 0
 		results, err := a.installInternal(&installInternalRequest{
 			Workdir:           wd,
 			PackageDir:        packageDir,
-			Name:              name,
+			Name:              entry.Name,
 			Excludes:          req.Excludes,
 			NoFlatten:         req.NoFlatten,
-			Target:            req.Target,
+			Target:            entry.Target,
 			AllTargets:        req.AllTargets,
 			ShowInstallMethod: show,
 			SkillsSubdir:      cfg.SkillsSubdir,
 			AgentsSubdir:      cfg.AgentsSubdir,
 			HooksSubdir:       cfg.HooksSubdir,
+			IsUser:            req.Global,
 		})
 		if err != nil {
 			return nil, err
@@ -152,6 +158,48 @@ func (a *App) InstallAll(req *InstallAllRequest) (*InstallAllResponse, error) {
 	}
 
 	return resp, nil
+}
+
+func (a *App) planInstallAllEntries(packageDir string, cfg *config.Config, target string) ([]installAllEntry, error) {
+	trimmedTarget := strings.TrimSpace(target)
+	if trimmedTarget == "" {
+		trimmedTarget = "cursor"
+	}
+
+	provider, ok := a.resourceRegistry().providerForTarget(trimmedTarget)
+	if !ok {
+		return nil, errors.Newf(errors.CodeInvalidArgument, "unknown target: %s", trimmedTarget)
+	}
+
+	plans, err := provider.PlanInstallAll(packageDir, cfg)
+	if err != nil {
+		return nil, err
+	}
+	entries := installAllPlansToEntries(provider, plans)
+
+	if trimmedTarget != "cursor" {
+		return entries, nil
+	}
+
+	for _, p := range a.resourceRegistry().providers() {
+		if !p.IncludeInDefaultInstallAll() || p.Target() == "cursor" {
+			continue
+		}
+		plans2, err := p.PlanInstallAll(packageDir, cfg)
+		if err != nil {
+			return nil, err
+		}
+		entries = append(entries, installAllPlansToEntries(p, plans2)...)
+	}
+	return entries, nil
+}
+
+func installAllLabels(entries []installAllEntry) []string {
+	labels := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		labels = append(labels, entry.Label)
+	}
+	return labels
 }
 
 type installInternalRequest struct {
@@ -166,6 +214,7 @@ type installInternalRequest struct {
 	SkillsSubdir      string
 	AgentsSubdir      string
 	HooksSubdir       string
+	IsUser            bool
 }
 
 func (a *App) installInternal(req *installInternalRequest) ([]InstallResult, error) {
@@ -193,6 +242,18 @@ func (a *App) installInternal(req *installInternalRequest) ([]InstallResult, err
 	} else {
 		targets = []string{req.Target}
 	}
+	providerCfg := &config.Config{
+		SkillsSubdir: req.SkillsSubdir,
+		AgentsSubdir: req.AgentsSubdir,
+		HooksSubdir:  req.HooksSubdir,
+	}
+	if len(targets) == 1 && targets[0] == "cursor" {
+		if resolved, ok, err := a.resourceRegistry().resolveDefaultTarget(req.PackageDir, req.Name, providerCfg); err != nil {
+			return nil, err
+		} else if ok {
+			targets = []string{resolved}
+		}
+	}
 
 	effectiveExcludes := append([]string{}, req.Excludes...)
 	if m != nil && len(m.Exclude) > 0 {
@@ -201,97 +262,24 @@ func (a *App) installInternal(req *installInternalRequest) ([]InstallResult, err
 
 	results := make([]InstallResult, 0, len(targets))
 	for _, tgt := range targets {
-		switch tgt {
-		case "cursor-commands":
-			var err error
-			if isPackage {
-				err = core.InstallCommandPackageFromDir(req.Workdir, req.PackageDir, req.Name, effectiveExcludes, req.NoFlatten)
-			} else {
-				err = core.ApplyCommandToProject(req.Workdir, req.Name, req.PackageDir)
-			}
-			if err != nil {
-				return nil, errors.Wrapf(err, errors.CodeInternal, "install to cursor-commands failed")
-			}
-			results = append(results, InstallResult{
-				Name:       req.Name,
-				Target:     "cursor-commands",
-				OutputDir:  ".cursor/commands",
-				Strategy:   core.StrategyCopy,
-				ShowMethod: req.ShowInstallMethod,
-			})
-			continue
-		case "cursor-skills":
-			strategy, err := core.InstallSkillToProject(req.Workdir, req.PackageDir, req.Name, req.SkillsSubdir)
-			if err != nil {
-				return nil, errors.Wrapf(err, errors.CodeInternal, "install to cursor-skills failed")
-			}
-			results = append(results, InstallResult{
-				Name:       req.Name,
-				Target:     "cursor-skills",
-				OutputDir:  ".cursor/skills",
-				Strategy:   strategy,
-				ShowMethod: req.ShowInstallMethod,
-			})
-			continue
-		case "cursor-agents":
-			strategy, err := core.InstallAgentToProject(req.Workdir, req.PackageDir, req.Name, req.AgentsSubdir)
-			if err != nil {
-				return nil, errors.Wrapf(err, errors.CodeInternal, "install to cursor-agents failed")
-			}
-			results = append(results, InstallResult{
-				Name:       req.Name,
-				Target:     "cursor-agents",
-				OutputDir:  ".cursor/agents",
-				Strategy:   strategy,
-				ShowMethod: req.ShowInstallMethod,
-			})
-			continue
-		case "cursor-hooks":
-			strategy, err := core.InstallHookPresetToProject(req.Workdir, req.PackageDir, req.Name, req.HooksSubdir)
-			if err != nil {
-				return nil, errors.Wrapf(err, errors.CodeInternal, "install to cursor-hooks failed")
-			}
-			results = append(results, InstallResult{
-				Name:       req.Name,
-				Target:     "cursor-hooks",
-				OutputDir:  ".cursor/hooks",
-				Strategy:   strategy,
-				ShowMethod: req.ShowInstallMethod,
-			})
-			continue
+		provider, ok := a.resourceRegistry().providerForTarget(tgt)
+		if !ok {
+			return nil, errors.Newf(errors.CodeInvalidArgument, "unknown target: %s", tgt)
 		}
-
-		transformer, err := a.transformer(tgt)
+		strategy, err := provider.Install(req.Workdir, req.PackageDir, req.Name, providerCfg, nativeResourceInstallOptions{
+			Excludes:  effectiveExcludes,
+			NoFlatten: req.NoFlatten,
+			IsUser:    req.IsUser,
+		})
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, errors.CodeInternal, "install to %s failed", tgt)
 		}
-
-		var strategy core.InstallStrategy
-		if isPackage {
-			if transformer.Target() == "cursor" && (core.UseSymlink() || core.WantGNUStow()) {
-				strategy, err = core.InstallPackageFromPackageDir(req.Workdir, req.PackageDir, req.Name, effectiveExcludes, req.NoFlatten)
-				if err != nil {
-					return nil, errors.Wrapf(err, errors.CodeInternal, "install to %s failed", tgt)
-				}
-			} else {
-				strategy, err = installPackageWithTransformer(req.Workdir, pkgPath, req.Name, transformer, effectiveExcludes, req.NoFlatten)
-				if err != nil {
-					return nil, errors.Wrapf(err, errors.CodeInternal, "install to %s failed", tgt)
-				}
-			}
-		} else {
-			strategy, err = installPresetWithTransformer(req.Workdir, pkgPath, req.Name, transformer, req.PackageDir)
-			if err != nil {
-				return nil, errors.Wrapf(err, errors.CodeInternal, "install to %s failed", tgt)
-			}
-		}
-
 		results = append(results, InstallResult{
 			Name:       req.Name,
-			Target:     transformer.Target(),
-			OutputDir:  transformer.OutputDir(),
+			Target:     provider.Target(),
+			OutputDir:  provider.OutputDir(),
 			Strategy:   strategy,
-			ShowMethod: req.ShowInstallMethod && transformer.Target() == "cursor",
+			ShowMethod: req.ShowInstallMethod && provider.Target() == "cursor",
 		})
 	}
 
@@ -313,6 +301,25 @@ func installPackageWithTransformer(
 	noFlatten bool,
 ) (core.InstallStrategy, error) {
 	outDir := filepath.Join(workDir, transformer.OutputDir())
+	return installPackageWithTransformerToOutDir(outDir, pkgPath, presetName, transformer, excludes, noFlatten)
+}
+
+// installPackageWithTransformerToRulesDir installs a package into the given rules directory.
+func installPackageWithTransformerToRulesDir(
+	rulesDir, pkgPath, presetName string,
+	transformer transform.Transformer,
+	excludes []string,
+	noFlatten bool,
+) (core.InstallStrategy, error) {
+	return installPackageWithTransformerToOutDir(rulesDir, pkgPath, presetName, transformer, excludes, noFlatten)
+}
+
+func installPackageWithTransformerToOutDir(
+	outDir, pkgPath, presetName string,
+	transformer transform.Transformer,
+	excludes []string,
+	noFlatten bool,
+) (core.InstallStrategy, error) {
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return core.StrategyUnknown, errors.Wrapf(err, errors.CodeInternal, "create output dir for package %q", presetName)
 	}
@@ -348,6 +355,24 @@ func installPresetWithTransformer(
 	transformer transform.Transformer,
 	packageDir string,
 ) (core.InstallStrategy, error) {
+	outDir := filepath.Join(workDir, transformer.OutputDir())
+	return installPresetWithTransformerToOutDir(outDir, presetPath, presetName, transformer, packageDir)
+}
+
+// installPresetWithTransformerToRulesDir installs a preset into the given rules directory.
+func installPresetWithTransformerToRulesDir(
+	rulesDir, presetPath, presetName string,
+	transformer transform.Transformer,
+	packageDir string,
+) (core.InstallStrategy, error) {
+	return installPresetWithTransformerToOutDir(rulesDir, presetPath, presetName, transformer, packageDir)
+}
+
+func installPresetWithTransformerToOutDir(
+	outDir, presetPath, presetName string,
+	transformer transform.Transformer,
+	packageDir string,
+) (core.InstallStrategy, error) {
 	if !strings.HasSuffix(presetPath, ".mdc") {
 		presetPath += ".mdc"
 	}
@@ -361,11 +386,10 @@ func installPresetWithTransformer(
 			packageDirResolved = core.DefaultPackageDir()
 		}
 		if core.UseSymlink() || core.WantGNUStow() {
-			return core.ApplyPresetWithOptionalSymlink(workDir, presetName, packageDirResolved)
+			return core.ApplyPresetWithOptionalSymlinkToRulesDir(outDir, presetName, packageDirResolved)
 		}
 	}
 
-	outDir := filepath.Join(workDir, transformer.OutputDir())
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return core.StrategyUnknown, errors.Wrapf(err, errors.CodeInternal, "create output dir for preset %q", presetName)
 	}
