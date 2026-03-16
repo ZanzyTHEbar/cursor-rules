@@ -148,8 +148,8 @@
         [
             "@semantic-release/exec",
             {
-                "prepareCmd": "jq '.version=\"${nextRelease.version}\"' extension/package.json > extension/package.json.tmp && mv extension/package.json.tmp extension/package.json && make build VERSION=${nextRelease.version} && make release-artifacts VERSION=${nextRelease.version}",
-                "publishCmd": "echo \"Prepared VSIX and CLI binaries for ${nextRelease.version}\""
+                "prepareCmd": "make build VERSION=${nextRelease.version} && make release-artifacts VERSION=${nextRelease.version}",
+                "publishCmd": "echo \"Prepared CLI binaries for ${nextRelease.version}\""
             }
         ],
         [
@@ -157,9 +157,6 @@
             {
                 "addReleases": "bottom",
                 "assets": [
-                    {
-                        "path": "extension/*.vsix"
-                    },
                     {
                         "path": "dist/*"
                     }
@@ -171,8 +168,7 @@
             {
                 "assets": [
                     "LICENSE*",
-                    "CHANGELOG.md",
-                    "extension/package.json"
+                    "CHANGELOG.md"
                 ],
                 "message": "chore(${nextRelease.type}): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
             }

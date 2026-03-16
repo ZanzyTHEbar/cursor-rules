@@ -16,7 +16,6 @@ echo ""
 
 # Track failures
 FAILURES=0
-EXTENSION_FAILURES=0
 
 # Helper function to run a step
 run_step() {
@@ -113,31 +112,6 @@ echo ""
 run_step "Run integration tests" "bash scripts/integration_test.sh" || true
 
 # ============================================================================
-# Job 5: Build VSCode Extension (Optional - not blocking for Go changes)
-# ============================================================================
-echo ""
-echo "╔══════════════════════════════════════════════════════════════╗"
-echo "║  Job 5: Build VSCode Extension (Optional)                    ║"
-echo "╚══════════════════════════════════════════════════════════════╝"
-echo ""
-
-# Extension build is optional - failures here don't block Go code pushes
-EXTENSION_FAILURES=0
-
-if command -v pnpm >/dev/null 2>&1; then
-    run_step "Install extension dependencies" "(cd extension && pnpm install --no-frozen-lockfile)" || ((EXTENSION_FAILURES++))
-    run_step "Build extension" "(cd extension && pnpm build)" || ((EXTENSION_FAILURES++))
-    run_step "Package VSIX" "(cd extension && npx @vscode/vsce package --no-dependencies)" || ((EXTENSION_FAILURES++))
-    
-    if [ $EXTENSION_FAILURES -gt 0 ]; then
-        echo "⚠️  Extension build had $EXTENSION_FAILURES failure(s), but this is non-blocking for Go changes"
-    fi
-else
-    echo "⚠️  pnpm not found - install: npm install -g pnpm"
-    echo "⚠️  SKIP: Extension build (optional - tool not available)"
-fi
-
-# ============================================================================
 # Summary
 # ============================================================================
 echo ""
@@ -153,11 +127,6 @@ if [ $FAILURES -eq 0 ]; then
     echo "✓ Linting: PASS"
     echo "✓ Security: PASS"
     echo "✓ Integration: PASS"
-    if [ $EXTENSION_FAILURES -gt 0 ]; then
-        echo "⚠ Extension: $EXTENSION_FAILURES issue(s) (non-blocking)"
-    else
-        echo "✓ Extension: PASS"
-    fi
     echo ""
     echo "Your Go code changes are ready to push. CI should pass successfully."
     echo ""

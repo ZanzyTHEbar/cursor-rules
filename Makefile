@@ -169,54 +169,13 @@ vet:
 check: fmt vet lint test
 	@echo "All quality checks passed!"
 
-.PHONY: ext-build
-ext-build:
-	@# Build VSCode extension: compile TypeScript from extension/src to extension/out
-	@cd extension && pnpm install --no-frozen-lockfile && pnpm build
-
-.PHONY: ext-prepare
-ext-prepare:
-	@# Ensure LICENSE exists for VSCE packaging
-	@cp -f LICENSE extension/LICENSE
-
-.PHONY: ext-version
-ext-version:
-	@# Update extension/package.json version when VERSION is provided
-	@node -e "const fs=require('fs');const p=require('./extension/package.json');const v=process.env.VERSION; if(v){p.version=v; fs.writeFileSync('./extension/package.json', JSON.stringify(p,null,2)+'\n'); console.log('Set extension version to', v);} else { console.log('VERSION not set; leaving extension version as', p.version);}"
-
-.PHONY: ext-install
-ext-install:
-	@# Package and install extension locally (user must have code CLI available)
-	@echo "Installing the cursor-rules cli binary in $(GOPATH)/bin"
-	@make install
-	@echo "Cursor-rules binary: $$(ls -1 $(GOPATH)/bin/cursor-rules)"
-	@# Ensure the extension is packaged (creates .vsix)
-	@make ext-package
-	@cd extension && VSIX_FILE=$$(ls -1t *.vsix | head -n1) && \
-	echo "VSIX packaged at: extension/$$VSIX_FILE" && \
-	echo "Install the VSIX manually with: code --install-extension extension/$$VSIX_FILE" && \
-	echo "Or in Cursor: Command Palette → Extensions: Install from VSIX... → select the VSIX above."
-    
-.PHONY: ext-test
-ext-test:
-	@cd extension && pnpm install --no-frozen-lockfile && pnpm build && pnpm test
-
-.PHONY: ext-package
-ext-package: ext-prepare ext-build
-	@cd extension && npx @vscode/vsce package --no-dependencies
-	@cd extension && VSIX_FILE=$$(ls -1t *.vsix | head -n1); \
-	echo "Created VSIX at: $$(pwd)/$$VSIX_FILE"
-
 .PHONY: build-all
 build-all:
 	@make build
-	@make ext-build
 
 .PHONY: release-artifacts
 release-artifacts:
 	@make release-binaries VERSION=$(VERSION)
-	@make ext-version VERSION=$(VERSION)
-	@make ext-package
 
 .PHONY: release-binaries
 release-binaries:
@@ -237,7 +196,7 @@ help:
 	@echo "Build Targets:"
 	@echo "  build              - Build the CLI binary"
 	@echo "  install            - Install the CLI binary to GOPATH/bin"
-	@echo "  build-all          - Build CLI and extension"
+	@echo "  build-all          - Build CLI binary"
 	@echo "  release-binaries   - Build release binaries for all platforms"
 	@echo ""
 	@echo "Test Targets:"
@@ -251,12 +210,6 @@ help:
 	@echo "  test-all           - Run all test suites"
 	@echo "  test-ci            - Run tests in CI mode"
 	@echo "  bench              - Run benchmarks"
-	@echo ""
-	@echo "Extension Targets:"
-	@echo "  ext-build          - Build VSCode extension"
-	@echo "  ext-test           - Test VSCode extension"
-	@echo "  ext-package        - Package extension as VSIX"
-	@echo "  ext-install        - Build and install extension"
 	@echo ""
 	@echo "Code Quality Targets:"
 	@echo "  fmt                - Format Go code"
@@ -286,6 +239,3 @@ all: build install
 .PHONY: clean
 clean:
 	@rm -rf bin/
-	@rm -rf extension/out/
-	@rm -rf extension/node_modules/
-	@rm -rf extension/package-lock.json
