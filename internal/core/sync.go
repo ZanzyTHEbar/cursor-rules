@@ -44,6 +44,10 @@ func ListPackageDirs(packageDir string) ([]string, error) {
 		if strings.HasPrefix(e.Name(), ".") {
 			continue
 		}
+		switch e.Name() {
+		case defaultCommandsSubdir, defaultSkillsSubdir, defaultAgentsSubdir, defaultHooksSubdir:
+			continue
+		}
 		if hasRuleFiles(filepath.Join(packageDir, e.Name())) {
 			out = append(out, e.Name())
 		}

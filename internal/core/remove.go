@@ -3,11 +3,12 @@ package core
 import (
 	"os"
 	"path/filepath"
+
+	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 )
 
-// RemovePreset removes the stub file for a preset from the project's .cursor/rules
-func RemovePreset(projectRoot, preset string) error {
-	rulesDir := filepath.Join(projectRoot, ".cursor", "rules")
+// RemovePreset removes the stub file for a preset from the given rules directory.
+func RemovePreset(rulesDir, preset string) error {
 	target := filepath.Join(rulesDir, preset+".mdc")
 	if _, err := os.Stat(target); os.IsNotExist(err) {
 		return nil // Return nil if file doesn't exist (idempotent)
@@ -15,30 +16,31 @@ func RemovePreset(projectRoot, preset string) error {
 	return os.Remove(target)
 }
 
-// RemoveCommand removes a command file from the project's .cursor/commands
-func RemoveCommand(projectRoot, command string) error {
-	commandsDir := filepath.Join(projectRoot, ".cursor", "commands")
-	target := filepath.Join(commandsDir, command+".md")
-	if _, err := os.Stat(target); os.IsNotExist(err) {
-		return nil // Return nil if file doesn't exist (idempotent)
+// RemoveCommand removes a command file from the given commands directory.
+func RemoveCommand(commandsDir, command string) error {
+	normalized, err := normalizeCommandName(command)
+	if err != nil {
+		return errors.Wrapf(err, errors.CodeInvalidArgument, "invalid command name")
 	}
-	return os.Remove(target)
-}
-
-// RemoveSkill removes a skill directory from the project's .cursor/skills
-func RemoveSkill(projectRoot, skillName string) error {
-	skillDir := filepath.Join(projectRoot, ".cursor", "skills", skillName)
-	if _, err := os.Stat(skillDir); os.IsNotExist(err) {
+	if removed, err := removeInstalledNamedFileResourceFrom(commandsDir, normalized, ".md"); err != nil {
+		return err
+	} else if removed {
 		return nil
 	}
-	return os.RemoveAll(skillDir)
+	if _, err := removeInstalledNamedDirResourceFrom(commandsDir, normalized); err != nil {
+		return err
+	}
+	return nil
 }
 
-// RemoveAgent removes an agent file from the project's .cursor/agents
-func RemoveAgent(projectRoot, agentName string) error {
-	agentPath := filepath.Join(projectRoot, ".cursor", "agents", agentName+".md")
-	if _, err := os.Stat(agentPath); os.IsNotExist(err) {
-		return nil
-	}
-	return os.Remove(agentPath)
+// RemoveSkill removes a skill directory from the given skills directory.
+func RemoveSkill(skillsDir, skillName string) error {
+	_, err := removeInstalledNamedDirResourceFrom(skillsDir, skillName)
+	return err
+}
+
+// RemoveAgent removes an agent file from the given agents directory.
+func RemoveAgent(agentsDir, agentName string) error {
+	_, err := removeInstalledNamedFileResourceFrom(agentsDir, agentName, ".md")
+	return err
 }

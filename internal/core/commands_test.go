@@ -3,6 +3,7 @@ package core
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 )
 
@@ -53,7 +54,8 @@ func TestInstallAndRemoveCommand(t *testing.T) {
 	}
 
 	// Test RemoveCommand
-	if err := RemoveCommand(proj, cmdName); err != nil {
+	commandsDir := filepath.Join(proj, ".cursor", "commands")
+	if err := RemoveCommand(commandsDir, cmdName); err != nil {
 		t.Fatalf("RemoveCommand failed: %v", err)
 	}
 	if _, err := os.Stat(stub); !os.IsNotExist(err) {
@@ -101,5 +103,88 @@ func TestInstallCommandPackageFlattenIgnore(t *testing.T) {
 	// verify templates/t.md NOT copied
 	if _, err := os.Stat(filepath.Join(proj, ".cursor", "commands", "t.md")); err == nil {
 		t.Fatalf("expected templates t.md to be ignored when flattened")
+	}
+}
+
+func TestListPackageCommandsIncludesCommandDirectories(t *testing.T) {
+	packageDir := t.TempDir()
+
+	if err := os.WriteFile(filepath.Join(packageDir, "hello.md"), []byte("# hello"), 0o644); err != nil {
+		t.Fatalf("write hello.md: %v", err)
+	}
+
+	commandDir := filepath.Join(packageDir, "commands", "release")
+	if err := os.MkdirAll(commandDir, 0o755); err != nil {
+		t.Fatalf("mkdir release command: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(commandDir, "run.md"), []byte("# run"), 0o644); err != nil {
+		t.Fatalf("write run.md: %v", err)
+	}
+
+	names, err := ListPackageCommands(packageDir)
+	if err != nil {
+		t.Fatalf("ListPackageCommands: %v", err)
+	}
+	if !slices.Contains(names, "hello.md") {
+		t.Fatalf("expected hello.md in command list: %v", names)
+	}
+	if !slices.Contains(names, "release") {
+		t.Fatalf("expected release command directory in command list: %v", names)
+	}
+}
+
+func TestInstallAndRemoveCommandDirectory(t *testing.T) {
+	sharedDir := t.TempDir()
+	commandDir := filepath.Join(sharedDir, "commands", "release")
+	if err := os.MkdirAll(filepath.Join(commandDir, "partials"), 0o755); err != nil {
+		t.Fatalf("mkdir partials: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(commandDir, "run.md"), []byte("# run"), 0o644); err != nil {
+		t.Fatalf("write run.md: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(commandDir, "partials", "details.md"), []byte("# details"), 0o644); err != nil {
+		t.Fatalf("write details.md: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(commandDir, "notes.txt"), []byte("ignore"), 0o644); err != nil {
+		t.Fatalf("write notes.txt: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(commandDir, ".cursor-commands-ignore"), []byte("partials/*\n"), 0o644); err != nil {
+		t.Fatalf("write ignore file: %v", err)
+	}
+
+	proj := t.TempDir()
+	strategy, err := InstallCommandToProject(proj, sharedDir, "release", nil, false)
+	if err != nil {
+		t.Fatalf("InstallCommandToProject failed: %v", err)
+	}
+	if strategy != StrategyCopy && strategy != StrategySymlink && strategy != StrategyStow {
+		t.Fatalf("unexpected install strategy: %s", strategy)
+	}
+
+	runPath := filepath.Join(proj, ".cursor", "commands", "release", "run.md")
+	if _, err := os.Stat(runPath); err != nil {
+		t.Fatalf("expected run.md at %s: %v", runPath, err)
+	}
+	if _, err := os.Stat(filepath.Join(proj, ".cursor", "commands", "release", "partials", "details.md")); err == nil {
+		t.Fatalf("expected ignored markdown file to be skipped")
+	}
+	if _, err := os.Stat(filepath.Join(proj, ".cursor", "commands", "release", "notes.txt")); err == nil {
+		t.Fatalf("expected non-markdown file to be skipped")
+	}
+
+	cmds, err := ListProjectCommands(proj)
+	if err != nil {
+		t.Fatalf("ListProjectCommands failed: %v", err)
+	}
+	if !slices.Contains(cmds, "release") {
+		t.Fatalf("expected release directory in project command list: %v", cmds)
+	}
+
+	commandsDir := filepath.Join(proj, ".cursor", "commands")
+	if err := RemoveCommand(commandsDir, "release"); err != nil {
+		t.Fatalf("RemoveCommand failed: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(proj, ".cursor", "commands", "release")); !os.IsNotExist(err) {
+		t.Fatalf("expected command directory removed, got: %v", err)
 	}
 }

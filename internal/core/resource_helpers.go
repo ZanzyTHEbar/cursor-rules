@@ -9,6 +9,7 @@ import (
 
 	"github.com/ZanzyTHEbar/cursor-rules/internal/config"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
+	"github.com/ZanzyTHEbar/cursor-rules/internal/security"
 )
 
 // DefaultPackageDirWithEnv returns a package dir path based on an env var or a default name under the user's home.
@@ -40,11 +41,11 @@ func DefaultPackageDirWithEnv(envVar, defaultName string) string {
 // InstallPackageGeneric installs an entire package directory from packageDir into the project's
 // destRoot (.cursor/<subdir>). It supports excludes and a package-level ignore file name.
 // exts is a list of allowed file extensions (e.g. []string{".mdc",".md"}).
-func InstallPackageGeneric(projectRoot, packageDir, packageName, destSubdir string, exts []string, ignoreFileName string, excludes []string, noFlatten bool) error {
+func InstallPackageGeneric(projectRoot, packageDir, packageName, destSubdir string, exts []string, ignoreFileName string, excludes []string, noFlatten bool) (InstallStrategy, error) {
 	pkgDir := filepath.Join(packageDir, packageName)
 	info, err := os.Stat(pkgDir)
 	if err != nil || !info.IsDir() {
-		return errors.Newf(errors.CodeNotFound, "package not found: %s", pkgDir)
+		return StrategyUnknown, errors.Newf(errors.CodeNotFound, "package not found: %s", pkgDir)
 	}
 
 	// Read ignore file if present in package dir
@@ -69,12 +70,45 @@ func InstallPackageGeneric(projectRoot, packageDir, packageName, destSubdir stri
 		}
 	}
 
-	// Walk package dir and install allowed files unless excluded
-	destRoot := filepath.Join(projectRoot, ".cursor", destSubdir)
-	if err := os.MkdirAll(destRoot, 0o755); err != nil {
-		return err
+	destRoot, err := security.SafeJoin(projectRoot, ".cursor", destSubdir)
+	if err != nil {
+		return StrategyUnknown, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid destination path")
+	}
+	return InstallPackageGenericToDest(destRoot, packageDir, packageName, exts, ignoreFileName, excludes, noFlatten)
+}
+
+// InstallPackageGenericToDest installs a package into the given destRoot directory.
+func InstallPackageGenericToDest(destRoot, packageDir, packageName string, exts []string, ignoreFileName string, excludes []string, noFlatten bool) (InstallStrategy, error) {
+	pkgDir := filepath.Join(packageDir, packageName)
+	info, err := os.Stat(pkgDir)
+	if err != nil || !info.IsDir() {
+		return StrategyUnknown, errors.Newf(errors.CodeNotFound, "package not found: %s", pkgDir)
 	}
 
+	ignorePath := filepath.Join(pkgDir, ignoreFileName)
+	var ignorePatterns []string
+	if b, err := os.ReadFile(ignorePath); err == nil {
+		lines := strings.Split(string(b), "\n")
+		for _, l := range lines {
+			l = strings.TrimSpace(l)
+			if l == "" || strings.HasPrefix(l, "#") {
+				continue
+			}
+			ignorePatterns = append(ignorePatterns, l)
+		}
+	}
+	for _, ex := range excludes {
+		ex = strings.TrimSpace(ex)
+		if ex != "" {
+			ignorePatterns = append(ignorePatterns, ex)
+		}
+	}
+
+	if err := os.MkdirAll(destRoot, 0o755); err != nil {
+		return StrategyUnknown, err
+	}
+
+	usedStrategy := StrategyCopy
 	err = filepath.Walk(pkgDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -120,13 +154,16 @@ func InstallPackageGeneric(projectRoot, packageDir, packageName, destSubdir stri
 		}
 
 		// Delegate applying source to dest (stow/symlink or stub)
-		_, applyErr := ApplySourceToDest(packageDir, path, dest, packageName)
+		strategy, applyErr := ApplySourceToDest(packageDir, path, dest, packageName)
+		if applyErr == nil && strategy != StrategyCopy {
+			usedStrategy = strategy
+		}
 		return applyErr
 	})
 	if err != nil {
-		return err
+		return StrategyUnknown, err
 	}
-	return nil
+	return usedStrategy, nil
 }
 
 // AtomicWriteString writes content to dest atomically using a temp file in tmpDir.

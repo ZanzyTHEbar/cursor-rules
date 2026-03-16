@@ -43,7 +43,8 @@ func TestE2EInstallApplyRemove(t *testing.T) {
 	}
 
 	// Remove
-	if err := RemovePreset(projectDir, presetName); err != nil {
+	rulesDir := filepath.Join(projectDir, ".cursor", "rules")
+	if err := RemovePreset(rulesDir, presetName); err != nil {
 		t.Fatalf("RemovePreset failed: %v", err)
 	}
 }

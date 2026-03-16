@@ -180,8 +180,149 @@ func UserCursorHooksJSON() string {
 	return filepath.Join(UserCursorDir(), "hooks.json")
 }
 
-// GlobalProjectRoot returns a project root such that projectRoot/.cursor equals UserCursorDir().
+// GlobalProjectRoot returns a project root such that projectRoot/.cursor equals the user base.
 // Use this as the effective workdir when operating in --global mode.
-func GlobalProjectRoot() string {
-	return filepath.Dir(UserCursorDir())
+// When cfg is non-nil, user base is derived from packageDir (env CURSOR_USER_DIR overrides).
+func GlobalProjectRoot(cfg *Config) string {
+	return filepath.Dir(EffectiveUserBase(cfg))
+}
+
+// EffectiveUserBase returns the user/global Cursor base. Precedence: CURSOR_USER_DIR env >
+// when cfg != nil, dir(ResolvePackageDir(cfg)) (so packageDir is source of truth) > default ~/.cursor.
+func EffectiveUserBase(cfg *Config) string {
+	if v := strings.TrimSpace(os.Getenv(EnvUserDir)); v != "" {
+		return v
+	}
+	if cfg != nil {
+		return filepath.Dir(ResolvePackageDir(cfg))
+	}
+	return DefaultUserCursorDir()
+}
+
+// EffectiveUserRulesDir returns user rules dir. Precedence: CURSOR_RULES_DIR env >
+// when cfg != nil, ResolvePackageDir(cfg) (same path as package dir) > UserCursorRulesDir().
+func EffectiveUserRulesDir(cfg *Config) string {
+	if v := strings.TrimSpace(os.Getenv(EnvUserRules)); v != "" {
+		return v
+	}
+	if cfg != nil {
+		return ResolvePackageDir(cfg)
+	}
+	return UserCursorRulesDir()
+}
+
+// EffectiveUserCommandsDir returns user commands dir (env override or derived from EffectiveUserBase(cfg)).
+func EffectiveUserCommandsDir(cfg *Config) string {
+	if v := strings.TrimSpace(os.Getenv(EnvUserCommands)); v != "" {
+		return v
+	}
+	return filepath.Join(EffectiveUserBase(cfg), "commands")
+}
+
+// EffectiveUserSkillsDir returns user skills dir (env override or derived from EffectiveUserBase(cfg)).
+func EffectiveUserSkillsDir(cfg *Config) string {
+	if v := strings.TrimSpace(os.Getenv(EnvUserSkills)); v != "" {
+		return v
+	}
+	return filepath.Join(EffectiveUserBase(cfg), "skills")
+}
+
+// EffectiveUserAgentsDir returns user agents dir (env override or derived from EffectiveUserBase(cfg)).
+func EffectiveUserAgentsDir(cfg *Config) string {
+	if v := strings.TrimSpace(os.Getenv(EnvUserAgents)); v != "" {
+		return v
+	}
+	return filepath.Join(EffectiveUserBase(cfg), "agents")
+}
+
+// EffectiveUserHooksDir returns user hooks dir (env override or derived from EffectiveUserBase(cfg)).
+func EffectiveUserHooksDir(cfg *Config) string {
+	if v := strings.TrimSpace(os.Getenv(EnvUserHooks)); v != "" {
+		return v
+	}
+	return filepath.Join(EffectiveUserBase(cfg), "hooks")
+}
+
+// EffectiveUserHooksJSON returns user hooks.json path (env override or derived from EffectiveUserBase(cfg)).
+func EffectiveUserHooksJSON(cfg *Config) string {
+	if v := strings.TrimSpace(os.Getenv(EnvUserHooksJSON)); v != "" {
+		return v
+	}
+	return filepath.Join(EffectiveUserBase(cfg), "hooks.json")
+}
+
+// EffectiveRulesDir returns rules dir: EffectiveUserRulesDir(cfg) when isUser, else projectRoot/.cursor/rules.
+func EffectiveRulesDir(projectRoot string, isUser bool, cfg *Config) string {
+	if isUser {
+		return EffectiveUserRulesDir(cfg)
+	}
+	return ProjectCursorRulesDir(projectRoot)
+}
+
+// EffectiveCommandsDir returns commands dir: EffectiveUserCommandsDir(cfg) when isUser, else projectRoot/.cursor/commands.
+func EffectiveCommandsDir(projectRoot string, isUser bool, cfg *Config) string {
+	if isUser {
+		return EffectiveUserCommandsDir(cfg)
+	}
+	return ProjectCursorCommandsDir(projectRoot)
+}
+
+// EffectiveSkillsDir returns skills dir: EffectiveUserSkillsDir(cfg) when isUser, else projectRoot/.cursor/skills.
+func EffectiveSkillsDir(projectRoot string, isUser bool, cfg *Config) string {
+	if isUser {
+		return EffectiveUserSkillsDir(cfg)
+	}
+	return ProjectCursorSkillsDir(projectRoot)
+}
+
+// EffectiveAgentsDir returns agents dir: EffectiveUserAgentsDir(cfg) when isUser, else projectRoot/.cursor/agents.
+func EffectiveAgentsDir(projectRoot string, isUser bool, cfg *Config) string {
+	if isUser {
+		return EffectiveUserAgentsDir(cfg)
+	}
+	return ProjectCursorAgentsDir(projectRoot)
+}
+
+// EffectiveHooksDir returns hooks dir: EffectiveUserHooksDir(cfg) when isUser, else projectRoot/.cursor/hooks.
+func EffectiveHooksDir(projectRoot string, isUser bool, cfg *Config) string {
+	if isUser {
+		return EffectiveUserHooksDir(cfg)
+	}
+	return ProjectCursorHooksDir(projectRoot)
+}
+
+// EffectiveHooksJSON returns hooks.json path: EffectiveUserHooksJSON(cfg) when isUser, else projectRoot/.cursor/hooks.json.
+func EffectiveHooksJSON(projectRoot string, isUser bool, cfg *Config) string {
+	if isUser {
+		return EffectiveUserHooksJSON(cfg)
+	}
+	return ProjectCursorHooksJSON(projectRoot)
+}
+
+// EffectiveCursorDirs returns the correct paths for rules, commands, skills, agents, and hooks.
+// When isUser is true (--global), paths are derived from packageDir (config) with env overrides.
+// When false, uses projectRoot/.cursor/<subdir>.
+func EffectiveCursorDirs(projectRoot string, isUser bool, cfg *Config) struct {
+	Rules     string
+	Commands  string
+	Skills    string
+	Agents    string
+	Hooks     string
+	HooksJSON string
+} {
+	return struct {
+		Rules     string
+		Commands  string
+		Skills    string
+		Agents    string
+		Hooks     string
+		HooksJSON string
+	}{
+		Rules:     EffectiveRulesDir(projectRoot, isUser, cfg),
+		Commands:  EffectiveCommandsDir(projectRoot, isUser, cfg),
+		Skills:    EffectiveSkillsDir(projectRoot, isUser, cfg),
+		Agents:    EffectiveAgentsDir(projectRoot, isUser, cfg),
+		Hooks:     EffectiveHooksDir(projectRoot, isUser, cfg),
+		HooksJSON: EffectiveHooksJSON(projectRoot, isUser, cfg),
+	}
 }

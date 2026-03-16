@@ -155,6 +155,42 @@ func InstallPackageFromPackageDir(projectRoot, packageDir, packageName string, e
 	if err != nil {
 		return StrategyUnknown, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid rules directory path")
 	}
+	return InstallPackageToRulesDir(rulesDir, packageDir, packageName, excludes, noFlatten)
+}
+
+// InstallPackageToRulesDir installs a package directory into the given rules directory.
+func InstallPackageToRulesDir(rulesDir, packageDir, packageName string, excludes []string, noFlatten bool) (InstallStrategy, error) {
+	pkgDir, err := security.SafeJoin(packageDir, packageName)
+	if err != nil {
+		return StrategyUnknown, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid package path")
+	}
+	info, statErr := os.Stat(pkgDir)
+	if statErr != nil || !info.IsDir() {
+		return StrategyUnknown, errors.Newf(errors.CodeNotFound, "package not found: %s", pkgDir)
+	}
+
+	ignorePath, err := security.SafeJoin(pkgDir, ".cursor-rules-ignore")
+	if err != nil {
+		return StrategyUnknown, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid ignore file path")
+	}
+	var ignorePatterns []string
+	if b, err := os.ReadFile(ignorePath); err == nil {
+		lines := strings.Split(string(b), "\n")
+		for _, l := range lines {
+			l = strings.TrimSpace(l)
+			if l == "" || strings.HasPrefix(l, "#") {
+				continue
+			}
+			ignorePatterns = append(ignorePatterns, l)
+		}
+	}
+	for _, ex := range excludes {
+		ex = strings.TrimSpace(ex)
+		if ex != "" {
+			ignorePatterns = append(ignorePatterns, ex)
+		}
+	}
+
 	if err := os.MkdirAll(rulesDir, 0o755); err != nil {
 		return StrategyUnknown, err
 	}

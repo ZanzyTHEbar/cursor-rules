@@ -15,18 +15,20 @@ func WorkingDir() (string, error) {
 }
 
 // ListProjectPresets lists files in project's .cursor/rules directory (returns file names).
+// Deprecated: prefer ListProjectPresetsFrom(rulesDir) with config.EffectiveRulesDir or config.ProjectCursorRulesDir.
 func ListProjectPresets(projectRoot string) ([]string, error) {
-	// Safely construct rules directory path
 	rulesDir, err := security.SafeJoin(projectRoot, ".cursor", "rules")
 	if err != nil {
 		return nil, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid project path")
 	}
+	return ListProjectPresetsFrom(rulesDir)
+}
 
-	// Check if directory exists
+// ListProjectPresetsFrom lists .mdc files in the given rules directory.
+func ListProjectPresetsFrom(rulesDir string) ([]string, error) {
 	if _, err := os.Stat(rulesDir); os.IsNotExist(err) {
-		return []string{}, nil // Return empty list when directory doesn't exist
+		return []string{}, nil
 	}
-
 	var out []string
 	entries, readErr := fs.ReadDir(os.DirFS(rulesDir), ".")
 	if readErr != nil {
@@ -59,29 +61,14 @@ func InitProject(projectRoot string) error {
 	return nil
 }
 
-// ListProjectCommands lists files in project's .cursor/commands directory (returns file names).
+// ListProjectCommands lists command entries in project's .cursor/commands directory.
 func ListProjectCommands(projectRoot string) ([]string, error) {
-	commandsDir := filepath.Join(projectRoot, ".cursor", "commands")
-
-	// Check if directory exists
-	if _, err := os.Stat(commandsDir); os.IsNotExist(err) {
-		return []string{}, nil // Return empty list when directory doesn't exist
-	}
-
-	var out []string
-	entries, err := fs.ReadDir(os.DirFS(commandsDir), ".")
+	commandsDir, err := security.SafeJoin(projectRoot, ".cursor", "commands")
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid project path")
 	}
-	for _, e := range entries {
-		if e.IsDir() {
-			continue
-		}
-		if filepath.Ext(e.Name()) == ".md" {
-			out = append(out, e.Name())
-		}
-	}
-	return out, nil
+
+	return ListInstalledCommands(commandsDir)
 }
 
 // InitProjectCommands ensures the .cursor/commands directory exists for a project.

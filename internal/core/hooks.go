@@ -5,7 +5,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 
 	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
@@ -30,34 +29,25 @@ func ListHookPresets(packageDir, hooksSubdir string) ([]string, error) {
 	if err != nil {
 		return nil, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid package dir or hooks subdir")
 	}
-	entries, err := os.ReadDir(hooksRoot)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	var names []string
-	for _, e := range entries {
-		if !e.IsDir() {
-			continue
-		}
-		name := e.Name()
-		if err := security.ValidatePackageName(name); err != nil {
-			continue
-		}
-		jsonPath := filepath.Join(hooksRoot, name, hooksJSONName)
-		if _, statErr := os.Stat(jsonPath); statErr == nil {
-			names = append(names, name)
-		}
-	}
-	sort.Strings(names)
-	return names, nil
+	return listNamedDirResources(hooksRoot, hooksJSONName)
 }
 
 // InstallHookPresetToProject installs a hook preset: copies scripts to projectRoot/.cursor/hooks/,
 // rewrites command paths in hooks.json to .cursor/hooks/<script>, and writes projectRoot/.cursor/hooks.json.
 func InstallHookPresetToProject(projectRoot, packageDir, presetName, hooksSubdir string) (InstallStrategy, error) {
+	destHooksDir, err := security.SafeJoin(projectRoot, ".cursor", "hooks")
+	if err != nil {
+		return StrategyUnknown, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid project path")
+	}
+	destJSON, err := security.SafeJoin(projectRoot, ".cursor", hooksJSONName)
+	if err != nil {
+		return StrategyUnknown, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid project path")
+	}
+	return InstallHookPresetToDirs(destHooksDir, destJSON, packageDir, presetName, hooksSubdir)
+}
+
+// InstallHookPresetToDirs installs a hook preset into the given hooks directory and hooks.json path.
+func InstallHookPresetToDirs(destHooksDir, destJSONPath, packageDir, presetName, hooksSubdir string) (InstallStrategy, error) {
 	if err := security.ValidatePackageName(presetName); err != nil {
 		return StrategyUnknown, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid hook preset name")
 	}
@@ -80,11 +70,6 @@ func InstallHookPresetToProject(projectRoot, packageDir, presetName, hooksSubdir
 	}
 	if cfg.Hooks == nil {
 		cfg.Hooks = make(map[string][]hookDef)
-	}
-
-	destHooksDir, err := security.SafeJoin(projectRoot, ".cursor", "hooks")
-	if err != nil {
-		return StrategyUnknown, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid project path")
 	}
 	if err := os.MkdirAll(destHooksDir, 0o755); err != nil {
 		return StrategyUnknown, err
@@ -130,11 +115,7 @@ func InstallHookPresetToProject(projectRoot, packageDir, presetName, hooksSubdir
 	if err != nil {
 		return StrategyUnknown, errors.Wrapf(err, errors.CodeInternal, "marshal hooks.json")
 	}
-	destJSON, err := security.SafeJoin(projectRoot, ".cursor", hooksJSONName)
-	if err != nil {
-		return StrategyUnknown, err
-	}
-	if err := os.WriteFile(destJSON, out, 0o644); err != nil {
+	if err := os.WriteFile(destJSONPath, out, 0o644); err != nil {
 		return StrategyUnknown, err
 	}
 	return strategy, nil
@@ -186,6 +167,11 @@ func rewriteHookCommands(cfg *hooksConfig, presetDir, destHooksDir string) {
 func RemoveHookPresetFromProject(projectRoot string) error {
 	jsonPath := filepath.Join(projectRoot, ".cursor", hooksJSONName)
 	hooksDir := filepath.Join(projectRoot, ".cursor", "hooks")
+	return RemoveHookPresetFromDirs(hooksDir, jsonPath)
+}
+
+// RemoveHookPresetFromDirs removes hooks.json and the hooks directory.
+func RemoveHookPresetFromDirs(hooksDir, jsonPath string) error {
 	if err := os.Remove(jsonPath); err != nil && !os.IsNotExist(err) {
 		return errors.Wrapf(err, errors.CodeInternal, "remove hooks.json")
 	}
@@ -193,4 +179,32 @@ func RemoveHookPresetFromProject(projectRoot string) error {
 		return errors.Wrapf(err, errors.CodeInternal, "remove hooks dir")
 	}
 	return nil
+}
+
+// ListInstalledHooks reports whether hooks are currently configured in the project.
+func ListInstalledHooks(projectRoot string) ([]string, error) {
+	jsonPath, err := security.SafeJoin(projectRoot, ".cursor", hooksJSONName)
+	if err != nil {
+		return nil, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid project path")
+	}
+	hooksDir, err := security.SafeJoin(projectRoot, ".cursor", "hooks")
+	if err != nil {
+		return nil, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid project path")
+	}
+	return ListInstalledHooksFrom(hooksDir, jsonPath)
+}
+
+// ListInstalledHooksFrom reports whether hooks are configured at the given paths.
+func ListInstalledHooksFrom(hooksDir, jsonPath string) ([]string, error) {
+	if _, err := os.Stat(jsonPath); err == nil {
+		return []string{"configured"}, nil
+	} else if !os.IsNotExist(err) {
+		return nil, err
+	}
+	if _, err := os.Stat(hooksDir); err == nil {
+		return []string{"configured"}, nil
+	} else if !os.IsNotExist(err) {
+		return nil, err
+	}
+	return nil, nil
 }
