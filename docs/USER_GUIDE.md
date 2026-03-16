@@ -22,7 +22,7 @@
 
 ## Introduction
 
-Cursor Rules Manager is a CLI tool and VSCode extension that helps you manage shared Cursor `.mdc` rule presets across projects. It also supports transforming rules to GitHub Copilot instructions and prompts for seamless multi-tool workflows.
+Cursor Rules Manager is a CLI tool that helps you manage shared Cursor `.mdc` rule presets across projects. It also supports transforming rules to GitHub Copilot instructions and prompts for seamless multi-tool workflows.
 
 ### Why Use Cursor Rules Manager?
 
@@ -50,7 +50,6 @@ This guide will teach you how to:
 
 - **Go 1.25.2+** (for building from source)
 - **Git** (for syncing shared presets)
-- **VS Code or Cursor** (for the extension)
 
 ### Option 1: Install from Source
 
@@ -79,14 +78,6 @@ sudo mv cursor-rules /usr/local/bin/
 # Verify
 cursor-rules --version
 ```
-
-### Option 3: Install VSCode Extension
-
-1. Download `.vsix` file from releases
-2. Open VS Code/Cursor
-3. Press `Cmd/Ctrl+Shift+P`
-4. Type "Install from VSIX"
-5. Select the downloaded file
 
 ---
 
@@ -200,22 +191,24 @@ cursor-rules install react-package
 | `cursor` | `.cursor/rules/` | Cursor `.mdc` |
 | `copilot-instr` | `.github/instructions/` | Copilot Instructions |
 | `copilot-prompt` | `.github/prompts/` | Copilot Prompts |
-| `cursor-commands` | `.cursor/commands/` | Command `.md` files |
-| `cursor-skills` | `.cursor/skills/<name>/` | Skill dir with `SKILL.md` |
-| `cursor-agents` | `.cursor/agents/<name>.md` | Agent markdown |
-| `cursor-hooks` | `.cursor/hooks.json` + `.cursor/hooks/` | Hooks config and scripts |
+| `commands` | `.cursor/commands/` | Command `.md` files |
+| `skills` | `.cursor/skills/<name>/` | Skill dir with `SKILL.md` |
+| `agents` | `.cursor/agents/<name>.md` | Agent markdown |
+| `hooks` | `.cursor/hooks.json` + `.cursor/hooks/` | Hooks config and scripts |
 
 ### 4. Rules, commands, skills, agents, and hooks
 
 The **package directory** (default `~/.cursor/rules`) can hold all five Cursor context types:
 
 - **Rules:** `*.mdc` presets and `<package>/*.mdc` — install to `.cursor/rules/` or Copilot targets.
-- **Commands:** `*.md` or `commands/<name>/` — install with `--target cursor-commands` to `.cursor/commands/`.
-- **Skills:** `skills/<name>/SKILL.md` (plus optional `scripts/`, `references/`, `assets/`) — install with `--target cursor-skills` to `.cursor/skills/<name>/`.
-- **Agents:** `agents/<name>.md` (YAML frontmatter + body) — install with `--target cursor-agents` to `.cursor/agents/<name>.md`.
-- **Hooks:** `hooks/<preset>/hooks.json` plus script files — install with `--target cursor-hooks` to `.cursor/hooks.json` and `.cursor/hooks/`. Installing a hook preset **replaces** the project’s existing `.cursor/hooks.json`; script paths are rewritten to `.cursor/hooks/<script>`.
+- **Commands:** `*.md` or `commands/<name>/` — `install commands [name|all]` to `.cursor/commands/`.
+- **Skills:** `skills/<name>/SKILL.md` (plus optional `scripts/`, `references/`, `assets/`) — `install skills [name|all]` to `.cursor/skills/<name>/`.
+- **Agents:** `agents/<name>.md` (YAML frontmatter + body) — `install agents [name|all]` to `.cursor/agents/<name>.md`.
+- **Hooks:** `hooks/<preset>/hooks.json` plus script files — `install hooks [preset]` to `.cursor/hooks.json` and `.cursor/hooks/`. Installing a hook preset **replaces** the project’s existing `.cursor/hooks.json`; script paths are rewritten to `.cursor/hooks/<script>`.
 
 Use **init** to create all five project dirs (`.cursor/rules`, `commands`, `skills`, `agents`, `hooks`). Use **list** and **sync** to see presets, commands, skills, agents, and hook presets. Use **remove** with `--type rule|command|skill|agent|hooks` to remove by type (e.g. `remove my-skill --type skill`, `remove --type hooks`).
+
+**Migration:** Use subcommands instead of `--target` for native resources: `install commands my-cmd` (not `install my-cmd --target commands`).
 
 ### 5. Manifest
 
@@ -312,11 +305,17 @@ Install a preset or package to your project.
 
 **Usage:**
 ```bash
-cursor-rules install <preset|package> [flags]
+cursor-rules install [name]              # rules (default)
+cursor-rules install rules [name]       # explicit rules
+cursor-rules install commands [name|all]
+cursor-rules install skills [name|all]
+cursor-rules install agents [name|all]
+cursor-rules install hooks [preset]
+cursor-rules install all
 ```
 
 **Flags:**
-- `--target <target>` - Output target: `cursor`, `copilot-instr`, `copilot-prompt`, `cursor-commands`, `cursor-skills`, `cursor-agents`, `cursor-hooks`
+- `--target <target>` - Rules output target: `cursor`, `copilot-instr`, `copilot-prompt` (for rules only; commands/skills/agents/hooks use subcommands)
 - `--all-targets` - Install to all targets in manifest
 - `--global` (persistent) - Install to user dirs (~/.cursor/...) instead of project. Can be passed before the subcommand.
 - `--dir <path|user>` (persistent) - Destination: path or `user` (same as `--global` when `user`).
@@ -335,10 +334,12 @@ cursor-rules --global install frontend
 # Install to Copilot instructions
 cursor-rules install frontend --target copilot-instr
 
-# Install Cursor skills, agents, or hook presets
-cursor-rules install my-skill --target cursor-skills
-cursor-rules install my-agent --target cursor-agents
-cursor-rules install my-hooks --target cursor-hooks
+# Install commands, skills, agents, or hooks (subcommands)
+cursor-rules install commands my-cmd
+cursor-rules install skills deploy
+cursor-rules install skills all
+cursor-rules install agents code-reviewer
+cursor-rules install hooks my-hooks
 
 # Install package with exclusions
 cursor-rules install mypkg --exclude "*.test.mdc"
@@ -566,9 +567,11 @@ Three concepts control where content lives:
 
 - **Source:** Where shared packages and config are read from. Set `CURSOR_RULES_PACKAGE_DIR` to your package directory; config dir is then the parent by default, or set `CURSOR_RULES_CONFIG_DIR` to override.
 - **Destination:** Either a project path (e.g. `.` or `--workdir /path`) or user dirs (`--dir user` or `--global`). Use `-w`/`--workdir` for a path, or `--global` for user. These flags can be passed before the subcommand: `cursor-rules --global list`, `cursor-rules -w ~/my-project install frontend`.
-- **User base:** When using `--global` or `--dir user`, rules/commands/skills/agents/hooks live under `CURSOR_USER_DIR` unless overridden by `CURSOR_RULES_DIR`, etc.
+- **User base:** When using `--global` or `--dir user`, rules/commands/skills/agents/hooks live under `CURSOR_USER_DIR` unless overridden by per-feature env vars.
 
 ### Environment Variables
+
+**Primary (simple UX):**
 
 | Variable | Description | Default |
 |----------|-------------|---------|
@@ -576,12 +579,17 @@ Three concepts control where content lives:
 | `CURSOR_RULES_CONFIG_DIR` | Config directory | `~/.cursor/rules` |
 | `CURSOR_RULES_SYMLINK` | Use symlinks instead of copies | `false` |
 | `CURSOR_USER_DIR` | User/global base for `--global` or `--dir user` | `~/.cursor` |
-| `CURSOR_RULES_DIR` | User rules dir (overrides `<user-dir>/rules`) | — |
-| `CURSOR_COMMANDS_DIR` | User commands dir | — |
-| `CURSOR_SKILLS_DIR` | User skills dir | — |
-| `CURSOR_AGENTS_DIR` | User agents dir | — |
-| `CURSOR_HOOKS_DIR` | User hooks script dir | — |
-| `CURSOR_HOOKS_JSON` | User hooks.json path | — |
+
+**Advanced (per-feature overrides):** Set these only when you need rules, commands, skills, agents, or hooks in different locations. Most users should use `CURSOR_USER_DIR` only.
+
+| Variable | Description |
+|----------|-------------|
+| `CURSOR_RULES_DIR` | Override user rules dir (default `<user-dir>/rules`) |
+| `CURSOR_COMMANDS_DIR` | Override user commands dir |
+| `CURSOR_SKILLS_DIR` | Override user skills dir |
+| `CURSOR_AGENTS_DIR` | Override user agents dir |
+| `CURSOR_HOOKS_DIR` | Override user hooks script dir |
+| `CURSOR_HOOKS_JSON` | Override user hooks.json path |
 
 **Set in shell:**
 ```bash
@@ -590,29 +598,21 @@ export CURSOR_RULES_PACKAGE_DIR=~/cursor-rules-shared
 export CURSOR_RULES_CONFIG_DIR=~/.cursor/rules
 export CURSOR_RULES_SYMLINK=1
 
-# User/global and custom dirs (for install --global, list --global, remove --global)
+# User/global base (for install --global, list --global, remove --global)
 export CURSOR_USER_DIR=~/.cursor
-# Optional: point user context at custom dirs, then run config link
-export CURSOR_RULES_DIR=~/my-rules
-export CURSOR_COMMANDS_DIR=~/my-commands
+
+# Optional: per-feature overrides (advanced)
+# export CURSOR_RULES_DIR=~/my-rules
+# export CURSOR_COMMANDS_DIR=~/my-commands
 
 # Add to ~/.bashrc or ~/.zshrc for persistence
 ```
 
 ### Custom directories and symlinks
 
-When you set `CURSOR_RULES_DIR`, `CURSOR_COMMANDS_DIR`, etc. to custom paths, the CLI uses those for `--global` operations. To make Cursor (and other tools that only read `~/.cursor`) see the same content, create symlinks from the default user dir to your custom dirs:
+**Simple case:** Use `CURSOR_USER_DIR` to change the global base. Example: `CURSOR_USER_DIR=~/my-cursor` makes `--global` install to `~/my-cursor/rules`, `~/my-cursor/commands`, etc. Cursor reads from `~/.cursor` by default, so symlink `~/.cursor` to `~/my-cursor` if needed.
 
-```bash
-# Set your custom dirs
-export CURSOR_RULES_DIR=~/my-rules
-export CURSOR_COMMANDS_DIR=~/my-commands
-
-# Create ~/.cursor/rules -> ~/my-rules, ~/.cursor/commands -> ~/my-commands, etc.
-cursor-rules config link
-```
-
-After that, `~/.cursor/rules` and `~/.cursor/commands` point to your custom dirs.
+**Per-feature overrides:** When you set `CURSOR_RULES_DIR`, `CURSOR_COMMANDS_DIR`, etc., the CLI writes directly to those paths for `--global` operations. To make Cursor (which reads `~/.cursor`) see that content, run `cursor-rules config link` to create symlinks from `~/.cursor/rules` (etc.) to your custom dirs.
 
 ### Config File
 

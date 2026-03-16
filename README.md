@@ -3,13 +3,13 @@
 ---
 
 <p align="center">
-  <img src="extension/assets/icon.webp" alt="Cursor Rules Manager" width="160" height="160" />
+  <img src="assets/icon.webp" alt="Cursor Rules Manager" width="160" height="160" />
   <br/>
-  <em>Manage shared Cursor rule presets from your editor</em>
+  <em>Manage shared Cursor rule presets with ease</em>
   <br/>
 </p>
 
-CLI & Cursor Extension to manage shared Cursor `.mdc` rule presets across projects, with support for GitHub Copilot instructions and prompts.
+CLI to manage shared Cursor `.mdc` rule presets across projects, with support for GitHub Copilot instructions and prompts.
 
 #### Why
 
@@ -26,21 +26,13 @@ I wanted a centralized way to manage rules that would be easy to maintain and sh
 
 #### How
 
-CLI and VSCode extension that wraps the CLI.
-
 The CLI is a simple tool that allows you to install, uninstall, list presets and apply them to the current project (some advanced features are available).
 
-The Cursor extension, a VS Code extension, allows you to call the CLI from the command palette.
-
 ## Build Everything & Install CLI
-
-> [!NOTE]
-> Cursor does not support installing extensions from the command line, so you need to install the extension manually.
 
 ### Prerequisites
 
 - Go 1.25.2+ (required)
-- Node.js and pnpm (for extension development)
 - Docker (optional, for Dev Container)
 
 ### Local Build
@@ -49,7 +41,7 @@ The Cursor extension, a VS Code extension, allows you to call the CLI from the c
 make
 ```
 
-### Dev Container (VS Code/Cursor)
+### Dev Container
 
 For a consistent development environment:
 
@@ -170,7 +162,7 @@ Three concepts control where content lives:
 
 - **Source:** Where shared packages and config are read from. Set `CURSOR_RULES_PACKAGE_DIR` to your package directory (e.g. `~/cursor-rules/rules`); config dir is then the parent by default (e.g. `~/cursor-rules`), or set `CURSOR_RULES_CONFIG_DIR` to override.
 - **Destination:** Either a project path (e.g. `.` or `--workdir /path`) or user dirs (`--dir user` or `--global`). Use `-w`/`--workdir` for a path, or `--global` for user.
-- **User base:** When using `--global` or `--dir user`, rules/commands/skills/agents/hooks live under `CURSOR_USER_DIR` unless overridden by `CURSOR_RULES_DIR`, etc.
+- **User base:** When using `--global` or `--dir user`, rules/commands/skills/agents/hooks live under `CURSOR_USER_DIR` (default `~/.cursor`). Per-feature overrides (`CURSOR_RULES_DIR`, etc.) are supported for advanced use.
 
 ### Generate a default config
 
@@ -211,26 +203,17 @@ Logger integration:
 - We use a minimal `cli.Logger` interface (Printf) so you can plug any logger easily.
 - By default `AppContext` uses the standard library logger.
 
-
-
-
-### Extension workflows
-
-- Cursor Rules: Sync Shared Presets — fetch updates then pick presets offered on first run
-- Cursor Rules: Show Effective Rules — opens a markdown preview of merged rules
-- Cursor Rules: Install Preset — prompts for a preset and installs into the current workspace
-
-Environment variables:
+### Environment variables
 
 -   `CURSOR_RULES_PACKAGE_DIR`: package directory (default: `~/.cursor/rules`). When set, config dir defaults to its parent so one var gives one root.
 -   `CURSOR_RULES_CONFIG_DIR`: override the config directory (default: `~/.cursor/rules`).
 -   `CURSOR_RULES_SYMLINK=1`: when set, `install`/`apply` operations will create real filesystem symlinks instead of writing stub `.mdc` files. Use with caution.
 -   `CURSOR_RULES_USE_GNUSTOW=1`: when set and GNU `stow` is available in PATH, the tool will attempt to use `stow` to manage symlinks from the package directory into project targets. This is best-effort and will fall back to symlinks or stubs if stow fails.
 
-**User/global dirs and custom directories:**
+**User/global dirs:**
 
--   `CURSOR_USER_DIR`: base for user/global context (default: `~/.cursor`). Used with `--global` or `--dir user` for install, list, remove.
--   `CURSOR_RULES_DIR`, `CURSOR_COMMANDS_DIR`, `CURSOR_SKILLS_DIR`, `CURSOR_AGENTS_DIR`, `CURSOR_HOOKS_DIR`, `CURSOR_HOOKS_JSON`: override where user-level rules, commands, skills, agents, hooks, and `hooks.json` live (default: `<CURSOR_USER_DIR>/rules`, etc.). Set these to point at custom dirs, then run `cursor-rules config link` to create symlinks from `~/.cursor/rules` (etc.) to those dirs so Cursor sees them as user globals.
+-   `CURSOR_USER_DIR`: base for user/global context (default: `~/.cursor`). Used with `--global` or `--dir user` for install, list, remove. Most users need only this.
+-   `CURSOR_RULES_DIR`, `CURSOR_COMMANDS_DIR`, etc.: optional per-feature overrides. When set, the CLI writes directly to those paths for `--global`. Run `cursor-rules config link` to symlink `~/.cursor/*` to custom dirs so Cursor sees them.
 
 Watcher mapping (auto-apply):
 
@@ -272,10 +255,14 @@ cursor-rules install frontend --target copilot-prompt
 # Install to all targets defined in package manifest
 cursor-rules install frontend --all-targets
 
-# Install Cursor skills, agents, or hook presets from package dir into project
-cursor-rules install my-skill --target cursor-skills
-cursor-rules install my-agent --target cursor-agents
-cursor-rules install my-hooks --target cursor-hooks
+# Install commands, skills, agents, or hooks (subcommands)
+cursor-rules install commands my-cmd
+cursor-rules install commands all
+cursor-rules install skills deploy
+cursor-rules install skills all
+cursor-rules install agents code-reviewer
+cursor-rules install hooks my-hooks
+cursor-rules install all
 ```
 
 ### Frontmatter transformation
@@ -395,21 +382,35 @@ For detailed examples and best practices, see [docs/copilot-integration.md](docs
 
 The package directory (default `~/.cursor/rules`) can hold all five Cursor context types:
 
-| Type      | Package dir layout              | Project location              | Install target      |
-|-----------|----------------------------------|-------------------------------|---------------------|
-| **Rules** | `*.mdc`, `<pkg>/*.mdc`           | `.cursor/rules/`              | `cursor`, `copilot-*` |
-| **Commands** | `*.md` or `commands/<name>/` | `.cursor/commands/`           | `cursor-commands`   |
-| **Skills**   | `skills/<name>/SKILL.md`     | `.cursor/skills/<name>/`      | `cursor-skills`     |
-| **Agents**   | `agents/<name>.md`           | `.cursor/agents/<name>.md`    | `cursor-agents`     |
-| **Hooks**    | `hooks/<preset>/hooks.json` + scripts | `.cursor/hooks.json`, `.cursor/hooks/` | `cursor-hooks` |
+| Type      | Package dir layout              | Project location              | Install command      |
+|-----------|----------------------------------|-------------------------------|----------------------|
+| **Rules** | `*.mdc`, `<pkg>/*.mdc`           | `.cursor/rules/`              | `install [name]` or `install rules [name]` (use `--target` for copilot) |
+| **Commands** | `*.md` or `commands/<name>/` | `.cursor/commands/`           | `install commands [name\|all]` |
+| **Skills**   | `skills/<name>/SKILL.md`     | `.cursor/skills/<name>/`      | `install skills [name\|all]` |
+| **Agents**   | `agents/<name>.md`           | `.cursor/agents/<name>.md`    | `install agents [name\|all]` |
+| **Hooks**    | `hooks/<preset>/hooks.json` + scripts | `.cursor/hooks.json`, `.cursor/hooks/` | `install hooks [preset]` |
 
 - **init** creates `.cursor/rules`, `.cursor/commands`, `.cursor/skills`, `.cursor/agents`, and `.cursor/hooks`.
 - **list** and **sync** show presets, commands, skills, agents, and hook presets from the package dir.
-- **install** with `--target cursor-commands`, `cursor-skills`, `cursor-agents`, or `cursor-hooks` installs from the package dir into the project.
+- **install** uses subcommands: `install [name]` for rules (default), `install commands`, `install skills`, `install agents`, `install hooks`, `install all`.
 - **remove** supports `--type rule|command|skill|agent|hooks` (e.g. `remove my-skill --type skill`, `remove --type hooks`).
 - **install**, **list**, and **remove** support `--global` (or `--dir user`) to operate on user dirs (`~/.cursor/...`) instead of the project. Destination can be set with persistent `--dir`, `--workdir`/`-w`, or `--global`. Override the user base with `CURSOR_USER_DIR` or per-feature with `CURSOR_RULES_DIR`, `CURSOR_COMMANDS_DIR`, etc. Run `cursor-rules config link` to create symlinks from `~/.cursor` to your custom dirs when those env vars are set.
 
 **Hooks:** Installing a hook preset replaces the project’s `.cursor/hooks.json` and populates `.cursor/hooks/` with scripts; script paths in the preset are rewritten to `.cursor/hooks/<name>`. Installing a second hook preset replaces the first unless merge support is added later.
+
+### Migration: Subcommand-based install (breaking)
+
+Native resources now use subcommands instead of `--target`:
+
+| Old | New |
+|-----|-----|
+| `install my-cmd --target commands` | `install commands my-cmd` |
+| `install deploy --target skills` | `install skills deploy` |
+| `install code-reviewer --target agents` | `install agents code-reviewer` |
+| `install my-hooks --target hooks` | `install hooks my-hooks` |
+| `install commands` (collection) | `install commands all` |
+
+Rules keep `--target` for output format: `install frontend --target copilot-instr`.
 
 ## Packages
 
@@ -448,7 +449,8 @@ cursor-rules install frontend/react
 cursor-rules install backend/nodejs/express
 ```
 
-**Note**: All packages are flattened by default when installed. This means files from packages will be placed directly in `.cursor/rules/` rather than preserving the package directory structure. Nested packages (containing `/` in the name) are always flattened regardless of flags.
+> [!NOTE]
+> All packages are flattened by default when installed. This means files from packages will be placed directly in `.cursor/rules/` rather than preserving the package directory structure. Nested packages (containing `/` in the name) are always flattened regardless of flags.
 
 Package installs support exclusions via the `--exclude` flag and a `.cursor-rules-ignore` file placed in the package root.
 The `--exclude` flag accepts repeated patterns which are merged with the `.cursor-rules-ignore` patterns.

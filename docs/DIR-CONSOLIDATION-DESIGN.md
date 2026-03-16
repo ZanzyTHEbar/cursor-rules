@@ -56,7 +56,7 @@ Result: **one env var** (`CURSOR_RULES_PACKAGE_DIR`) for the common "everything 
 
 Result: **one mental model** (destination = path or user); **one primary flag** (`--dir`); **existing flags** become shorthands.
 
-### 3. User dir: one primary env, overrides optional
+### 3. User dir: derived from packageDir, env overrides optional
 
 **Idea:** Don’t add new env vars; document a clear hierarchy.
 
@@ -73,7 +73,7 @@ Result: **One env var** for 99% of cases; **six optional overrides** for power u
 |--------|---------|----------------------|
 | **Source (package + config)** | `CURSOR_RULES_PACKAGE_DIR` (when set, config dir = parent) | `CURSOR_RULES_CONFIG_DIR` |
 | **Destination** | `--dir <path\|user>` | `--workdir`/`-w` (= path), `--global` (= user) |
-| **User/global base** | `CURSOR_USER_DIR` | `CURSOR_RULES_DIR`, … (6 optional) |
+| **User/global paths** | Derived from `packageDir` (user base = dir(packageDir)) | `CURSOR_USER_DIR`, `CURSOR_RULES_DIR`, … (env overrides) |
 
 ---
 
