@@ -303,7 +303,7 @@ Content`,
 	}
 }
 
-// TestInstallCursorSkillsAgentsHooks tests install --target cursor-skills, cursor-agents, cursor-hooks
+// TestInstallCursorSkillsAgentsHooks tests install --target skills, agents, hooks
 func TestInstallCursorSkillsAgentsHooks(t *testing.T) {
 	tmpShared := t.TempDir()
 	tmpProject := t.TempDir()
@@ -316,6 +316,18 @@ func TestInstallCursorSkillsAgentsHooks(t *testing.T) {
 		os.Unsetenv("CURSOR_RULES_CONFIG_DIR")
 		os.Unsetenv("CURSOR_RULES_USE_GNUSTOW")
 	}()
+
+	// Commands: commands/my-command/run.md
+	commandDir := filepath.Join(tmpShared, "commands", "my-command")
+	if err := os.MkdirAll(filepath.Join(commandDir, "partials"), 0755); err != nil {
+		t.Fatalf("create command dir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(commandDir, "run.md"), []byte("# Run command\n"), 0644); err != nil {
+		t.Fatalf("write run.md: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(commandDir, "partials", "details.md"), []byte("# Details\n"), 0644); err != nil {
+		t.Fatalf("write details.md: %v", err)
+	}
 
 	// Skill: skills/my-skill/SKILL.md
 	skillDir := filepath.Join(tmpShared, "skills", "my-skill")
@@ -361,9 +373,64 @@ You are a test agent.`
 	ctx := cli.NewAppContext(nil, nil)
 	ctx.Viper.Set("workdir", tmpProject)
 
-	t.Run("cursor-skills", func(t *testing.T) {
+	t.Run("commands package all", func(t *testing.T) {
 		cmd := commands.NewInstallCmd(ctx)
-		cmd.SetArgs([]string{"my-skill", "--target", "cursor-skills"})
+		cmd.SetArgs([]string{"commands", "all"})
+		if err := cmd.Execute(); err != nil {
+			t.Fatalf("install commands all: %v", err)
+		}
+		commandDest := filepath.Join(tmpProject, ".cursor", "commands", "my-command", "run.md")
+		if _, err := os.Stat(commandDest); err != nil {
+			t.Errorf("commands package not installed at %s: %v", commandDest, err)
+		}
+		if _, err := os.Stat(filepath.Join(tmpProject, ".cursor", "rules", "run.md")); err == nil {
+			t.Errorf("commands package should not install into .cursor/rules")
+		}
+	})
+
+	t.Run("skills package all", func(t *testing.T) {
+		cmd := commands.NewInstallCmd(ctx)
+		cmd.SetArgs([]string{"skills", "all"})
+		if err := cmd.Execute(); err != nil {
+			t.Fatalf("install skills all: %v", err)
+		}
+		skillDest := filepath.Join(tmpProject, ".cursor", "skills", "my-skill", "SKILL.md")
+		if _, err := os.Stat(skillDest); err != nil {
+			t.Errorf("skills package not installed at %s: %v", skillDest, err)
+		}
+	})
+
+	t.Run("agents package all", func(t *testing.T) {
+		cmd := commands.NewInstallCmd(ctx)
+		cmd.SetArgs([]string{"agents", "all"})
+		if err := cmd.Execute(); err != nil {
+			t.Fatalf("install agents all: %v", err)
+		}
+		agentDest := filepath.Join(tmpProject, ".cursor", "agents", "my-agent.md")
+		if _, err := os.Stat(agentDest); err != nil {
+			t.Errorf("agents package not installed at %s: %v", agentDest, err)
+		}
+	})
+
+	t.Run("commands", func(t *testing.T) {
+		cmd := commands.NewInstallCmd(ctx)
+		cmd.SetArgs([]string{"commands", "my-command"})
+		if err := cmd.Execute(); err != nil {
+			t.Fatalf("install command: %v", err)
+		}
+		commandDest := filepath.Join(tmpProject, ".cursor", "commands", "my-command", "run.md")
+		nestedDest := filepath.Join(tmpProject, ".cursor", "commands", "my-command", "partials", "details.md")
+		if _, err := os.Stat(commandDest); err != nil {
+			t.Errorf("command file not installed at %s: %v", commandDest, err)
+		}
+		if _, err := os.Stat(nestedDest); err != nil {
+			t.Errorf("nested command file not installed at %s: %v", nestedDest, err)
+		}
+	})
+
+	t.Run("skills", func(t *testing.T) {
+		cmd := commands.NewInstallCmd(ctx)
+		cmd.SetArgs([]string{"skills", "my-skill"})
 		if err := cmd.Execute(); err != nil {
 			t.Fatalf("install skill: %v", err)
 		}
@@ -373,9 +440,9 @@ You are a test agent.`
 		}
 	})
 
-	t.Run("cursor-agents", func(t *testing.T) {
+	t.Run("agents", func(t *testing.T) {
 		cmd := commands.NewInstallCmd(ctx)
-		cmd.SetArgs([]string{"my-agent", "--target", "cursor-agents"})
+		cmd.SetArgs([]string{"agents", "my-agent"})
 		if err := cmd.Execute(); err != nil {
 			t.Fatalf("install agent: %v", err)
 		}
@@ -385,9 +452,9 @@ You are a test agent.`
 		}
 	})
 
-	t.Run("cursor-hooks", func(t *testing.T) {
+	t.Run("hooks", func(t *testing.T) {
 		cmd := commands.NewInstallCmd(ctx)
-		cmd.SetArgs([]string{"my-hooks", "--target", "cursor-hooks"})
+		cmd.SetArgs([]string{"hooks", "my-hooks"})
 		if err := cmd.Execute(); err != nil {
 			t.Fatalf("install hooks: %v", err)
 		}

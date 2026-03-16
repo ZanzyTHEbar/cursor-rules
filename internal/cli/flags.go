@@ -56,12 +56,12 @@ func ResolveDestination(a *app.App, cmd *cobra.Command) (workdir string, isUser 
 	dir := strings.TrimSpace(GetOptionalFlag(cmd, "dir"))
 	if dir != "" {
 		if strings.EqualFold(dir, "user") || strings.EqualFold(dir, "global") {
-			return config.GlobalProjectRoot(), true, nil
+			return config.GlobalProjectRoot(nil), true, nil
 		}
 		return dir, false, nil
 	}
 	if GetBoolFlag(cmd, "global") {
-		return config.GlobalProjectRoot(), true, nil
+		return config.GlobalProjectRoot(nil), true, nil
 	}
 	wd := GetOptionalFlag(cmd, "workdir")
 	if a.Viper != nil && wd == "" {

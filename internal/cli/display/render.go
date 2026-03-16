@@ -40,6 +40,9 @@ func RenderListResponse(p Printer, resp *app.ListResponse) {
 	if resp == nil {
 		return
 	}
+	for _, e := range resp.Errors {
+		p.Warn("warning: %s\n", e)
+	}
 	p.Info("%s\n", FormatRulesTree(resp.Tree))
 	if len(resp.Commands) > 0 {
 		p.Info("commands:\n")
@@ -189,7 +192,9 @@ func RenderRemoveResponse(p Printer, resp *app.RemoveResponse) {
 	}
 	if resp.RemovedHooks {
 		p.Success("Removed hooks from %s/.cursor/\n", resp.Workdir)
+		return
 	}
+	p.Info("Nothing removed.\n")
 }
 
 // RenderConfigInitResponse writes config init output.

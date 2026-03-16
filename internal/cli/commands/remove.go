@@ -19,6 +19,9 @@ func NewRemoveCmd(ctx *cli.AppContext) *cobra.Command {
 		Short: "Remove a preset, command, skill, agent, or hooks from the current project",
 		Args:  cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if cli.ShowHelpIfReservedArg(cmd, args) {
+				return nil
+			}
 			name := ""
 			if len(args) > 0 {
 				name = args[0]

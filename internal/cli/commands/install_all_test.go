@@ -110,6 +110,89 @@ func TestInstallAllRespectsViperPackageDirWhenEnvUnset(t *testing.T) {
 	expectExists(t, filepath.Join(workdir, ".cursor", "rules", "a1.mdc"))
 }
 
+func TestInstallAllDetectsCommandsCollection(t *testing.T) {
+	packageDir := t.TempDir()
+	os.Setenv("CURSOR_RULES_PACKAGE_DIR", packageDir)
+	os.Setenv("CURSOR_RULES_CONFIG_DIR", t.TempDir())
+	defer func() {
+		os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
+		os.Unsetenv("CURSOR_RULES_CONFIG_DIR")
+	}()
+
+	if err := os.MkdirAll(filepath.Join(packageDir, "pkgA"), 0o755); err != nil {
+		t.Fatalf("failed to create pkgA: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(packageDir, "pkgA", "a1.mdc"), []byte("---\ndescription: a1\n---\nbody"), 0o644); err != nil {
+		t.Fatalf("failed to write pkgA/a1.mdc: %v", err)
+	}
+
+	commandsDir := filepath.Join(packageDir, "commands")
+	if err := os.MkdirAll(filepath.Join(commandsDir, "release"), 0o755); err != nil {
+		t.Fatalf("failed to create commands/release: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(commandsDir, "review.md"), []byte("# review"), 0o644); err != nil {
+		t.Fatalf("failed to write commands/review.md: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(commandsDir, "release", "run.md"), []byte("# run"), 0o644); err != nil {
+		t.Fatalf("failed to write commands/release/run.md: %v", err)
+	}
+
+	workdir := t.TempDir()
+	v := viper.New()
+	v.Set("workdir", workdir)
+	ctx := cli.NewAppContext(v, nil)
+
+	cmd := NewInstallCmd(ctx)
+	cmd.SetArgs([]string{"all"})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("install all failed: %v", err)
+	}
+
+	expectExists(t, filepath.Join(workdir, ".cursor", "rules", "a1.mdc"))
+	expectExists(t, filepath.Join(workdir, ".cursor", "commands", "review.md"))
+	expectExists(t, filepath.Join(workdir, ".cursor", "commands", "release", "run.md"))
+
+	if _, err := os.Stat(filepath.Join(workdir, ".cursor", "rules", "review.md")); err == nil {
+		t.Fatalf("expected commands/review.md not to be installed into .cursor/rules")
+	}
+	if _, err := os.Stat(filepath.Join(workdir, ".cursor", "rules", "run.md")); err == nil {
+		t.Fatalf("expected commands/release/run.md not to be installed into .cursor/rules")
+	}
+}
+
+func TestInstallAllSupportsSkillTarget(t *testing.T) {
+	packageDir := t.TempDir()
+	os.Setenv("CURSOR_RULES_PACKAGE_DIR", packageDir)
+	os.Setenv("CURSOR_RULES_CONFIG_DIR", t.TempDir())
+	defer func() {
+		os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
+		os.Unsetenv("CURSOR_RULES_CONFIG_DIR")
+	}()
+
+	skillDir := filepath.Join(packageDir, "skills", "deploy")
+	if err := os.MkdirAll(skillDir, 0o755); err != nil {
+		t.Fatalf("failed to create skills/deploy: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(skillDir, "SKILL.md"), []byte("---\nname: deploy\n---\nbody"), 0o644); err != nil {
+		t.Fatalf("failed to write skills/deploy/SKILL.md: %v", err)
+	}
+
+	workdir := t.TempDir()
+	v := viper.New()
+	v.Set("workdir", workdir)
+	ctx := cli.NewAppContext(v, nil)
+
+	cmd := NewInstallCmd(ctx)
+	cmd.SetArgs([]string{"all", "--target", "skills"})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("install all --target skills failed: %v", err)
+	}
+
+	expectExists(t, filepath.Join(workdir, ".cursor", "skills", "deploy", "SKILL.md"))
+}
+
 func expectExists(t *testing.T, path string) {
 	t.Helper()
 	if _, err := os.Stat(path); err != nil {

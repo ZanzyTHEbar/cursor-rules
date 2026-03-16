@@ -21,6 +21,9 @@ Example:
   cursor-rules transform frontend --target copilot-instr`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if cli.ShowHelpIfReservedArg(cmd, args) {
+				return nil
+			}
 			req := app.TransformRequest{
 				Name:   args[0],
 				Target: targetFlag,
