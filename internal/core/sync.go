@@ -10,8 +10,22 @@ import (
 	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 )
 
+// ResolveRulesPackageDir returns the directory that should be treated as the
+// rules source. If a dedicated `rules/` subdirectory exists under packageDir,
+// that subtree is authoritative. Otherwise packageDir itself is treated as the
+// rules source for backward compatibility.
+func ResolveRulesPackageDir(packageDir string) string {
+	rulesDir := filepath.Join(packageDir, "rules")
+	info, err := os.Stat(rulesDir)
+	if err == nil && info.IsDir() {
+		return rulesDir
+	}
+	return packageDir
+}
+
 // ListPackagePresets returns list of .mdc files found in packageDir.
 func ListPackagePresets(packageDir string) ([]string, error) {
+	packageDir = ResolveRulesPackageDir(packageDir)
 	var out []string
 	entries, err := fs.ReadDir(os.DirFS(packageDir), ".")
 	if err != nil {
@@ -32,6 +46,9 @@ func ListPackagePresets(packageDir string) ([]string, error) {
 // ListPackageDirs returns directories directly under packageDir which can be
 // treated as packages (e.g., "frontend", "git").
 func ListPackageDirs(packageDir string) ([]string, error) {
+	originalPackageDir := packageDir
+	packageDir = ResolveRulesPackageDir(packageDir)
+	isCompatibilityRoot := packageDir == originalPackageDir
 	var out []string
 	entries, err := fs.ReadDir(os.DirFS(packageDir), ".")
 	if err != nil {
@@ -44,9 +61,11 @@ func ListPackageDirs(packageDir string) ([]string, error) {
 		if strings.HasPrefix(e.Name(), ".") {
 			continue
 		}
-		switch e.Name() {
-		case defaultCommandsSubdir, defaultSkillsSubdir, defaultAgentsSubdir, defaultHooksSubdir:
-			continue
+		if isCompatibilityRoot {
+			switch e.Name() {
+			case defaultCommandsSubdir, defaultSkillsSubdir, defaultAgentsSubdir, legacyAgentsSubdir, defaultHooksSubdir:
+				continue
+			}
 		}
 		if hasRuleFiles(filepath.Join(packageDir, e.Name())) {
 			out = append(out, e.Name())

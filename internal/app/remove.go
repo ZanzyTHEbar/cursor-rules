@@ -46,8 +46,7 @@ func (a *App) Remove(req RemoveRequest) (*RemoveResponse, error) {
 		Workdir: wd,
 	}
 
-	switch req.Type {
-	case "rule":
+	if req.Type == "rule" {
 		if strings.TrimSpace(req.Name) == "" {
 			return nil, errors.New(errors.CodeInvalidArgument, "name required for remove --type rule")
 		}

@@ -29,8 +29,9 @@ type RulesPackage struct {
 // gracefully with empty slices.
 func BuildRulesTree(packageDir string) (*RulesTree, error) {
 	tree := &RulesTree{PackageDir: packageDir}
+	rulesDir := ResolveRulesPackageDir(packageDir)
 
-	info, err := os.Stat(packageDir)
+	info, err := os.Stat(rulesDir)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return tree, nil
@@ -41,7 +42,7 @@ func BuildRulesTree(packageDir string) (*RulesTree, error) {
 		return tree, errors.Newf(errors.CodeFailedPrecondition, "package dir is not a directory: %s", packageDir)
 	}
 
-	presets, err := listRootRuleFiles(packageDir)
+	presets, err := listRootRuleFiles(rulesDir)
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +60,7 @@ func BuildRulesTree(packageDir string) (*RulesTree, error) {
 		if err := security.ValidatePackageName(name); err != nil {
 			continue
 		}
-		files, err := collectPackageRuleFiles(packageDir, name)
+		files, err := collectPackageRuleFiles(rulesDir, name)
 		if err != nil {
 			return nil, err
 		}

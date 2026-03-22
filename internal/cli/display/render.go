@@ -179,7 +179,7 @@ func RenderRemoveResponse(p Printer, resp *app.RemoveResponse) {
 		return
 	}
 	if resp.RemovedCommand {
-		p.Success("Removed command %q from %s/.cursor/commands/\n", resp.Name, resp.Workdir)
+		p.Success("Removed command %q from %s/.cursor/skills/\n", resp.Name, resp.Workdir)
 		return
 	}
 	if resp.RemovedSkill {

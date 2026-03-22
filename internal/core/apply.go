@@ -11,6 +11,8 @@ import (
 // ApplyPresetToProject copies a package preset file into the project's .cursor/rules as a stub (@file).
 // If the stub already exists, it is left unchanged (idempotent). Returns the install strategy used.
 func ApplyPresetToProject(projectRoot, preset, packageDir string) (InstallStrategy, error) {
+	packageDir = ResolveRulesPackageDir(packageDir)
+
 	// Normalize preset name: remove .mdc extension if present
 	normalizedPreset := strings.TrimSuffix(preset, ".mdc")
 

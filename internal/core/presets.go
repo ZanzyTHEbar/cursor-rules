@@ -125,32 +125,6 @@ func InstallPackageFromPackageDir(projectRoot, packageDir, packageName string, e
 		return StrategyUnknown, errors.Newf(errors.CodeNotFound, "package not found: %s", pkgDir)
 	}
 
-	// Read .cursor-rules-ignore if present in package dir
-	ignorePath, err := security.SafeJoin(pkgDir, ".cursor-rules-ignore")
-	if err != nil {
-		return StrategyUnknown, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid ignore file path")
-	}
-	var ignorePatterns []string
-	if b, err := os.ReadFile(ignorePath); err == nil {
-		lines := strings.Split(string(b), "\n")
-		for _, l := range lines {
-			l = strings.TrimSpace(l)
-			if l == "" || strings.HasPrefix(l, "#") {
-				continue
-			}
-			ignorePatterns = append(ignorePatterns, l)
-		}
-	}
-
-	// Merge excludes param into ignorePatterns
-	for _, ex := range excludes {
-		ex = strings.TrimSpace(ex)
-		if ex != "" {
-			ignorePatterns = append(ignorePatterns, ex)
-		}
-	}
-
-	// Walk package dir and install each .mdc file unless excluded
 	rulesDir, err := security.SafeJoin(projectRoot, ".cursor", "rules")
 	if err != nil {
 		return StrategyUnknown, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid rules directory path")

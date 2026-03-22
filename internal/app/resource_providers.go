@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"sort"
 	"strings"
 
 	"github.com/ZanzyTHEbar/cursor-rules/internal/config"
@@ -102,10 +103,10 @@ func (r *nativeResourceRegistry) providers() []nativeResourceProvider {
 	return r.ordered
 }
 
-func (r *nativeResourceRegistry) resolveDefaultTarget(packageDir, name string, cfg *config.Config) (string, bool, error) {
+func (r *nativeResourceRegistry) resolveDefaultTarget(packageDir, name string, cfg *config.Config) (target string, ok bool, err error) {
 	var lastErr error
 	for _, provider := range r.providers() {
-		target, ok, err := provider.DetectDefaultTarget(packageDir, name, cfg)
+		target, ok, err = provider.DetectDefaultTarget(packageDir, name, cfg)
 		if ok {
 			return target, true, nil
 		}
@@ -114,10 +115,6 @@ func (r *nativeResourceRegistry) resolveDefaultTarget(packageDir, name string, c
 		}
 	}
 	return "", false, lastErr
-}
-
-func resourceBaseDir(projectRoot string) string {
-	return filepath.Join(projectRoot, ".cursor")
 }
 
 func removeFromInstalledList(name string, installed []string, remove func() error) (bool, error) {
@@ -153,26 +150,53 @@ type commandResourceProvider struct{}
 
 func (commandResourceProvider) Kind() string      { return resourceKindCommand }
 func (commandResourceProvider) Target() string    { return "commands" }
-func (commandResourceProvider) OutputDir() string { return ".cursor/commands" }
+func (commandResourceProvider) OutputDir() string { return ".cursor/skills" }
 func (commandResourceProvider) RequiresName() bool {
 	return true
 }
 func (commandResourceProvider) ListAvailable(packageDir string, _ *config.Config) ([]string, error) {
-	return core.ListPackageCommands(packageDir)
+	return core.ListCursorCompatibleCommands(packageDir)
 }
 func (commandResourceProvider) ListInstalled(projectRoot string, cfg *config.Config, isUser bool) ([]string, error) {
-	commandsDir := config.EffectiveCommandsDir(projectRoot, isUser, cfg)
-	return core.ListInstalledCommands(commandsDir)
+	legacyCommandsDir := config.EffectiveCommandsDir(projectRoot, isUser, cfg)
+	skillsDir := config.EffectiveSkillsDir(projectRoot, isUser, cfg)
+	compat, err := core.ListInstalledCommandSkills(skillsDir)
+	if err != nil {
+		return nil, err
+	}
+	legacy, err := core.ListInstalledCommands(legacyCommandsDir)
+	if err != nil {
+		return nil, err
+	}
+	seen := make(map[string]struct{}, len(compat)+len(legacy))
+	out := make([]string, 0, len(compat)+len(legacy))
+	for _, name := range compat {
+		if _, ok := seen[name]; ok {
+			continue
+		}
+		seen[name] = struct{}{}
+		out = append(out, name)
+	}
+	for _, name := range legacy {
+		normalized := strings.TrimSuffix(name, ".md")
+		if _, ok := seen[normalized]; ok {
+			continue
+		}
+		seen[normalized] = struct{}{}
+		out = append(out, normalized)
+	}
+	sort.Strings(out)
+	return out, nil
 }
 func (commandResourceProvider) Install(projectRoot, packageDir, name string, cfg *config.Config, opts nativeResourceInstallOptions) (core.InstallStrategy, error) {
-	commandsDir := config.EffectiveCommandsDir(projectRoot, opts.IsUser, cfg)
+	skillsDir := config.EffectiveSkillsDir(projectRoot, opts.IsUser, cfg)
 	if strings.TrimSpace(name) == core.CommandsSubdir() {
-		return core.InstallCommandCollectionToCommandsDir(commandsDir, packageDir, opts.Excludes)
+		return core.InstallCommandCollectionAsSkillsToDir(skillsDir, packageDir, opts.Excludes)
 	}
-	return core.InstallCommandToProjectWithCommandsDir(commandsDir, packageDir, name, opts.Excludes, opts.NoFlatten)
+	return core.InstallCommandAsSkillToDir(skillsDir, packageDir, name, opts.Excludes)
 }
 func (commandResourceProvider) PlanInstallAll(packageDir string, _ *config.Config) ([]nativeResourceInstallAllPlan, error) {
-	names, err := core.ListCommandsCollectionEntries(packageDir)
+	names, err := core.ListCursorCompatibleCommands(packageDir)
 	if err != nil {
 		return nil, err
 	}
@@ -186,11 +210,20 @@ func (commandResourceProvider) PlanInstallAll(packageDir string, _ *config.Confi
 	return plans, nil
 }
 func (commandResourceProvider) IncludeInDefaultInstallAll() bool { return true }
-func (commandResourceProvider) DetectDefaultTarget(packageDir, name string, _ *config.Config) (string, bool, error) {
+func (commandResourceProvider) DetectDefaultTarget(packageDir, name string, _ *config.Config) (target string, ok bool, err error) {
 	if strings.TrimSpace(name) != core.CommandsSubdir() {
+		names, err := core.ListCursorCompatibleCommands(packageDir)
+		if err != nil {
+			return "", false, err
+		}
+		for _, candidate := range names {
+			if candidate == strings.TrimSpace(name) {
+				return "commands", true, nil
+			}
+		}
 		return "", false, nil
 	}
-	names, err := core.ListCommandsCollectionEntries(packageDir)
+	names, err := core.ListCursorCompatibleCommands(packageDir)
 	if err != nil {
 		return "", false, err
 	}
@@ -202,7 +235,12 @@ func (commandResourceProvider) Remove(projectRoot, name string, cfg *config.Conf
 		return false, err
 	}
 	return removeFromInstalledList(name, installed, func() error {
-		return core.RemoveCommand(config.EffectiveCommandsDir(projectRoot, isUser, cfg), name)
+		skillsDir := config.EffectiveSkillsDir(projectRoot, isUser, cfg)
+		commandsDir := config.EffectiveCommandsDir(projectRoot, isUser, cfg)
+		if err := core.RemoveSkill(skillsDir, name); err != nil {
+			return err
+		}
+		return core.RemoveCommand(commandsDir, name)
 	})
 }
 
@@ -242,8 +280,8 @@ func (skillResourceProvider) PlanInstallAll(packageDir string, cfg *config.Confi
 	}
 	return plans, nil
 }
-func (skillResourceProvider) IncludeInDefaultInstallAll() bool { return false }
-func (skillResourceProvider) DetectDefaultTarget(packageDir, name string, cfg *config.Config) (string, bool, error) {
+func (skillResourceProvider) IncludeInDefaultInstallAll() bool { return true }
+func (skillResourceProvider) DetectDefaultTarget(packageDir, name string, cfg *config.Config) (target string, ok bool, err error) {
 	if strings.TrimSpace(name) != core.SkillsSubdir(cfg.SkillsSubdir) {
 		return "", false, nil
 	}
@@ -283,7 +321,7 @@ func (agentResourceProvider) Install(projectRoot, packageDir, name string, cfg *
 	if strings.TrimSpace(name) == core.AgentsSubdir(cfg.AgentsSubdir) {
 		return installAllFromProviderWithDir(agentResourceProvider{}, projectRoot, packageDir, cfg, opts.IsUser)
 	}
-	subdir := core.AgentsSubdir(cfg.AgentsSubdir)
+	subdir := core.ResolveAgentsSubdir(packageDir, cfg.AgentsSubdir)
 	agentsRoot, err := security.SafeJoin(packageDir, subdir)
 	if err != nil {
 		return core.StrategyUnknown, err
@@ -304,8 +342,8 @@ func (agentResourceProvider) PlanInstallAll(packageDir string, cfg *config.Confi
 	}
 	return plans, nil
 }
-func (agentResourceProvider) IncludeInDefaultInstallAll() bool { return false }
-func (agentResourceProvider) DetectDefaultTarget(packageDir, name string, cfg *config.Config) (string, bool, error) {
+func (agentResourceProvider) IncludeInDefaultInstallAll() bool { return true }
+func (agentResourceProvider) DetectDefaultTarget(packageDir, name string, cfg *config.Config) (target string, ok bool, err error) {
 	if strings.TrimSpace(name) != core.AgentsSubdir(cfg.AgentsSubdir) {
 		return "", false, nil
 	}
@@ -346,11 +384,22 @@ func (hooksResourceProvider) Install(projectRoot, packageDir, name string, cfg *
 	jsonPath := config.EffectiveHooksJSON(projectRoot, opts.IsUser, cfg)
 	return core.InstallHookPresetToDirs(hooksDir, jsonPath, packageDir, name, cfg.HooksSubdir)
 }
-func (hooksResourceProvider) PlanInstallAll(_ string, _ *config.Config) ([]nativeResourceInstallAllPlan, error) {
-	return nil, nil
+func (hooksResourceProvider) PlanInstallAll(packageDir string, cfg *config.Config) ([]nativeResourceInstallAllPlan, error) {
+	names, err := core.ListHookPresets(packageDir, cfg.HooksSubdir)
+	if err != nil {
+		return nil, err
+	}
+	plans := make([]nativeResourceInstallAllPlan, 0, len(names))
+	for _, name := range names {
+		plans = append(plans, nativeResourceInstallAllPlan{
+			Name:  name,
+			Label: filepath.Join(core.HooksSubdir(cfg.HooksSubdir), name),
+		})
+	}
+	return plans, nil
 }
-func (hooksResourceProvider) IncludeInDefaultInstallAll() bool { return false }
-func (hooksResourceProvider) DetectDefaultTarget(_ string, _ string, _ *config.Config) (string, bool, error) {
+func (hooksResourceProvider) IncludeInDefaultInstallAll() bool { return true }
+func (hooksResourceProvider) DetectDefaultTarget(_, _ string, _ *config.Config) (target string, ok bool, err error) {
 	return "", false, nil
 }
 func (hooksResourceProvider) Remove(projectRoot, _ string, cfg *config.Config, isUser bool) (bool, error) {
@@ -432,11 +481,12 @@ func (p rulesResourceProvider) ListInstalled(projectRoot string, cfg *config.Con
 }
 
 func (p rulesResourceProvider) Install(projectRoot, packageDir, name string, cfg *config.Config, opts nativeResourceInstallOptions) (core.InstallStrategy, error) {
+	rulesPackageDir := core.ResolveRulesPackageDir(packageDir)
 	trans, err := p.tp.Transformer(p.target)
 	if err != nil {
 		return core.StrategyUnknown, err
 	}
-	pkgPath := filepath.Join(packageDir, name)
+	pkgPath := filepath.Join(rulesPackageDir, name)
 	info, statErr := os.Stat(pkgPath)
 	isPackage := statErr == nil && info.IsDir()
 
@@ -444,34 +494,31 @@ func (p rulesResourceProvider) Install(projectRoot, packageDir, name string, cfg
 		rulesDir := config.EffectiveRulesDir(projectRoot, true, cfg)
 		if isPackage {
 			if core.UseSymlink() || core.WantGNUStow() {
-				return core.InstallPackageToRulesDir(rulesDir, packageDir, name, opts.Excludes, opts.NoFlatten)
+				return core.InstallPackageToRulesDir(rulesDir, rulesPackageDir, name, opts.Excludes, opts.NoFlatten)
 			}
 			return installPackageWithTransformerToRulesDir(rulesDir, pkgPath, name, trans, opts.Excludes, opts.NoFlatten)
 		}
-		presetPath := filepath.Join(packageDir, name)
+		presetPath := filepath.Join(rulesPackageDir, name)
 		if !strings.HasSuffix(presetPath, ".mdc") {
 			presetPath += ".mdc"
 		}
-		return installPresetWithTransformerToRulesDir(rulesDir, presetPath, name, trans, packageDir)
+		return installPresetWithTransformerToRulesDir(rulesDir, presetPath, name, trans, rulesPackageDir)
 	}
 
 	if isPackage {
 		if trans.Target() == "cursor" && (core.UseSymlink() || core.WantGNUStow()) {
-			return core.InstallPackageFromPackageDir(projectRoot, packageDir, name, opts.Excludes, opts.NoFlatten)
+			return core.InstallPackageFromPackageDir(projectRoot, rulesPackageDir, name, opts.Excludes, opts.NoFlatten)
 		}
 		return installPackageWithTransformer(projectRoot, pkgPath, name, trans, opts.Excludes, opts.NoFlatten)
 	}
-	presetPath := filepath.Join(packageDir, name)
+	presetPath := filepath.Join(rulesPackageDir, name)
 	if !strings.HasSuffix(presetPath, ".mdc") {
 		presetPath += ".mdc"
 	}
-	return installPresetWithTransformer(projectRoot, presetPath, name, trans, packageDir)
+	return installPresetWithTransformer(projectRoot, presetPath, name, trans, rulesPackageDir)
 }
 
 func (p rulesResourceProvider) PlanInstallAll(packageDir string, _ *config.Config) ([]nativeResourceInstallAllPlan, error) {
-	if p.target != "cursor" {
-		return nil, nil
-	}
 	pkgs, err := core.ListPackageDirs(packageDir)
 	if err != nil {
 		return nil, err
@@ -497,7 +544,7 @@ func (p rulesResourceProvider) IncludeInDefaultInstallAll() bool {
 	return p.target == "cursor"
 }
 
-func (p rulesResourceProvider) DetectDefaultTarget(packageDir, name string, _ *config.Config) (string, bool, error) {
+func (p rulesResourceProvider) DetectDefaultTarget(packageDir, name string, _ *config.Config) (target string, ok bool, err error) {
 	presets, err := core.ListPackagePresets(packageDir)
 	if err != nil {
 		return "", false, err
@@ -530,10 +577,6 @@ func (p rulesResourceProvider) Remove(projectRoot, name string, cfg *config.Conf
 	return removeFromInstalledList(name, installed, func() error {
 		return core.RemovePreset(config.EffectiveRulesDir(projectRoot, isUser, cfg), name)
 	})
-}
-
-func installAllFromProvider(provider nativeResourceProvider, projectRoot, packageDir string, cfg *config.Config) (core.InstallStrategy, error) {
-	return installAllFromProviderWithDir(provider, projectRoot, packageDir, cfg, false)
 }
 
 func installAllFromProviderWithDir(provider nativeResourceProvider, projectRoot, packageDir string, cfg *config.Config, isUser bool) (core.InstallStrategy, error) {

@@ -48,28 +48,6 @@ func InstallPackageGeneric(projectRoot, packageDir, packageName, destSubdir stri
 		return StrategyUnknown, errors.Newf(errors.CodeNotFound, "package not found: %s", pkgDir)
 	}
 
-	// Read ignore file if present in package dir
-	ignorePath := filepath.Join(pkgDir, ignoreFileName)
-	var ignorePatterns []string
-	if b, err := os.ReadFile(ignorePath); err == nil {
-		lines := strings.Split(string(b), "\n")
-		for _, l := range lines {
-			l = strings.TrimSpace(l)
-			if l == "" || strings.HasPrefix(l, "#") {
-				continue
-			}
-			ignorePatterns = append(ignorePatterns, l)
-		}
-	}
-
-	// Merge excludes param into ignorePatterns
-	for _, ex := range excludes {
-		ex = strings.TrimSpace(ex)
-		if ex != "" {
-			ignorePatterns = append(ignorePatterns, ex)
-		}
-	}
-
 	destRoot, err := security.SafeJoin(projectRoot, ".cursor", destSubdir)
 	if err != nil {
 		return StrategyUnknown, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid destination path")

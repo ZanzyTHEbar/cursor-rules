@@ -90,12 +90,34 @@ func newInstallRulesCmd(ctx *cli.AppContext) *cobra.Command {
 	var allTargetsFlag bool
 
 	c := &cobra.Command{
-		Use:   "rules [name]",
-		Short: "Install a rules preset or package",
-		Long:  `Install a rules preset or package to .cursor/rules/ or Copilot targets.`,
-		Args:  cobra.ExactArgs(1),
+		Use:   "rules [name|all]",
+		Short: "Install a rules preset, package, or all rules",
+		Long:  `Install a rules preset or package to .cursor/rules/ or Copilot targets. With no name, installs all rules.`,
+		Args:  cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if cli.ShowHelpIfReservedArg(cmd, args) {
+				return nil
+			}
+			if len(args) == 0 || args[0] == "all" {
+				workdir, isUser, err := cli.ResolveDestination(ctx.App(), cmd)
+				if err != nil {
+					return err
+				}
+				req := &app.InstallAllRequest{
+					Workdir:                workdir,
+					Global:                 isUser,
+					Excludes:               excludeFlag,
+					NoFlatten:              noFlattenFlag,
+					Target:                 targetFlag,
+					AllTargets:             allTargetsFlag,
+					ShowInstallMethodFirst: true,
+				}
+				resp, err := ctx.App().InstallAll(req)
+				if err != nil {
+					return err
+				}
+				p := display.NewPrinter(ctx.Messenger(), cmd.OutOrStdout(), cmd.ErrOrStderr())
+				display.RenderInstallAllResponse(p, resp)
 				return nil
 			}
 			return runInstallRules(ctx, cmd, args[0], excludeFlag, noFlattenFlag, targetFlag, allTargetsFlag)
@@ -114,9 +136,9 @@ func newInstallCommandsCmd(ctx *cli.AppContext) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "commands [name|all]",
-		Short: "Install a command or all commands",
-		Long:  `Install a command from the package dir into .cursor/commands/. Use "all" to install the entire commands collection.`,
-		Args:  cobra.ExactArgs(1),
+		Short: "Install a command or all commands as Cursor skills",
+		Long:  `Install a command from the package dir into .cursor/skills/ as a Cursor-compatible skill. Use "all" to install the entire commands collection.`,
+		Args:  cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if cli.ShowHelpIfReservedArg(cmd, args) {
 				return nil
@@ -125,9 +147,12 @@ func newInstallCommandsCmd(ctx *cli.AppContext) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			name := args[0]
+			name := ""
+			if len(args) > 0 {
+				name = args[0]
+			}
 			target := "commands"
-			if name == "all" {
+			if name == "" || name == "all" {
 				req := &app.InstallAllRequest{
 					Workdir:                workdir,
 					Global:                 isUser,
@@ -173,8 +198,8 @@ func newInstallSkillsCmd(ctx *cli.AppContext) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "skills [name|all]",
 		Short: "Install a skill or all skills",
-		Long:  `Install a skill from the package dir into .cursor/skills/<name>/`,
-		Args:  cobra.ExactArgs(1),
+		Long:  `Install a skill from the package dir into .cursor/skills/<name>/. With no name, installs all skills.`,
+		Args:  cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if cli.ShowHelpIfReservedArg(cmd, args) {
 				return nil
@@ -183,9 +208,12 @@ func newInstallSkillsCmd(ctx *cli.AppContext) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			name := args[0]
+			name := ""
+			if len(args) > 0 {
+				name = args[0]
+			}
 			target := "skills"
-			if name == "all" {
+			if name == "" || name == "all" {
 				req := &app.InstallAllRequest{
 					Workdir:                workdir,
 					Global:                 isUser,
@@ -228,8 +256,8 @@ func newInstallAgentsCmd(ctx *cli.AppContext) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "agents [name|all]",
 		Short: "Install an agent or all agents",
-		Long:  `Install an agent from the package dir into .cursor/agents/<name>.md`,
-		Args:  cobra.ExactArgs(1),
+		Long:  `Install an agent from the package dir into .cursor/agents/<name>.md. With no name, installs all agents.`,
+		Args:  cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if cli.ShowHelpIfReservedArg(cmd, args) {
 				return nil
@@ -238,9 +266,12 @@ func newInstallAgentsCmd(ctx *cli.AppContext) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			name := args[0]
+			name := ""
+			if len(args) > 0 {
+				name = args[0]
+			}
 			target := "agents"
-			if name == "all" {
+			if name == "" || name == "all" {
 				req := &app.InstallAllRequest{
 					Workdir:                workdir,
 					Global:                 isUser,
@@ -279,10 +310,10 @@ func newInstallAgentsCmd(ctx *cli.AppContext) *cobra.Command {
 
 func newInstallHooksCmd(ctx *cli.AppContext) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "hooks [preset]",
-		Short: "Install a hook preset",
-		Long:  `Install a hook preset from the package dir into .cursor/hooks.json and .cursor/hooks/`,
-		Args:  cobra.ExactArgs(1),
+		Use:   "hooks [preset|all]",
+		Short: "Install a hook preset or all hook presets",
+		Long:  `Install a hook preset from the package dir into .cursor/hooks.json and .cursor/hooks/. With no preset, installs all hook presets.`,
+		Args:  cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if cli.ShowHelpIfReservedArg(cmd, args) {
 				return nil
@@ -290,6 +321,21 @@ func newInstallHooksCmd(ctx *cli.AppContext) *cobra.Command {
 			workdir, isUser, err := cli.ResolveDestination(ctx.App(), cmd)
 			if err != nil {
 				return err
+			}
+			if len(args) == 0 || args[0] == "all" {
+				req := &app.InstallAllRequest{
+					Workdir:                workdir,
+					Global:                 isUser,
+					Target:                 "hooks",
+					ShowInstallMethodFirst: true,
+				}
+				resp, err := ctx.App().InstallAll(req)
+				if err != nil {
+					return err
+				}
+				p := display.NewPrinter(ctx.Messenger(), cmd.OutOrStdout(), cmd.ErrOrStderr())
+				display.RenderInstallAllResponse(p, resp)
+				return nil
 			}
 			req := &app.InstallRequest{
 				Name:              args[0],
@@ -319,10 +365,8 @@ func newInstallAllCmd(ctx *cli.AppContext) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "all",
 		Short: "Install all packages from the package directory",
-		Long: `Install all rules packages and commands from the package directory. Use --target to limit to a specific type.
-
-Hooks are not included in "install all" (they have no install-all plan). Use "install hooks [preset]" to install a hook preset explicitly.`,
-		Args: cobra.NoArgs,
+		Long:  `Install all installable resources from the package directory. By default this includes rules, commands, skills, agents, and hooks. Use --target to limit to a specific type.`,
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			workdir, isUser, err := cli.ResolveDestination(ctx.App(), cmd)
 			if err != nil {
@@ -348,7 +392,7 @@ Hooks are not included in "install all" (they have no install-all plan). Use "in
 	}
 	cmd.Flags().StringArrayVar(&excludeFlag, "exclude", []string{}, "patterns to exclude")
 	cmd.Flags().BoolVarP(&noFlattenFlag, "no-flatten", "n", false, "preserve package structure")
-	cmd.Flags().StringVar(&targetFlag, "target", "cursor", "output target: cursor|commands|skills|agents")
+	cmd.Flags().StringVar(&targetFlag, "target", "cursor", "output target: cursor|copilot-instr|copilot-prompt|commands|skills|agents|hooks")
 	cmd.Flags().BoolVar(&allTargetsFlag, "all-targets", false, "install to all targets in manifest")
 	return cmd
 }

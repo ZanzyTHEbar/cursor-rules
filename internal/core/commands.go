@@ -235,26 +235,6 @@ func installCommandFileToCommandsDir(commandsDir, sourceDir, command string) (In
 	return installNamedFileResourceTo(commandsDir, sourceDir, command, ".md")
 }
 
-func installCommandFileToProjectIfExists(projectRoot, sourceDir, command string) (InstallStrategy, bool, error) {
-	src, err := security.SafeJoin(sourceDir, command+".md")
-	if err != nil {
-		return StrategyUnknown, false, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid shared command path")
-	}
-	info, err := os.Stat(src)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return StrategyUnknown, false, nil
-		}
-		return StrategyUnknown, false, err
-	}
-	if info.IsDir() {
-		return StrategyUnknown, false, nil
-	}
-
-	strategy, err := installCommandFileToProject(projectRoot, sourceDir, command)
-	return strategy, true, err
-}
-
 func installCommandFileToCommandsDirIfExists(commandsDir, sourceDir, command string) (InstallStrategy, bool, error) {
 	src, err := security.SafeJoin(sourceDir, command+".md")
 	if err != nil {
@@ -271,32 +251,6 @@ func installCommandFileToCommandsDirIfExists(commandsDir, sourceDir, command str
 		return StrategyUnknown, false, nil
 	}
 	strategy, err := installCommandFileToCommandsDir(commandsDir, sourceDir, command)
-	return strategy, true, err
-}
-
-func installCommandCollectionFileToProjectIfExists(projectRoot, sourceDir, command string) (InstallStrategy, bool, error) {
-	commandsRoot, err := security.SafeJoin(sourceDir, defaultCommandsSubdir)
-	if err != nil {
-		return StrategyUnknown, false, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid commands directory")
-	}
-
-	src, err := security.SafeJoin(commandsRoot, command+".md")
-	if err != nil {
-		return StrategyUnknown, false, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid command file path")
-	}
-
-	info, err := os.Stat(src)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return StrategyUnknown, false, nil
-		}
-		return StrategyUnknown, false, err
-	}
-	if info.IsDir() {
-		return StrategyUnknown, false, nil
-	}
-
-	strategy, err := installCommandFileToProject(projectRoot, commandsRoot, command)
 	return strategy, true, err
 }
 
@@ -323,34 +277,6 @@ func installCommandCollectionFileToCommandsDirIfExists(commandsDir, sourceDir, c
 	return strategy, true, err
 }
 
-func installCommandSubdirToProject(projectRoot, sourceDir, command string, excludes []string) (InstallStrategy, bool, error) {
-	commandsRoot, err := security.SafeJoin(sourceDir, defaultCommandsSubdir)
-	if err != nil {
-		return StrategyUnknown, false, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid commands directory")
-	}
-	srcDir, err := security.SafeJoin(commandsRoot, command)
-	if err != nil {
-		return StrategyUnknown, false, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid command directory")
-	}
-
-	info, err := os.Stat(srcDir)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return StrategyUnknown, false, nil
-		}
-		return StrategyUnknown, false, err
-	}
-	if !info.IsDir() {
-		return StrategyUnknown, false, nil
-	}
-	if !commandDirContainsMarkdown(srcDir) {
-		return StrategyUnknown, false, nil
-	}
-
-	strategy, err := InstallPackageGeneric(projectRoot, commandsRoot, command, "commands", []string{".md"}, ".cursor-commands-ignore", excludes, true)
-	return strategy, true, err
-}
-
 func installCommandSubdirToCommandsDir(commandsDir, sourceDir, command string, excludes []string) (InstallStrategy, bool, error) {
 	commandsRoot, err := security.SafeJoin(sourceDir, defaultCommandsSubdir)
 	if err != nil {
@@ -374,30 +300,6 @@ func installCommandSubdirToCommandsDir(commandsDir, sourceDir, command string, e
 		return StrategyUnknown, false, nil
 	}
 	strategy, err := InstallPackageGenericToDest(commandsDir, commandsRoot, command, []string{".md"}, ".cursor-commands-ignore", excludes, true)
-	return strategy, true, err
-}
-
-func installLegacyCommandPackageToProject(projectRoot, sourceDir, command string, excludes []string, noFlatten bool) (InstallStrategy, bool, error) {
-	srcDir, err := security.SafeJoin(sourceDir, command)
-	if err != nil {
-		return StrategyUnknown, false, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid command package path")
-	}
-
-	info, err := os.Stat(srcDir)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return StrategyUnknown, false, nil
-		}
-		return StrategyUnknown, false, err
-	}
-	if !info.IsDir() {
-		return StrategyUnknown, false, nil
-	}
-	if !commandDirContainsMarkdown(srcDir) {
-		return StrategyUnknown, false, nil
-	}
-
-	strategy, err := InstallPackageGeneric(projectRoot, sourceDir, command, "commands", []string{".md"}, ".cursor-commands-ignore", excludes, noFlatten)
 	return strategy, true, err
 }
 
@@ -450,7 +352,7 @@ func listCommandEntries(commandsRoot string) ([]string, error) {
 
 func commandDirContainsMarkdown(dir string) bool {
 	found := false
-	_ = filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(dir, func(_ string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -463,7 +365,7 @@ func commandDirContainsMarkdown(dir string) bool {
 		}
 		return nil
 	})
-	return found
+	return found || err == fs.SkipAll
 }
 
 func sortedCommandNames(names map[string]struct{}) []string {

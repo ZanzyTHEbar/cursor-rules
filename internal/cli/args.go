@@ -31,6 +31,8 @@ func ShowHelpIfReservedArg(cmd *cobra.Command, args []string) bool {
 	if len(args) == 0 || !IsReservedHelpArg(args[0]) {
 		return false
 	}
-	_ = cmd.Help()
+	if err := cmd.Help(); err != nil {
+		return false
+	}
 	return true
 }

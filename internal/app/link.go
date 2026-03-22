@@ -27,12 +27,11 @@ type LinkGlobalResponse struct {
 // LinkGlobal creates symlinks at DefaultUserCursorDir() so that ~/.cursor/rules (etc.) point to
 // CURSOR_RULES_DIR, CURSOR_COMMANDS_DIR, etc. when those env vars are set. Call this so that
 // Cursor sees your custom dirs as the user globals.
-func (a *App) LinkGlobal(req LinkGlobalRequest) (*LinkGlobalResponse, error) {
+func (a *App) LinkGlobal(_ LinkGlobalRequest) (*LinkGlobalResponse, error) {
 	base := config.DefaultUserCursorDir()
 	if err := os.MkdirAll(base, 0o755); err != nil {
 		return nil, errors.Wrapf(err, errors.CodeInternal, "create user dir")
 	}
-	var results []LinkGlobalResult
 	pairs := []struct {
 		envKey string
 		subdir string
@@ -43,6 +42,7 @@ func (a *App) LinkGlobal(req LinkGlobalRequest) (*LinkGlobalResponse, error) {
 		{config.EnvUserAgents, "agents"},
 		{config.EnvUserHooks, "hooks"},
 	}
+	results := make([]LinkGlobalResult, 0, len(pairs)+1)
 	for _, p := range pairs {
 		target := os.Getenv(p.envKey)
 		if target == "" {
@@ -73,8 +73,8 @@ func createSymlinkTo(linkPath, target string) error {
 	info, err := os.Lstat(linkPath)
 	if err == nil {
 		if info.Mode()&os.ModeSymlink != 0 {
-			cur, _ := os.Readlink(linkPath)
-			if filepath.Clean(cur) == target {
+			cur, readErr := os.Readlink(linkPath)
+			if readErr == nil && filepath.Clean(cur) == target {
 				return nil
 			}
 		}

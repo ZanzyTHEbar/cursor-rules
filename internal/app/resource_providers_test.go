@@ -130,17 +130,27 @@ func TestResolveDefaultTargetUnknownReturnsLastError(t *testing.T) {
 	}
 }
 
-func TestHooksProviderPlanInstallAllReturnsEmpty(t *testing.T) {
+func TestHooksProviderPlanInstallAllReturnsPresets(t *testing.T) {
 	reg := newNativeResourceRegistry(nil)
 	p, ok := reg.providerForTarget("hooks")
 	if !ok {
 		t.Fatal("hooks provider not found")
 	}
-	plans, err := p.PlanInstallAll(t.TempDir(), &config.Config{})
+
+	packageDir := t.TempDir()
+	hookDir := filepath.Join(packageDir, "hooks", "format")
+	if err := os.MkdirAll(hookDir, 0o755); err != nil {
+		t.Fatalf("mkdir hook dir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(hookDir, "hooks.json"), []byte(`{"version":1,"hooks":{}}`), 0o644); err != nil {
+		t.Fatalf("write hooks.json: %v", err)
+	}
+
+	plans, err := p.PlanInstallAll(packageDir, &config.Config{})
 	if err != nil {
 		t.Fatalf("PlanInstallAll: %v", err)
 	}
-	if len(plans) != 0 {
-		t.Errorf("hooks PlanInstallAll: want 0 plans, got %d", len(plans))
+	if len(plans) != 1 || plans[0].Name != "format" {
+		t.Errorf("hooks PlanInstallAll: want [format], got %+v", plans)
 	}
 }

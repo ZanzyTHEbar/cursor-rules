@@ -21,7 +21,7 @@ func listNamedFileResources(root, ext string) ([]string, error) {
 		return nil, err
 	}
 
-	var names []string
+	names := make([]string, 0, len(entries))
 	for _, e := range entries {
 		if e.IsDir() || filepath.Ext(e.Name()) != ext {
 			continue
@@ -45,7 +45,7 @@ func listNamedDirResources(root, sentinel string) ([]string, error) {
 		return nil, err
 	}
 
-	var names []string
+	names := make([]string, 0, len(entries))
 	for _, e := range entries {
 		if !e.IsDir() {
 			continue
@@ -93,14 +93,6 @@ func installNamedFileResourceTo(destDir, sourceRoot, name, ext string) (InstallS
 		return StrategyUnknown, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid resource destination")
 	}
 	return ApplySourceToDest(sourceRoot, src, dest, name)
-}
-
-func installNamedDirectoryResource(projectRoot, sourceRoot, destSubdir, name, sentinel string) (InstallStrategy, error) {
-	destParent, err := security.SafeJoin(projectRoot, ".cursor", destSubdir)
-	if err != nil {
-		return StrategyUnknown, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid destination path")
-	}
-	return installNamedDirectoryResourceTo(destParent, sourceRoot, name, sentinel)
 }
 
 func installNamedDirectoryResourceTo(destParent, sourceRoot, name, sentinel string) (InstallStrategy, error) {
@@ -179,44 +171,20 @@ func installNamedDirectoryResourceTo(destParent, sourceRoot, name, sentinel stri
 		if err != nil {
 			return err
 		}
-		return os.WriteFile(dest, data, 0o644)
+		info, err := os.Stat(path)
+		if err != nil {
+			return err
+		}
+		perm := info.Mode().Perm()
+		if perm == 0 {
+			perm = 0o600
+		}
+		return os.WriteFile(dest, data, perm)
 	})
 	if err != nil {
 		return StrategyUnknown, err
 	}
 	return strategy, nil
-}
-
-func listInstalledNamedFileResources(projectRoot, destSubdir, ext string) ([]string, error) {
-	root, err := security.SafeJoin(projectRoot, ".cursor", destSubdir)
-	if err != nil {
-		return nil, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid installed resource path")
-	}
-	return listInstalledNamedFileResourcesFrom(root, ext)
-}
-
-func listInstalledNamedFileResourcesFrom(destDir, ext string) ([]string, error) {
-	return listNamedFileResources(destDir, ext)
-}
-
-func listInstalledNamedDirResources(projectRoot, destSubdir, sentinel string) ([]string, error) {
-	root, err := security.SafeJoin(projectRoot, ".cursor", destSubdir)
-	if err != nil {
-		return nil, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid installed resource path")
-	}
-	return listInstalledNamedDirResourcesFrom(root, sentinel)
-}
-
-func listInstalledNamedDirResourcesFrom(destDir, sentinel string) ([]string, error) {
-	return listNamedDirResources(destDir, sentinel)
-}
-
-func removeInstalledNamedFileResource(projectRoot, destSubdir, name, ext string) (bool, error) {
-	root, err := security.SafeJoin(projectRoot, ".cursor", destSubdir)
-	if err != nil {
-		return false, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid installed resource path")
-	}
-	return removeInstalledNamedFileResourceFrom(root, name, ext)
 }
 
 func removeInstalledNamedFileResourceFrom(destDir, name, ext string) (bool, error) {
@@ -233,14 +201,6 @@ func removeInstalledNamedFileResourceFrom(destDir, name, ext string) (bool, erro
 		return false, err
 	}
 	return true, os.Remove(target)
-}
-
-func removeInstalledNamedDirResource(projectRoot, destSubdir, name string) (bool, error) {
-	root, err := security.SafeJoin(projectRoot, ".cursor", destSubdir)
-	if err != nil {
-		return false, errors.Wrapf(err, errors.CodeInvalidArgument, "invalid installed resource path")
-	}
-	return removeInstalledNamedDirResourceFrom(root, name)
 }
 
 func removeInstalledNamedDirResourceFrom(destDir, name string) (bool, error) {

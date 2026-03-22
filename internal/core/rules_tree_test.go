@@ -88,6 +88,23 @@ func TestBuildRulesTreeMissingDir(t *testing.T) {
 	}
 }
 
+func TestBuildRulesTreeUsesRulesSubdirWhenPresent(t *testing.T) {
+	root := t.TempDir()
+	writeFile(t, filepath.Join(root, "rules", "agent", "base.mdc"), "content")
+	writeFile(t, filepath.Join(root, "agent", "AGENT.md"), "not rules")
+
+	tree, err := core.BuildRulesTree(root)
+	if err != nil {
+		t.Fatalf("BuildRulesTree failed: %v", err)
+	}
+	if len(tree.Packages) != 1 || tree.Packages[0].Name != "agent" {
+		t.Fatalf("expected only rules/agent package, got %+v", tree.Packages)
+	}
+	if len(tree.Packages[0].Files) != 1 || tree.Packages[0].Files[0] != "base.mdc" {
+		t.Fatalf("unexpected rules package files: %+v", tree.Packages[0].Files)
+	}
+}
+
 func writeFile(t *testing.T, path, content string) {
 	t.Helper()
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {

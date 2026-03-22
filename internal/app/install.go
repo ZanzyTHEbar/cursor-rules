@@ -225,6 +225,13 @@ func (a *App) installInternal(req *installInternalRequest) ([]InstallResult, err
 	pkgPath := filepath.Join(req.PackageDir, req.Name)
 	info, statErr := os.Stat(pkgPath)
 	isPackage := statErr == nil && info.IsDir()
+	if !isPackage {
+		rulesPkgPath := filepath.Join(core.ResolveRulesPackageDir(req.PackageDir), req.Name)
+		if rulesPkgInfo, rulesErr := os.Stat(rulesPkgPath); rulesErr == nil && rulesPkgInfo.IsDir() {
+			pkgPath = rulesPkgPath
+			isPackage = true
+		}
+	}
 
 	var m *manifest.Manifest
 	if isPackage {

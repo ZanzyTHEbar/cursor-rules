@@ -102,20 +102,28 @@ func InstallHookPresetToDirs(destHooksDir, destJSONPath, packageDir, presetName,
 		if readErr != nil {
 			return readErr
 		}
-		return os.WriteFile(dest, content, 0o755)
+		info, statErr := os.Stat(path)
+		if statErr != nil {
+			return statErr
+		}
+		perm := os.FileMode(0o600)
+		if info.Mode()&0o111 != 0 {
+			perm = 0o700
+		}
+		return os.WriteFile(dest, content, perm)
 	})
 	if err != nil {
 		return StrategyUnknown, err
 	}
 
 	// Rewrite command paths in cfg to .cursor/hooks/<basename>
-	rewriteHookCommands(&cfg, presetDir, destHooksDir)
+	rewriteHookCommands(&cfg, presetDir)
 
 	out, err := json.MarshalIndent(&cfg, "", "  ")
 	if err != nil {
 		return StrategyUnknown, errors.Wrapf(err, errors.CodeInternal, "marshal hooks.json")
 	}
-	if err := os.WriteFile(destJSONPath, out, 0o644); err != nil {
+	if err := os.WriteFile(destJSONPath, out, 0o600); err != nil {
 		return StrategyUnknown, err
 	}
 	return strategy, nil
@@ -137,7 +145,7 @@ type hookDef struct {
 }
 
 // rewriteHookCommands rewrites command paths in cfg from preset-relative to project-relative .cursor/hooks/<name>.
-func rewriteHookCommands(cfg *hooksConfig, presetDir, destHooksDir string) {
+func rewriteHookCommands(cfg *hooksConfig, presetDir string) {
 	for event, list := range cfg.Hooks {
 		for i := range list {
 			cmd := strings.TrimSpace(list[i].Command)

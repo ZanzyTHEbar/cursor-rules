@@ -317,16 +317,19 @@ func TestInstallCursorSkillsAgentsHooks(t *testing.T) {
 		os.Unsetenv("CURSOR_RULES_USE_GNUSTOW")
 	}()
 
-	// Commands: commands/my-command/run.md
-	commandDir := filepath.Join(tmpShared, "commands", "my-command")
-	if err := os.MkdirAll(filepath.Join(commandDir, "partials"), 0755); err != nil {
-		t.Fatalf("create command dir: %v", err)
+	// Command compatibility: commands/my-command.command.mdc -> .cursor/skills/my-command/SKILL.md
+	commandDir := filepath.Join(tmpShared, "commands")
+	if err := os.MkdirAll(commandDir, 0755); err != nil {
+		t.Fatalf("create commands dir: %v", err)
 	}
-	if err := os.WriteFile(filepath.Join(commandDir, "run.md"), []byte("# Run command\n"), 0644); err != nil {
-		t.Fatalf("write run.md: %v", err)
-	}
-	if err := os.WriteFile(filepath.Join(commandDir, "partials", "details.md"), []byte("# Details\n"), 0644); err != nil {
-		t.Fatalf("write details.md: %v", err)
+	commandMD := `---
+description: Run command
+---
+# /my-command
+
+Run the command.`
+	if err := os.WriteFile(filepath.Join(commandDir, "my-command.command.mdc"), []byte(commandMD), 0644); err != nil {
+		t.Fatalf("write my-command.command.mdc: %v", err)
 	}
 
 	// Skill: skills/my-skill/SKILL.md
@@ -343,10 +346,10 @@ Use this skill for testing.`
 		t.Fatalf("write SKILL.md: %v", err)
 	}
 
-	// Agent: agents/my-agent.md
-	agentsDir := filepath.Join(tmpShared, "agents")
+	// Agent: agent/my-agent.md
+	agentsDir := filepath.Join(tmpShared, "agent")
 	if err := os.MkdirAll(agentsDir, 0755); err != nil {
-		t.Fatalf("create agents dir: %v", err)
+		t.Fatalf("create agent dir: %v", err)
 	}
 	agentMD := `---
 name: my-agent
@@ -379,12 +382,12 @@ You are a test agent.`
 		if err := cmd.Execute(); err != nil {
 			t.Fatalf("install commands all: %v", err)
 		}
-		commandDest := filepath.Join(tmpProject, ".cursor", "commands", "my-command", "run.md")
+		commandDest := filepath.Join(tmpProject, ".cursor", "skills", "my-command", "SKILL.md")
 		if _, err := os.Stat(commandDest); err != nil {
 			t.Errorf("commands package not installed at %s: %v", commandDest, err)
 		}
-		if _, err := os.Stat(filepath.Join(tmpProject, ".cursor", "rules", "run.md")); err == nil {
-			t.Errorf("commands package should not install into .cursor/rules")
+		if _, err := os.Stat(filepath.Join(tmpProject, ".cursor", "commands")); err == nil {
+			t.Errorf("commands should be converted into skills, not installed to .cursor/commands")
 		}
 	})
 
@@ -418,13 +421,9 @@ You are a test agent.`
 		if err := cmd.Execute(); err != nil {
 			t.Fatalf("install command: %v", err)
 		}
-		commandDest := filepath.Join(tmpProject, ".cursor", "commands", "my-command", "run.md")
-		nestedDest := filepath.Join(tmpProject, ".cursor", "commands", "my-command", "partials", "details.md")
+		commandDest := filepath.Join(tmpProject, ".cursor", "skills", "my-command", "SKILL.md")
 		if _, err := os.Stat(commandDest); err != nil {
 			t.Errorf("command file not installed at %s: %v", commandDest, err)
-		}
-		if _, err := os.Stat(nestedDest); err != nil {
-			t.Errorf("nested command file not installed at %s: %v", nestedDest, err)
 		}
 	})
 
