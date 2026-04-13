@@ -511,6 +511,13 @@ func TestTransformerMetadata(t *testing.T) {
 			wantExt: ".prompt.md",
 			wantDir: ".github/prompts",
 		},
+		{
+			name:    "opencode-rules",
+			trans:   NewOpenCodeRulesTransformer(),
+			wantTgt: "opencode-rules",
+			wantExt: ".mdc",
+			wantDir: ".opencode/rules",
+		},
 	}
 
 	for _, tt := range tests {
@@ -525,5 +532,56 @@ func TestTransformerMetadata(t *testing.T) {
 				t.Errorf("OutputDir() = %v, want %v", got, tt.wantDir)
 			}
 		})
+	}
+}
+
+func TestOpenCodeRulesTransformer(t *testing.T) {
+	transformer := NewOpenCodeRulesTransformer()
+
+	input := `---
+description: "Go guidance"
+apply_to:
+  - "**/*.go"
+priority: 1
+alwaysApply: true
+keywords:
+  - "refactor"
+---
+Use table-driven tests.`
+
+	fm, body, err := SplitFrontmatter([]byte(input))
+	if err != nil {
+		t.Fatalf("SplitFrontmatter failed: %v", err)
+	}
+
+	outFM, outBody, err := transformer.Transform(fm, body)
+	if err != nil {
+		t.Fatalf("Transform failed: %v", err)
+	}
+	if err := transformer.Validate(outFM); err != nil {
+		t.Fatalf("Validate failed: %v", err)
+	}
+	if outBody != body {
+		t.Fatalf("Body changed: expected %q, got %q", body, outBody)
+	}
+
+	var result map[string]interface{}
+	if err := outFM.Decode(&result); err != nil {
+		t.Fatalf("Decode result failed: %v", err)
+	}
+
+	globs, ok := result["globs"].([]interface{})
+	if !ok || len(globs) != 1 || globs[0] != "**/*.go" {
+		t.Fatalf("globs = %#v, want [**/*.go]", result["globs"])
+	}
+	keywords, ok := result["keywords"].([]interface{})
+	if !ok || len(keywords) != 1 || keywords[0] != "refactor" {
+		t.Fatalf("keywords = %#v, want [refactor]", result["keywords"])
+	}
+	if _, ok := result["priority"]; ok {
+		t.Fatal("priority field should be removed")
+	}
+	if _, ok := result["description"]; ok {
+		t.Fatal("description field should be removed")
 	}
 }

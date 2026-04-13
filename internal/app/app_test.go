@@ -44,8 +44,36 @@ func TestListRulesUsesPackageDir(t *testing.T) {
 	if resp.PackageDir != packageDir {
 		t.Fatalf("expected packageDir %s, got %s", packageDir, resp.PackageDir)
 	}
+	if resp.Tree == nil {
+		t.Fatal("expected rules tree to be present for default list")
+	}
 	if len(resp.Tree.Presets) != 1 || resp.Tree.Presets[0] != "example.mdc" {
 		t.Fatalf("unexpected presets: %+v", resp.Tree.Presets)
+	}
+}
+
+func TestListRulesOmitsTreeForNonRuleFilters(t *testing.T) {
+	packageDir := t.TempDir()
+	configDir := t.TempDir()
+	t.Setenv("CURSOR_RULES_PACKAGE_DIR", packageDir)
+	t.Setenv("CURSOR_RULES_CONFIG_DIR", configDir)
+	if err := os.MkdirAll(filepath.Join(packageDir, "commands"), 0o755); err != nil {
+		t.Fatalf("mkdir commands: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(packageDir, "commands", "review.command.mdc"), []byte("---\ndescription: review\n---\nbody"), 0o644); err != nil {
+		t.Fatalf("write command: %v", err)
+	}
+
+	a := New(nil, nil)
+	resp, err := a.ListRules(ListRequest{Kind: resourceKindCommand})
+	if err != nil {
+		t.Fatalf("ListRules failed: %v", err)
+	}
+	if resp.Tree != nil {
+		t.Fatalf("expected no rules tree for non-rule filter, got %+v", resp.Tree)
+	}
+	if len(resp.Targets) == 0 || resp.Targets[0].Target != "commands" {
+		t.Fatalf("unexpected target entries: %+v", resp.Targets)
 	}
 }
 
@@ -64,7 +92,8 @@ Hello`
 	}
 
 	provider := staticProvider{
-		"copilot-instr": transform.NewCopilotInstructionsTransformer(),
+		"copilot-instr":  transform.NewCopilotInstructionsTransformer(),
+		"opencode-rules": transform.NewOpenCodeRulesTransformer(),
 	}
 	a := New(nil, provider)
 	resp, err := a.TransformPreview(TransformRequest{

@@ -39,7 +39,7 @@ test-silent:
 .PHONY: test-unit
 test-unit:
 	@echo "Running unit tests..."
-	@go test ./internal/... ./cli/... -v -short
+	@go test ./internal/... ./cmd/cursor-rules/... -v -short
 
 # Run integration tests
 .PHONY: test-integration

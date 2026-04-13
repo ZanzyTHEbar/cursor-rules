@@ -18,7 +18,8 @@ func NewTransformCmd(ctx *cli.AppContext) *cobra.Command {
 to Copilot format without writing files.
 
 Example:
-  cursor-rules transform frontend --target copilot-instr`,
+  cursor-rules transform frontend --target copilot-instr
+  cursor-rules transform frontend --target opencode-rules`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if cli.ShowHelpIfReservedArg(cmd, args) {
@@ -38,7 +39,7 @@ Example:
 		},
 	}
 
-	cmd.Flags().StringVar(&targetFlag, "target", "copilot-instr", "target format")
+	cmd.Flags().StringVar(&targetFlag, "target", "copilot-instr", "target format: copilot-instr|copilot-prompt|opencode-rules|cursor")
 
 	return cmd
 }

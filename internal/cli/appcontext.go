@@ -44,6 +44,7 @@ func NewAppContext(v *viper.Viper, l Logger) *AppContext {
 	ctx.RegisterTransformer("cursor", transform.NewCursorTransformer())
 	ctx.RegisterTransformer("copilot-instr", transform.NewCopilotInstructionsTransformer())
 	ctx.RegisterTransformer("copilot-prompt", transform.NewCopilotPromptsTransformer())
+	ctx.RegisterTransformer("opencode-rules", transform.NewOpenCodeRulesTransformer())
 
 	return ctx
 }
@@ -57,7 +58,7 @@ func (ctx *AppContext) RegisterTransformer(name string, t transform.Transformer)
 func (ctx *AppContext) Transformer(target string) (transform.Transformer, error) {
 	t, ok := ctx.transformers[target]
 	if !ok {
-		return nil, errors.Newf(errors.CodeInvalidArgument, "unknown target: %s (available: cursor, copilot-instr, copilot-prompt)", target)
+		return nil, errors.Newf(errors.CodeInvalidArgument, "unknown target: %s (available: cursor, copilot-instr, copilot-prompt, opencode-rules)", target)
 	}
 	return t, nil
 }

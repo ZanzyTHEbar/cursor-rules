@@ -239,6 +239,7 @@ Cursor Rules Manager now supports installing your Cursor rules as GitHub Copilot
 - **Cursor Rules (`.mdc`)**: Project-scoped AI guidance for Cursor IDE, auto-included based on relevance
 - **Copilot Instructions (`.instructions.md`)**: Ambient behavioral rules for GitHub Copilot, auto-merged into all Chat/agent interactions
 - **Copilot Prompts (`.prompt.md`)**: Reusable task templates for GitHub Copilot, invoked via slash commands
+- **OpenCode Rules (`.mdc`)**: Rule files for the `opencode-rules` plugin, installed into `.opencode/rules/` or `~/.config/opencode/rules/`
 
 ### Installation targets
 
@@ -252,6 +253,9 @@ cursor-rules install frontend --target copilot-instr
 # Install to Copilot Prompts (.github/prompts/)
 cursor-rules install frontend --target copilot-prompt
 
+# Install to OpenCode rules (.opencode/rules/)
+cursor-rules install frontend --target opencode-rules
+
 # Install to all targets defined in package manifest
 cursor-rules install frontend --all-targets
 
@@ -262,8 +266,64 @@ cursor-rules install skills deploy
 cursor-rules install skills all
 cursor-rules install agents code-reviewer
 cursor-rules install hooks my-hooks
+
+# Install native OpenCode commands, skills, or agents
+cursor-rules install commands review --target opencode
+cursor-rules install skills deploy --target opencode
+cursor-rules install agents reviewer --target opencode
+
 cursor-rules install all
 ```
+
+### List and remove by target
+
+`list` is target-aware. By default it shows shared package content grouped by the concrete install targets it can feed. With `--global` (or `--dir user`), it lists installed user resources instead.
+
+```bash
+# Show everything grouped by target
+cursor-rules list
+
+# Show only rule targets
+cursor-rules list --kind rule
+
+# Show only command targets
+cursor-rules list --kind command
+
+# Show one concrete target
+cursor-rules list --target opencode-skills
+
+# Show installed global OpenCode rules
+cursor-rules list --global --target opencode-rules
+```
+
+`remove` is also target-aware. Pass `--target` to remove from one concrete install target. Without `--target`, removal only succeeds when exactly one installed target matches; if the same name exists in multiple targets, the CLI errors and asks for `--target`.
+
+```bash
+# Remove a Cursor rule install
+cursor-rules remove frontend --target cursor
+
+# Remove a Copilot prompt install of a rule
+cursor-rules remove base --target copilot-prompt
+
+# Remove an OpenCode command install
+cursor-rules remove review --target opencode-commands
+
+# Remove configured hooks
+cursor-rules remove --type hooks
+
+# Remove a global OpenCode skill install
+cursor-rules remove deploy --target opencode-skills --global
+```
+
+Concrete target names used by `list --target` and `remove --target`:
+
+- `cursor`, `copilot-instr`, `copilot-prompt`, `opencode-rules` for rules
+- `commands`, `opencode-commands` for commands
+- `skills`, `opencode-skills` for skills
+- `agents`, `opencode-agents` for agents
+- `hooks` for hooks
+
+Native installs use the higher-level `--target cursor|opencode` selector on `install commands|skills|agents`. `list` and `remove` then operate on the concrete target names above.
 
 ### Frontmatter transformation
 
@@ -351,6 +411,9 @@ cursor-rules effective --target copilot-instr
 
 # Copilot prompts
 cursor-rules effective --target copilot-prompt
+
+# OpenCode rules
+cursor-rules effective --target opencode-rules
 ```
 
 ### Migration workflow
@@ -378,25 +441,27 @@ cursor-rules effective --target copilot-prompt
 
 For detailed examples and best practices, see [docs/copilot-integration.md](docs/copilot-integration.md).
 
-## Cursor context: rules, commands, skills, agents, hooks
+## Shared context: rules, commands, skills, agents, hooks
 
-The package directory (default `~/.cursor/rules`) can hold all five Cursor context types:
+The package directory (default `~/.cursor/rules`) can hold all five shared context types:
 
 | Type      | Package dir layout              | Project location              | Install command      |
 |-----------|----------------------------------|-------------------------------|----------------------|
 | **Rules** | `*.mdc`, `<pkg>/*.mdc`           | `.cursor/rules/`              | `install [name]` or `install rules [name]` (use `--target` for copilot) |
-| **Commands** | `*.md` or `commands/<name>/` | `.cursor/commands/`           | `install commands [name\|all]` |
+| **Commands** | `commands/<name>.md`, `commands/<name>.command.mdc`, or `commands/<name>/` | `.cursor/skills/<name>/SKILL.md` (Cursor-compatible) | `install commands [name\|all]` |
 | **Skills**   | `skills/<name>/SKILL.md`     | `.cursor/skills/<name>/`      | `install skills [name\|all]` |
 | **Agents**   | `agents/<name>.md`           | `.cursor/agents/<name>.md`    | `install agents [name\|all]` |
 | **Hooks**    | `hooks/<preset>/hooks.json` + scripts | `.cursor/hooks.json`, `.cursor/hooks/` | `install hooks [preset]` |
 
 - **init** creates `.cursor/rules`, `.cursor/commands`, `.cursor/skills`, `.cursor/agents`, and `.cursor/hooks`.
-- **list** and **sync** show presets, commands, skills, agents, and hook presets from the package dir.
+- **list** shows package content by default, grouped by concrete target. Use `--kind` and `--target` to filter sections, or `--global` / `--dir user` to list installed user resources.
 - **install** uses subcommands: `install [name]` for rules (default), `install commands`, `install skills`, `install agents`, `install hooks`, `install all`.
-- **remove** supports `--type rule|command|skill|agent|hooks` (e.g. `remove my-skill --type skill`, `remove --type hooks`).
+- **remove** supports `--type rule|command|skill|agent|hooks` and `--target`. Without `--target`, removal only succeeds when the installed name is unique across targets.
 - **install**, **list**, and **remove** support `--global` (or `--dir user`) to operate on user dirs (`~/.cursor/...`) instead of the project. Destination can be set with persistent `--dir`, `--workdir`/`-w`, or `--global`. Override the user base with `CURSOR_USER_DIR` or per-feature with `CURSOR_RULES_DIR`, `CURSOR_COMMANDS_DIR`, etc. Run `cursor-rules config link` to create symlinks from `~/.cursor` to your custom dirs when those env vars are set.
 
 **Hooks:** Installing a hook preset replaces the project’s `.cursor/hooks.json` and populates `.cursor/hooks/` with scripts; script paths in the preset are rewritten to `.cursor/hooks/<name>`. Installing a second hook preset replaces the first unless merge support is added later.
+
+**Commands:** Cursor installs convert shared commands into Cursor-compatible skills under `.cursor/skills/`. OpenCode installs keep native command files under `.opencode/commands/`.
 
 ### Migration: Subcommand-based install (breaking)
 
@@ -411,6 +476,7 @@ Native resources now use subcommands instead of `--target`:
 | `install commands` (collection) | `install commands all` |
 
 Rules keep `--target` for output format: `install frontend --target copilot-instr`.
+For native resources, `install ... --target opencode` maps to the concrete `list` / `remove` targets `opencode-commands`, `opencode-skills`, and `opencode-agents`.
 
 ## Packages
 

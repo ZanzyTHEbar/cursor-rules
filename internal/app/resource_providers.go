@@ -35,7 +35,7 @@ type nativeResourceInstallAllPlan struct {
 type nativeResourceProvider interface {
 	Kind() string
 	Target() string
-	OutputDir() string
+	OutputDir(projectRoot string, cfg *config.Config, isUser bool) string
 	RequiresName() bool
 	ListAvailable(packageDir string, cfg *config.Config) ([]string, error)
 	ListInstalled(projectRoot string, cfg *config.Config, isUser bool) ([]string, error)
@@ -47,35 +47,39 @@ type nativeResourceProvider interface {
 }
 
 type nativeResourceRegistry struct {
-	ordered  []nativeResourceProvider
-	byTarget map[string]nativeResourceProvider
-	byKind   map[string]nativeResourceProvider
+	ordered     []nativeResourceProvider
+	kindOrdered []string
+	byTarget    map[string]nativeResourceProvider
+	byKind      map[string][]nativeResourceProvider
 }
 
 func newNativeResourceRegistry(transformerProvider TransformerProvider) *nativeResourceRegistry {
 	providers := []nativeResourceProvider{
-		commandResourceProvider{},
-		skillResourceProvider{},
-		agentResourceProvider{},
+		commandResourceProvider{target: "commands"},
+		commandResourceProvider{target: "opencode-commands", opencode: true},
+		skillResourceProvider{target: "skills"},
+		skillResourceProvider{target: "opencode-skills", opencode: true},
+		agentResourceProvider{target: "agents"},
+		agentResourceProvider{target: "opencode-agents", opencode: true},
 		hooksResourceProvider{},
 	}
 	if transformerProvider != nil {
-		providers = append(providers,
-			rulesResourceProvider{target: "cursor", tp: transformerProvider},
-			rulesResourceProvider{target: "copilot-instr", tp: transformerProvider},
-			rulesResourceProvider{target: "copilot-prompt", tp: transformerProvider},
-		)
+		for _, target := range orderedRuleTargets(transformerProvider.AvailableTargets()) {
+			providers = append(providers, rulesResourceProvider{target: target, tp: transformerProvider})
+		}
 	}
 	registry := &nativeResourceRegistry{
 		ordered:  providers,
 		byTarget: make(map[string]nativeResourceProvider, len(providers)),
-		byKind:   make(map[string]nativeResourceProvider, len(providers)),
+		byKind:   make(map[string][]nativeResourceProvider, len(providers)),
 	}
 	for _, provider := range providers {
 		registry.byTarget[provider.Target()] = provider
-		if provider.Kind() != resourceKindRule {
-			registry.byKind[provider.Kind()] = provider
+		kind := provider.Kind()
+		if _, exists := registry.byKind[kind]; !exists {
+			registry.kindOrdered = append(registry.kindOrdered, kind)
 		}
+		registry.byKind[kind] = append(registry.byKind[kind], provider)
 	}
 	return registry
 }
@@ -88,12 +92,15 @@ func (r *nativeResourceRegistry) providerForTarget(target string) (nativeResourc
 	return provider, ok
 }
 
-func (r *nativeResourceRegistry) providerForKind(kind string) (nativeResourceProvider, bool) {
+func (r *nativeResourceRegistry) providersForKind(kind string) []nativeResourceProvider {
 	if r == nil {
-		return nil, false
+		return nil
 	}
-	provider, ok := r.byKind[strings.TrimSpace(kind)]
-	return provider, ok
+	providers, ok := r.byKind[strings.TrimSpace(kind)]
+	if !ok {
+		return nil
+	}
+	return slices.Clone(providers)
 }
 
 func (r *nativeResourceRegistry) providers() []nativeResourceProvider {
@@ -101,6 +108,21 @@ func (r *nativeResourceRegistry) providers() []nativeResourceProvider {
 		return nil
 	}
 	return r.ordered
+}
+
+func (r *nativeResourceRegistry) uniqueKindProviders() []nativeResourceProvider {
+	if r == nil {
+		return nil
+	}
+	providers := make([]nativeResourceProvider, 0, len(r.kindOrdered))
+	for _, kind := range r.kindOrdered {
+		kindProviders := r.byKind[kind]
+		if len(kindProviders) == 0 {
+			continue
+		}
+		providers = append(providers, kindProviders[0])
+	}
+	return providers
 }
 
 func (r *nativeResourceRegistry) resolveDefaultTarget(packageDir, name string, cfg *config.Config) (target string, ok bool, err error) {
@@ -134,6 +156,33 @@ func containsInstalledResource(installed []string, name string) bool {
 	return false
 }
 
+func orderedRuleTargets(targets []string) []string {
+	seen := make(map[string]struct{}, len(targets))
+	for _, target := range targets {
+		target = strings.TrimSpace(target)
+		if target == "" {
+			continue
+		}
+		seen[target] = struct{}{}
+	}
+
+	ordered := make([]string, 0, len(seen))
+	for _, target := range []string{"cursor", "copilot-instr", "copilot-prompt", "opencode-rules"} {
+		if _, ok := seen[target]; !ok {
+			continue
+		}
+		ordered = append(ordered, target)
+		delete(seen, target)
+	}
+
+	extra := make([]string, 0, len(seen))
+	for target := range seen {
+		extra = append(extra, target)
+	}
+	sort.Strings(extra)
+	return append(ordered, extra...)
+}
+
 func installAllPlansToEntries(provider nativeResourceProvider, plans []nativeResourceInstallAllPlan) []installAllEntry {
 	entries := make([]installAllEntry, 0, len(plans))
 	for _, plan := range plans {
@@ -146,18 +195,31 @@ func installAllPlansToEntries(provider nativeResourceProvider, plans []nativeRes
 	return entries
 }
 
-type commandResourceProvider struct{}
+type commandResourceProvider struct {
+	target   string
+	opencode bool
+}
 
-func (commandResourceProvider) Kind() string      { return resourceKindCommand }
-func (commandResourceProvider) Target() string    { return "commands" }
-func (commandResourceProvider) OutputDir() string { return ".cursor/skills" }
+func (p commandResourceProvider) Kind() string   { return resourceKindCommand }
+func (p commandResourceProvider) Target() string { return p.target }
+func (p commandResourceProvider) OutputDir(projectRoot string, cfg *config.Config, isUser bool) string {
+	if p.opencode {
+		return config.EffectiveOpenCodeCommandsDir(projectRoot, isUser)
+	}
+	return config.EffectiveSkillsDir(projectRoot, isUser, cfg)
+}
 func (commandResourceProvider) RequiresName() bool {
 	return true
 }
 func (commandResourceProvider) ListAvailable(packageDir string, _ *config.Config) ([]string, error) {
 	return core.ListCursorCompatibleCommands(packageDir)
 }
-func (commandResourceProvider) ListInstalled(projectRoot string, cfg *config.Config, isUser bool) ([]string, error) {
+
+func (p commandResourceProvider) ListInstalled(projectRoot string, cfg *config.Config, isUser bool) ([]string, error) {
+	if p.opencode {
+		commandsDir := config.EffectiveOpenCodeCommandsDir(projectRoot, isUser)
+		return core.ListInstalledCommands(commandsDir)
+	}
 	legacyCommandsDir := config.EffectiveCommandsDir(projectRoot, isUser, cfg)
 	skillsDir := config.EffectiveSkillsDir(projectRoot, isUser, cfg)
 	compat, err := core.ListInstalledCommandSkills(skillsDir)
@@ -188,7 +250,15 @@ func (commandResourceProvider) ListInstalled(projectRoot string, cfg *config.Con
 	sort.Strings(out)
 	return out, nil
 }
-func (commandResourceProvider) Install(projectRoot, packageDir, name string, cfg *config.Config, opts nativeResourceInstallOptions) (core.InstallStrategy, error) {
+
+func (p commandResourceProvider) Install(projectRoot, packageDir, name string, cfg *config.Config, opts nativeResourceInstallOptions) (core.InstallStrategy, error) {
+	if p.opencode {
+		commandsDir := config.EffectiveOpenCodeCommandsDir(projectRoot, opts.IsUser)
+		if strings.TrimSpace(name) == core.CommandsSubdir() {
+			return core.InstallOpenCodeCommandCollectionToDir(commandsDir, packageDir, opts.Excludes)
+		}
+		return core.InstallOpenCodeCommandToDir(commandsDir, packageDir, name, opts.Excludes)
+	}
 	skillsDir := config.EffectiveSkillsDir(projectRoot, opts.IsUser, cfg)
 	if strings.TrimSpace(name) == core.CommandsSubdir() {
 		return core.InstallCommandCollectionAsSkillsToDir(skillsDir, packageDir, opts.Excludes)
@@ -209,8 +279,11 @@ func (commandResourceProvider) PlanInstallAll(packageDir string, _ *config.Confi
 	}
 	return plans, nil
 }
-func (commandResourceProvider) IncludeInDefaultInstallAll() bool { return true }
-func (commandResourceProvider) DetectDefaultTarget(packageDir, name string, _ *config.Config) (target string, ok bool, err error) {
+func (p commandResourceProvider) IncludeInDefaultInstallAll() bool { return !p.opencode }
+func (p commandResourceProvider) DetectDefaultTarget(packageDir, name string, _ *config.Config) (target string, ok bool, err error) {
+	if p.opencode {
+		return "", false, nil
+	}
 	if strings.TrimSpace(name) != core.CommandsSubdir() {
 		names, err := core.ListCursorCompatibleCommands(packageDir)
 		if err != nil {
@@ -229,12 +302,15 @@ func (commandResourceProvider) DetectDefaultTarget(packageDir, name string, _ *c
 	}
 	return "commands", len(names) > 0, nil
 }
-func (commandResourceProvider) Remove(projectRoot, name string, cfg *config.Config, isUser bool) (bool, error) {
-	installed, err := commandResourceProvider{}.ListInstalled(projectRoot, cfg, isUser)
+func (p commandResourceProvider) Remove(projectRoot, name string, cfg *config.Config, isUser bool) (bool, error) {
+	installed, err := p.ListInstalled(projectRoot, cfg, isUser)
 	if err != nil {
 		return false, err
 	}
 	return removeFromInstalledList(name, installed, func() error {
+		if p.opencode {
+			return core.RemoveCommand(config.EffectiveOpenCodeCommandsDir(projectRoot, isUser), name)
+		}
 		skillsDir := config.EffectiveSkillsDir(projectRoot, isUser, cfg)
 		commandsDir := config.EffectiveCommandsDir(projectRoot, isUser, cfg)
 		if err := core.RemoveSkill(skillsDir, name); err != nil {
@@ -244,25 +320,39 @@ func (commandResourceProvider) Remove(projectRoot, name string, cfg *config.Conf
 	})
 }
 
-type skillResourceProvider struct{}
+type skillResourceProvider struct {
+	target   string
+	opencode bool
+}
 
-func (skillResourceProvider) Kind() string      { return resourceKindSkill }
-func (skillResourceProvider) Target() string    { return "skills" }
-func (skillResourceProvider) OutputDir() string { return ".cursor/skills" }
+func (p skillResourceProvider) Kind() string   { return resourceKindSkill }
+func (p skillResourceProvider) Target() string { return p.target }
+func (p skillResourceProvider) OutputDir(projectRoot string, cfg *config.Config, isUser bool) string {
+	if p.opencode {
+		return config.EffectiveOpenCodeSkillsDir(projectRoot, isUser)
+	}
+	return config.EffectiveSkillsDir(projectRoot, isUser, cfg)
+}
 func (skillResourceProvider) RequiresName() bool {
 	return true
 }
 func (skillResourceProvider) ListAvailable(packageDir string, cfg *config.Config) ([]string, error) {
 	return core.ListSkillDirs(packageDir, cfg.SkillsSubdir)
 }
-func (skillResourceProvider) ListInstalled(projectRoot string, cfg *config.Config, isUser bool) ([]string, error) {
+func (p skillResourceProvider) ListInstalled(projectRoot string, cfg *config.Config, isUser bool) ([]string, error) {
 	skillsDir := config.EffectiveSkillsDir(projectRoot, isUser, cfg)
+	if p.opencode {
+		skillsDir = config.EffectiveOpenCodeSkillsDir(projectRoot, isUser)
+	}
 	return core.ListSkillDirsFrom(skillsDir)
 }
-func (skillResourceProvider) Install(projectRoot, packageDir, name string, cfg *config.Config, opts nativeResourceInstallOptions) (core.InstallStrategy, error) {
+func (p skillResourceProvider) Install(projectRoot, packageDir, name string, cfg *config.Config, opts nativeResourceInstallOptions) (core.InstallStrategy, error) {
 	skillsDir := config.EffectiveSkillsDir(projectRoot, opts.IsUser, cfg)
+	if p.opencode {
+		skillsDir = config.EffectiveOpenCodeSkillsDir(projectRoot, opts.IsUser)
+	}
 	if strings.TrimSpace(name) == core.SkillsSubdir(cfg.SkillsSubdir) {
-		return installAllFromProviderWithDir(skillResourceProvider{}, projectRoot, packageDir, cfg, opts.IsUser)
+		return installAllFromProviderWithDir(p, projectRoot, packageDir, cfg, opts.IsUser)
 	}
 	return core.InstallSkillToDir(skillsDir, packageDir, name, cfg.SkillsSubdir)
 }
@@ -280,8 +370,11 @@ func (skillResourceProvider) PlanInstallAll(packageDir string, cfg *config.Confi
 	}
 	return plans, nil
 }
-func (skillResourceProvider) IncludeInDefaultInstallAll() bool { return true }
-func (skillResourceProvider) DetectDefaultTarget(packageDir, name string, cfg *config.Config) (target string, ok bool, err error) {
+func (p skillResourceProvider) IncludeInDefaultInstallAll() bool { return !p.opencode }
+func (p skillResourceProvider) DetectDefaultTarget(packageDir, name string, cfg *config.Config) (target string, ok bool, err error) {
+	if p.opencode {
+		return "", false, nil
+	}
 	if strings.TrimSpace(name) != core.SkillsSubdir(cfg.SkillsSubdir) {
 		return "", false, nil
 	}
@@ -291,35 +384,53 @@ func (skillResourceProvider) DetectDefaultTarget(packageDir, name string, cfg *c
 	}
 	return "skills", len(names) > 0, nil
 }
-func (skillResourceProvider) Remove(projectRoot, name string, cfg *config.Config, isUser bool) (bool, error) {
-	installed, err := skillResourceProvider{}.ListInstalled(projectRoot, cfg, isUser)
+func (p skillResourceProvider) Remove(projectRoot, name string, cfg *config.Config, isUser bool) (bool, error) {
+	installed, err := p.ListInstalled(projectRoot, cfg, isUser)
 	if err != nil {
 		return false, err
 	}
 	return removeFromInstalledList(name, installed, func() error {
-		return core.RemoveSkill(config.EffectiveSkillsDir(projectRoot, isUser, cfg), name)
+		skillsDir := config.EffectiveSkillsDir(projectRoot, isUser, cfg)
+		if p.opencode {
+			skillsDir = config.EffectiveOpenCodeSkillsDir(projectRoot, isUser)
+		}
+		return core.RemoveSkill(skillsDir, name)
 	})
 }
 
-type agentResourceProvider struct{}
+type agentResourceProvider struct {
+	target   string
+	opencode bool
+}
 
-func (agentResourceProvider) Kind() string      { return resourceKindAgent }
-func (agentResourceProvider) Target() string    { return "agents" }
-func (agentResourceProvider) OutputDir() string { return ".cursor/agents" }
+func (p agentResourceProvider) Kind() string   { return resourceKindAgent }
+func (p agentResourceProvider) Target() string { return p.target }
+func (p agentResourceProvider) OutputDir(projectRoot string, cfg *config.Config, isUser bool) string {
+	if p.opencode {
+		return config.EffectiveOpenCodeAgentsDir(projectRoot, isUser)
+	}
+	return config.EffectiveAgentsDir(projectRoot, isUser, cfg)
+}
 func (agentResourceProvider) RequiresName() bool {
 	return true
 }
 func (agentResourceProvider) ListAvailable(packageDir string, cfg *config.Config) ([]string, error) {
 	return core.ListAgentFiles(packageDir, cfg.AgentsSubdir)
 }
-func (agentResourceProvider) ListInstalled(projectRoot string, cfg *config.Config, isUser bool) ([]string, error) {
+func (p agentResourceProvider) ListInstalled(projectRoot string, cfg *config.Config, isUser bool) ([]string, error) {
 	agentsDir := config.EffectiveAgentsDir(projectRoot, isUser, cfg)
+	if p.opencode {
+		agentsDir = config.EffectiveOpenCodeAgentsDir(projectRoot, isUser)
+	}
 	return core.ListAgentFilesFrom(agentsDir)
 }
-func (agentResourceProvider) Install(projectRoot, packageDir, name string, cfg *config.Config, opts nativeResourceInstallOptions) (core.InstallStrategy, error) {
+func (p agentResourceProvider) Install(projectRoot, packageDir, name string, cfg *config.Config, opts nativeResourceInstallOptions) (core.InstallStrategy, error) {
 	agentsDir := config.EffectiveAgentsDir(projectRoot, opts.IsUser, cfg)
+	if p.opencode {
+		agentsDir = config.EffectiveOpenCodeAgentsDir(projectRoot, opts.IsUser)
+	}
 	if strings.TrimSpace(name) == core.AgentsSubdir(cfg.AgentsSubdir) {
-		return installAllFromProviderWithDir(agentResourceProvider{}, projectRoot, packageDir, cfg, opts.IsUser)
+		return installAllFromProviderWithDir(p, projectRoot, packageDir, cfg, opts.IsUser)
 	}
 	subdir := core.ResolveAgentsSubdir(packageDir, cfg.AgentsSubdir)
 	agentsRoot, err := security.SafeJoin(packageDir, subdir)
@@ -342,8 +453,11 @@ func (agentResourceProvider) PlanInstallAll(packageDir string, cfg *config.Confi
 	}
 	return plans, nil
 }
-func (agentResourceProvider) IncludeInDefaultInstallAll() bool { return true }
-func (agentResourceProvider) DetectDefaultTarget(packageDir, name string, cfg *config.Config) (target string, ok bool, err error) {
+func (p agentResourceProvider) IncludeInDefaultInstallAll() bool { return !p.opencode }
+func (p agentResourceProvider) DetectDefaultTarget(packageDir, name string, cfg *config.Config) (target string, ok bool, err error) {
+	if p.opencode {
+		return "", false, nil
+	}
 	if strings.TrimSpace(name) != core.AgentsSubdir(cfg.AgentsSubdir) {
 		return "", false, nil
 	}
@@ -353,21 +467,27 @@ func (agentResourceProvider) DetectDefaultTarget(packageDir, name string, cfg *c
 	}
 	return "agents", len(names) > 0, nil
 }
-func (agentResourceProvider) Remove(projectRoot, name string, cfg *config.Config, isUser bool) (bool, error) {
-	installed, err := agentResourceProvider{}.ListInstalled(projectRoot, cfg, isUser)
+func (p agentResourceProvider) Remove(projectRoot, name string, cfg *config.Config, isUser bool) (bool, error) {
+	installed, err := p.ListInstalled(projectRoot, cfg, isUser)
 	if err != nil {
 		return false, err
 	}
 	return removeFromInstalledList(name, installed, func() error {
-		return core.RemoveAgent(config.EffectiveAgentsDir(projectRoot, isUser, cfg), name)
+		agentsDir := config.EffectiveAgentsDir(projectRoot, isUser, cfg)
+		if p.opencode {
+			agentsDir = config.EffectiveOpenCodeAgentsDir(projectRoot, isUser)
+		}
+		return core.RemoveAgent(agentsDir, name)
 	})
 }
 
 type hooksResourceProvider struct{}
 
-func (hooksResourceProvider) Kind() string      { return resourceKindHooks }
-func (hooksResourceProvider) Target() string    { return "hooks" }
-func (hooksResourceProvider) OutputDir() string { return ".cursor/hooks" }
+func (hooksResourceProvider) Kind() string   { return resourceKindHooks }
+func (hooksResourceProvider) Target() string { return "hooks" }
+func (hooksResourceProvider) OutputDir(projectRoot string, cfg *config.Config, isUser bool) string {
+	return config.EffectiveHooksDir(projectRoot, isUser, cfg)
+}
 func (hooksResourceProvider) RequiresName() bool {
 	return false
 }
@@ -420,16 +540,19 @@ type rulesResourceProvider struct {
 
 func (p rulesResourceProvider) Kind() string   { return resourceKindRule }
 func (p rulesResourceProvider) Target() string { return p.target }
-func (p rulesResourceProvider) OutputDir() string {
+func (p rulesResourceProvider) OutputDir(projectRoot string, cfg *config.Config, isUser bool) string {
 	switch p.target {
 	case "cursor":
-		return ".cursor/rules"
-	case "copilot-instr":
-		return ".github/instructions"
-	case "copilot-prompt":
-		return ".github/prompts"
+		return config.EffectiveRulesDir(projectRoot, isUser, cfg)
+	case "opencode-rules":
+		return config.EffectiveOpenCodeRulesDir(projectRoot, isUser)
 	default:
-		return ".cursor/rules"
+		if p.tp != nil {
+			if transformer, err := p.tp.Transformer(p.target); err == nil {
+				return filepath.Join(projectRoot, transformer.OutputDir())
+			}
+		}
+		return config.EffectiveRulesDir(projectRoot, isUser, cfg)
 	}
 }
 func (p rulesResourceProvider) RequiresName() bool { return true }
@@ -462,22 +585,14 @@ func (p rulesResourceProvider) ListAvailable(packageDir string, _ *config.Config
 }
 
 func (p rulesResourceProvider) ListInstalled(projectRoot string, cfg *config.Config, isUser bool) ([]string, error) {
-	if p.target != "cursor" {
+	if p.tp == nil {
 		return nil, nil
 	}
-	rulesDir := config.EffectiveRulesDir(projectRoot, isUser, cfg)
-	presets, err := core.ListProjectPresetsFrom(rulesDir)
+	transformer, err := p.tp.Transformer(p.target)
 	if err != nil {
 		return nil, err
 	}
-	out := make([]string, 0, len(presets))
-	for _, f := range presets {
-		name := strings.TrimSuffix(f, ".mdc")
-		if name != "" {
-			out = append(out, name)
-		}
-	}
-	return out, nil
+	return listInstalledRuleFiles(p.OutputDir(projectRoot, cfg, isUser), transformer.Extension())
 }
 
 func (p rulesResourceProvider) Install(projectRoot, packageDir, name string, cfg *config.Config, opts nativeResourceInstallOptions) (core.InstallStrategy, error) {
@@ -496,6 +611,18 @@ func (p rulesResourceProvider) Install(projectRoot, packageDir, name string, cfg
 			if core.UseSymlink() || core.WantGNUStow() {
 				return core.InstallPackageToRulesDir(rulesDir, rulesPackageDir, name, opts.Excludes, opts.NoFlatten)
 			}
+			return installPackageWithTransformerToRulesDir(rulesDir, pkgPath, name, trans, opts.Excludes, opts.NoFlatten)
+		}
+		presetPath := filepath.Join(rulesPackageDir, name)
+		if !strings.HasSuffix(presetPath, ".mdc") {
+			presetPath += ".mdc"
+		}
+		return installPresetWithTransformerToRulesDir(rulesDir, presetPath, name, trans, rulesPackageDir)
+	}
+
+	if p.target == "opencode-rules" && opts.IsUser {
+		rulesDir := config.EffectiveOpenCodeRulesDir(projectRoot, true)
+		if isPackage {
 			return installPackageWithTransformerToRulesDir(rulesDir, pkgPath, name, trans, opts.Excludes, opts.NoFlatten)
 		}
 		presetPath := filepath.Join(rulesPackageDir, name)
@@ -567,16 +694,59 @@ func (p rulesResourceProvider) DetectDefaultTarget(packageDir, name string, _ *c
 }
 
 func (p rulesResourceProvider) Remove(projectRoot, name string, cfg *config.Config, isUser bool) (bool, error) {
-	if p.target != "cursor" {
+	if p.tp == nil {
 		return false, nil
 	}
 	installed, err := p.ListInstalled(projectRoot, cfg, isUser)
 	if err != nil {
 		return false, err
 	}
+	transformer, err := p.tp.Transformer(p.target)
+	if err != nil {
+		return false, err
+	}
 	return removeFromInstalledList(name, installed, func() error {
-		return core.RemovePreset(config.EffectiveRulesDir(projectRoot, isUser, cfg), name)
+		return removeInstalledRuleFile(p.OutputDir(projectRoot, cfg, isUser), name, transformer.Extension())
 	})
+}
+
+func listInstalledRuleFiles(rulesDir, ext string) ([]string, error) {
+	entries, err := os.ReadDir(rulesDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	out := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ext) {
+			continue
+		}
+		name := strings.TrimSuffix(entry.Name(), ext)
+		if err := security.ValidatePackageName(name); err != nil {
+			continue
+		}
+		out = append(out, name)
+	}
+	sort.Strings(out)
+	return out, nil
+}
+
+func removeInstalledRuleFile(rulesDir, name, ext string) error {
+	if err := security.ValidatePackageName(name); err != nil {
+		return errors.Wrapf(err, errors.CodeInvalidArgument, "invalid resource name")
+	}
+	target, err := security.SafeJoin(rulesDir, name+ext)
+	if err != nil {
+		return errors.Wrapf(err, errors.CodeInvalidArgument, "invalid installed rule file path")
+	}
+	if _, err := os.Stat(target); os.IsNotExist(err) {
+		return nil
+	} else if err != nil {
+		return err
+	}
+	return os.Remove(target)
 }
 
 func installAllFromProviderWithDir(provider nativeResourceProvider, projectRoot, packageDir string, cfg *config.Config, isUser bool) (core.InstallStrategy, error) {

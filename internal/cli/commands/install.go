@@ -1,9 +1,12 @@
 package commands
 
 import (
+	"strings"
+
 	"github.com/ZanzyTHEbar/cursor-rules/internal/app"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/cli"
 	"github.com/ZanzyTHEbar/cursor-rules/internal/cli/display"
+	"github.com/ZanzyTHEbar/cursor-rules/internal/errors"
 	"github.com/spf13/cobra"
 )
 
@@ -23,6 +26,7 @@ Examples:
   # Install rules preset (default)
   cursor-rules install frontend
   cursor-rules install frontend --target copilot-instr
+  cursor-rules install frontend --target opencode-rules
 
   # Install via subcommands (no --target needed)
   cursor-rules install commands my-cmd
@@ -46,7 +50,7 @@ Examples:
 
 	cmd.Flags().StringArrayVar(&excludeFlag, "exclude", []string{}, "patterns to exclude when installing a package (can be repeated)")
 	cmd.Flags().BoolVarP(&noFlattenFlag, "no-flatten", "n", false, "preserve package directory structure")
-	cmd.Flags().StringVar(&targetFlag, "target", "cursor", "rules output target: cursor|copilot-instr|copilot-prompt")
+	cmd.Flags().StringVar(&targetFlag, "target", "cursor", "rules output target: cursor|copilot-instr|copilot-prompt|opencode-rules")
 	cmd.Flags().BoolVar(&allTargetsFlag, "all-targets", false, "install to all targets in manifest")
 
 	cmd.AddCommand(newInstallRulesCmd(ctx))
@@ -92,7 +96,7 @@ func newInstallRulesCmd(ctx *cli.AppContext) *cobra.Command {
 	c := &cobra.Command{
 		Use:   "rules [name|all]",
 		Short: "Install a rules preset, package, or all rules",
-		Long:  `Install a rules preset or package to .cursor/rules/ or Copilot targets. With no name, installs all rules.`,
+		Long:  `Install a rules preset or package to .cursor/rules/, .opencode/rules/, or Copilot targets. With no name, installs all rules.`,
 		Args:  cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if cli.ShowHelpIfReservedArg(cmd, args) {
@@ -125,7 +129,7 @@ func newInstallRulesCmd(ctx *cli.AppContext) *cobra.Command {
 	}
 	c.Flags().StringArrayVar(&excludeFlag, "exclude", []string{}, "patterns to exclude")
 	c.Flags().BoolVarP(&noFlattenFlag, "no-flatten", "n", false, "preserve package structure")
-	c.Flags().StringVar(&targetFlag, "target", "cursor", "output target: cursor|copilot-instr|copilot-prompt")
+	c.Flags().StringVar(&targetFlag, "target", "cursor", "output target: cursor|copilot-instr|copilot-prompt|opencode-rules")
 	c.Flags().BoolVar(&allTargetsFlag, "all-targets", false, "install to all targets in manifest")
 	return c
 }
@@ -133,11 +137,12 @@ func newInstallRulesCmd(ctx *cli.AppContext) *cobra.Command {
 func newInstallCommandsCmd(ctx *cli.AppContext) *cobra.Command {
 	var excludeFlag []string
 	var noFlattenFlag bool
+	var targetFlag string
 
 	cmd := &cobra.Command{
 		Use:   "commands [name|all]",
-		Short: "Install a command or all commands as Cursor skills",
-		Long:  `Install a command from the package dir into .cursor/skills/ as a Cursor-compatible skill. Use "all" to install the entire commands collection.`,
+		Short: "Install a command or all commands",
+		Long:  `Install a command from the package dir. Cursor target installs commands as Cursor-compatible skills in .cursor/skills/. OpenCode target installs native command markdown files or directories in .opencode/commands/. Use "all" to install the entire commands collection.`,
 		Args:  cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if cli.ShowHelpIfReservedArg(cmd, args) {
@@ -151,7 +156,10 @@ func newInstallCommandsCmd(ctx *cli.AppContext) *cobra.Command {
 			if len(args) > 0 {
 				name = args[0]
 			}
-			target := "commands"
+			target, err := resolveNativeInstallTarget(targetFlag, "commands", "opencode-commands")
+			if err != nil {
+				return err
+			}
 			if name == "" || name == "all" {
 				req := &app.InstallAllRequest{
 					Workdir:                workdir,
@@ -189,16 +197,18 @@ func newInstallCommandsCmd(ctx *cli.AppContext) *cobra.Command {
 	}
 	cmd.Flags().StringArrayVar(&excludeFlag, "exclude", []string{}, "patterns to exclude")
 	cmd.Flags().BoolVarP(&noFlattenFlag, "no-flatten", "n", false, "preserve package structure")
+	cmd.Flags().StringVar(&targetFlag, "target", "cursor", "output target: cursor|opencode")
 	return cmd
 }
 
 func newInstallSkillsCmd(ctx *cli.AppContext) *cobra.Command {
 	var excludeFlag []string
+	var targetFlag string
 
 	cmd := &cobra.Command{
 		Use:   "skills [name|all]",
 		Short: "Install a skill or all skills",
-		Long:  `Install a skill from the package dir into .cursor/skills/<name>/. With no name, installs all skills.`,
+		Long:  `Install a skill from the package dir. Cursor target installs to .cursor/skills/<name>/. OpenCode target installs natively to .opencode/skills/<name>/SKILL.md. With no name, installs all skills.`,
 		Args:  cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if cli.ShowHelpIfReservedArg(cmd, args) {
@@ -212,7 +222,10 @@ func newInstallSkillsCmd(ctx *cli.AppContext) *cobra.Command {
 			if len(args) > 0 {
 				name = args[0]
 			}
-			target := "skills"
+			target, err := resolveNativeInstallTarget(targetFlag, "skills", "opencode-skills")
+			if err != nil {
+				return err
+			}
 			if name == "" || name == "all" {
 				req := &app.InstallAllRequest{
 					Workdir:                workdir,
@@ -247,16 +260,18 @@ func newInstallSkillsCmd(ctx *cli.AppContext) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringArrayVar(&excludeFlag, "exclude", []string{}, "patterns to exclude")
+	cmd.Flags().StringVar(&targetFlag, "target", "cursor", "output target: cursor|opencode")
 	return cmd
 }
 
 func newInstallAgentsCmd(ctx *cli.AppContext) *cobra.Command {
 	var excludeFlag []string
+	var targetFlag string
 
 	cmd := &cobra.Command{
 		Use:   "agents [name|all]",
 		Short: "Install an agent or all agents",
-		Long:  `Install an agent from the package dir into .cursor/agents/<name>.md. With no name, installs all agents.`,
+		Long:  `Install an agent from the package dir. Cursor target installs to .cursor/agents/<name>.md. OpenCode target installs natively to .opencode/agents/<name>.md. With no name, installs all agents.`,
 		Args:  cobra.RangeArgs(0, 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if cli.ShowHelpIfReservedArg(cmd, args) {
@@ -270,7 +285,10 @@ func newInstallAgentsCmd(ctx *cli.AppContext) *cobra.Command {
 			if len(args) > 0 {
 				name = args[0]
 			}
-			target := "agents"
+			target, err := resolveNativeInstallTarget(targetFlag, "agents", "opencode-agents")
+			if err != nil {
+				return err
+			}
 			if name == "" || name == "all" {
 				req := &app.InstallAllRequest{
 					Workdir:                workdir,
@@ -305,6 +323,7 @@ func newInstallAgentsCmd(ctx *cli.AppContext) *cobra.Command {
 		},
 	}
 	cmd.Flags().StringArrayVar(&excludeFlag, "exclude", []string{}, "patterns to exclude")
+	cmd.Flags().StringVar(&targetFlag, "target", "cursor", "output target: cursor|opencode")
 	return cmd
 }
 
@@ -392,7 +411,18 @@ func newInstallAllCmd(ctx *cli.AppContext) *cobra.Command {
 	}
 	cmd.Flags().StringArrayVar(&excludeFlag, "exclude", []string{}, "patterns to exclude")
 	cmd.Flags().BoolVarP(&noFlattenFlag, "no-flatten", "n", false, "preserve package structure")
-	cmd.Flags().StringVar(&targetFlag, "target", "cursor", "output target: cursor|copilot-instr|copilot-prompt|commands|skills|agents|hooks")
+	cmd.Flags().StringVar(&targetFlag, "target", "cursor", "output target: cursor|copilot-instr|copilot-prompt|opencode-rules|commands|skills|agents|hooks")
 	cmd.Flags().BoolVar(&allTargetsFlag, "all-targets", false, "install to all targets in manifest")
 	return cmd
+}
+
+func resolveNativeInstallTarget(target, cursorTarget, opencodeTarget string) (string, error) {
+	switch strings.TrimSpace(target) {
+	case "", "cursor":
+		return cursorTarget, nil
+	case "opencode":
+		return opencodeTarget, nil
+	default:
+		return "", errors.Newf(errors.CodeInvalidArgument, "unknown target: %s (available: cursor, opencode)", target)
+	}
 }

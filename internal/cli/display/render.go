@@ -35,7 +35,14 @@ func renderInstallResults(p Printer, results []app.InstallResult) {
 	}
 }
 
-// RenderListResponse writes list output (rules tree plus commands, skills, agents, hooks).
+func listHeading(entry app.ListTargetEntry) string {
+	if entry.Kind == "hooks" {
+		return entry.Target + " (hook presets)"
+	}
+	return entry.Target + " (" + entry.Kind + ")"
+}
+
+// RenderListResponse writes list output (rules tree plus target-scoped entries).
 func RenderListResponse(p Printer, resp *app.ListResponse) {
 	if resp == nil {
 		return
@@ -43,29 +50,16 @@ func RenderListResponse(p Printer, resp *app.ListResponse) {
 	for _, e := range resp.Errors {
 		p.Warn("warning: %s\n", e)
 	}
-	p.Info("%s\n", FormatRulesTree(resp.Tree))
-	if len(resp.Commands) > 0 {
-		p.Info("commands:\n")
-		for _, c := range resp.Commands {
-			p.Info("  - %s\n", c)
-		}
+	if resp.IncludesRules() {
+		p.Info("%s\n", FormatRulesTree(resp.Tree))
 	}
-	if len(resp.Skills) > 0 {
-		p.Info("skills:\n")
-		for _, s := range resp.Skills {
-			p.Info("  - %s\n", s)
+	for _, entry := range resp.Targets {
+		if len(entry.Items) == 0 {
+			continue
 		}
-	}
-	if len(resp.Agents) > 0 {
-		p.Info("agents:\n")
-		for _, a := range resp.Agents {
-			p.Info("  - %s\n", a)
-		}
-	}
-	if len(resp.Hooks) > 0 {
-		p.Info("hook presets:\n")
-		for _, h := range resp.Hooks {
-			p.Info("  - %s\n", h)
+		p.Info("%s:\n", listHeading(entry))
+		for _, item := range entry.Items {
+			p.Info("  - %s\n", item)
 		}
 	}
 }
@@ -174,24 +168,23 @@ func RenderRemoveResponse(p Printer, resp *app.RemoveResponse) {
 	if resp == nil {
 		return
 	}
-	if resp.RemovedPreset {
-		p.Success("Removed preset %q from %s/.cursor/rules/\n", resp.Name, resp.Workdir)
+	for _, match := range resp.Matches {
+		if !match.Removed {
+			continue
+		}
+		if match.Kind == "hooks" {
+			p.Success("Removed hooks from target %s (%s)\n", match.Target, match.Path)
+			return
+		}
+		p.Success("Removed %s %q from target %s (%s)\n", match.Kind, match.Name, match.Target, match.Path)
 		return
 	}
-	if resp.RemovedCommand {
-		p.Success("Removed command %q from %s/.cursor/skills/\n", resp.Name, resp.Workdir)
-		return
-	}
-	if resp.RemovedSkill {
-		p.Success("Removed skill %q from %s/.cursor/skills/\n", resp.Name, resp.Workdir)
-		return
-	}
-	if resp.RemovedAgent {
-		p.Success("Removed agent %q from %s/.cursor/agents/\n", resp.Name, resp.Workdir)
-		return
-	}
-	if resp.RemovedHooks {
-		p.Success("Removed hooks from %s/.cursor/\n", resp.Workdir)
+	for _, match := range resp.Matches {
+		if match.Kind == "hooks" {
+			p.Info("Nothing removed from target %s (%s).\n", match.Target, match.Path)
+			return
+		}
+		p.Info("Nothing removed for %s %q from target %s (%s).\n", match.Kind, match.Name, match.Target, match.Path)
 		return
 	}
 	p.Info("Nothing removed.\n")

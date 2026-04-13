@@ -22,7 +22,10 @@ Examples:
   cursor-rules effective
   
   # Show Copilot instructions
-  cursor-rules effective --target copilot-instr`,
+  cursor-rules effective --target copilot-instr
+
+  # Show OpenCode rule files
+  cursor-rules effective --target opencode-rules`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			workdir := cli.GetOptionalFlag(cmd, "workdir")
@@ -40,7 +43,7 @@ Examples:
 		},
 	}
 
-	cmd.Flags().StringVar(&targetFlag, "target", "cursor", "target format to show: cursor|copilot-instr|copilot-prompt")
+	cmd.Flags().StringVar(&targetFlag, "target", "cursor", "target format to show: cursor|copilot-instr|copilot-prompt|opencode-rules")
 
 	return cmd
 }

@@ -48,9 +48,10 @@ func TestProviderForTargetWithTransformers(t *testing.T) {
 		"cursor":         transform.NewCursorTransformer(),
 		"copilot-instr":  transform.NewCopilotInstructionsTransformer(),
 		"copilot-prompt": transform.NewCopilotPromptsTransformer(),
+		"opencode-rules": transform.NewOpenCodeRulesTransformer(),
 	}
 	reg := newNativeResourceRegistry(tp)
-	for _, target := range []string{"commands", "skills", "agents", "hooks", "cursor", "copilot-instr", "copilot-prompt"} {
+	for _, target := range []string{"commands", "opencode-commands", "skills", "opencode-skills", "agents", "opencode-agents", "hooks", "cursor", "copilot-instr", "copilot-prompt", "opencode-rules"} {
 		p, ok := reg.providerForTarget(target)
 		if !ok || p == nil {
 			t.Errorf("providerForTarget(%q): want ok, got ok=%v", target, ok)
@@ -58,17 +59,85 @@ func TestProviderForTargetWithTransformers(t *testing.T) {
 	}
 }
 
-func TestProviderForKind(t *testing.T) {
+func TestOpenCodeNativeProvidersUseCanonicalOutputDirs(t *testing.T) {
+	projectRoot := t.TempDir()
 	reg := newNativeResourceRegistry(nil)
-	for _, kind := range []string{"command", "skill", "agent", "hooks"} {
-		p, ok := reg.providerForKind(kind)
-		if !ok || p == nil {
-			t.Errorf("providerForKind(%q): want ok, got ok=%v", kind, ok)
+
+	tests := []struct {
+		target string
+		want   string
+	}{
+		{target: "opencode-commands", want: filepath.Join(projectRoot, ".opencode", "commands")},
+		{target: "opencode-skills", want: filepath.Join(projectRoot, ".opencode", "skills")},
+		{target: "opencode-agents", want: filepath.Join(projectRoot, ".opencode", "agents")},
+	}
+
+	for _, tt := range tests {
+		provider, ok := reg.providerForTarget(tt.target)
+		if !ok {
+			t.Fatalf("providerForTarget(%q): missing provider", tt.target)
+		}
+		if got := provider.OutputDir(projectRoot, &config.Config{}, false); got != tt.want {
+			t.Fatalf("provider.OutputDir(%q): want %q, got %q", tt.target, tt.want, got)
 		}
 	}
-	_, ok := reg.providerForKind("rule")
-	if ok {
-		t.Error("providerForKind(rule): rules use target not kind, want !ok")
+}
+
+func TestProvidersForKind(t *testing.T) {
+	reg := newNativeResourceRegistry(nil)
+	for _, kind := range []string{"command", "skill", "agent", "hooks"} {
+		providers := reg.providersForKind(kind)
+		if len(providers) == 0 {
+			t.Errorf("providersForKind(%q): want providers, got none", kind)
+		}
+	}
+	ruleProviders := reg.providersForKind("rule")
+	if len(ruleProviders) != 0 {
+		t.Errorf("providersForKind(rule): want none without transformers, got %d", len(ruleProviders))
+	}
+}
+
+func TestProvidersForKindReturnsAllRuleTargets(t *testing.T) {
+	tp := staticTransformerProvider{
+		"cursor":         transform.NewCursorTransformer(),
+		"copilot-instr":  transform.NewCopilotInstructionsTransformer(),
+		"copilot-prompt": transform.NewCopilotPromptsTransformer(),
+		"opencode-rules": transform.NewOpenCodeRulesTransformer(),
+	}
+	reg := newNativeResourceRegistry(tp)
+	providers := reg.providersForKind(resourceKindRule)
+	if len(providers) != 4 {
+		t.Fatalf("providersForKind(rule): want 4 providers, got %d", len(providers))
+	}
+	gotTargets := make([]string, 0, len(providers))
+	for _, provider := range providers {
+		gotTargets = append(gotTargets, provider.Target())
+	}
+	wantTargets := []string{"cursor", "copilot-instr", "copilot-prompt", "opencode-rules"}
+	for i, target := range wantTargets {
+		if gotTargets[i] != target {
+			t.Fatalf("providersForKind(rule)[%d]: want %q, got %q", i, target, gotTargets[i])
+		}
+	}
+}
+
+func TestProviderForTargetWithFutureRuleTransformer(t *testing.T) {
+	tp := staticTransformerProvider{
+		"cursor":         transform.NewCursorTransformer(),
+		"opencode-rules": transform.NewOpenCodeRulesTransformer(),
+		"zzz-custom":     transform.NewCopilotInstructionsTransformer(),
+	}
+	reg := newNativeResourceRegistry(tp)
+	provider, ok := reg.providerForTarget("zzz-custom")
+	if !ok || provider == nil {
+		t.Fatal("expected future rule target to be registered")
+	}
+	providers := reg.providersForKind(resourceKindRule)
+	if len(providers) != 3 {
+		t.Fatalf("providersForKind(rule): want 3 providers, got %d", len(providers))
+	}
+	if providers[2].Target() != "zzz-custom" {
+		t.Fatalf("expected future target to appear after known targets, got %q", providers[2].Target())
 	}
 }
 

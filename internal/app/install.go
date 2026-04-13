@@ -261,6 +261,9 @@ func (a *App) installInternal(req *installInternalRequest) ([]InstallResult, err
 			targets = []string{resolved}
 		}
 	}
+	if len(targets) == 1 && targets[0] == "opencode-rules" {
+		targets = []string{"opencode-rules"}
+	}
 
 	effectiveExcludes := append([]string{}, req.Excludes...)
 	if m != nil && len(m.Exclude) > 0 {
@@ -284,7 +287,7 @@ func (a *App) installInternal(req *installInternalRequest) ([]InstallResult, err
 		results = append(results, InstallResult{
 			Name:       req.Name,
 			Target:     provider.Target(),
-			OutputDir:  provider.OutputDir(),
+			OutputDir:  provider.OutputDir(req.Workdir, providerCfg, req.IsUser),
 			Strategy:   strategy,
 			ShowMethod: req.ShowInstallMethod && provider.Target() == "cursor",
 		})

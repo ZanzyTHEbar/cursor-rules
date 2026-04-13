@@ -1,6 +1,7 @@
 package cli_test
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"testing"
@@ -94,6 +95,24 @@ Use strict mode.`
 				}
 			},
 		},
+		{
+			name:       "install to opencode-rules",
+			target:     "opencode-rules",
+			outputFile: filepath.Join(tmpProject, ".opencode/rules/test.mdc"),
+			checkFunc: func(t *testing.T, path string) {
+				if _, err := os.Stat(path); os.IsNotExist(err) {
+					t.Errorf("Output file not created: %s", path)
+				}
+				content, _ := os.ReadFile(path)
+				contentStr := string(content)
+				if !contains(contentStr, "globs:") {
+					t.Error("globs field not found in output")
+				}
+				if contains(contentStr, "description:") {
+					t.Error("description field should be removed for opencode-rules export")
+				}
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -113,6 +132,53 @@ Use strict mode.`
 			// Run checks
 			tt.checkFunc(t, tt.outputFile)
 		})
+	}
+}
+
+func TestInstallOpenCodeRulesGlobal(t *testing.T) {
+	packageDir := t.TempDir()
+	configDir := t.TempDir()
+	globalDir := t.TempDir()
+
+	testRule := `---
+description: "Test rule"
+apply_to: "**/*.ts"
+---
+Use strict mode.`
+
+	ruleFile := filepath.Join(packageDir, "test.mdc")
+	if err := os.WriteFile(ruleFile, []byte(testRule), 0644); err != nil {
+		t.Fatalf("Failed to create test rule: %v", err)
+	}
+
+	os.Setenv("CURSOR_RULES_PACKAGE_DIR", packageDir)
+	os.Setenv("CURSOR_RULES_CONFIG_DIR", configDir)
+	os.Setenv("OPENCODE_CONFIG_DIR", globalDir)
+	defer func() {
+		os.Unsetenv("CURSOR_RULES_PACKAGE_DIR")
+		os.Unsetenv("CURSOR_RULES_CONFIG_DIR")
+		os.Unsetenv("OPENCODE_CONFIG_DIR")
+	}()
+
+	ctx := cli.NewAppContext(nil, nil)
+	originalPalette := cli.DefaultPalette
+	cli.DefaultPalette = nil
+	commands.RegisterAll()
+	t.Cleanup(func() {
+		cli.DefaultPalette = originalPalette
+	})
+	root := cli.BuildRoot(ctx)
+	root.SetOut(new(bytes.Buffer))
+	root.SetErr(new(bytes.Buffer))
+	root.SetArgs([]string{"install", "test", "--target", "opencode-rules", "--global"})
+
+	if _, err := root.ExecuteC(); err != nil {
+		t.Fatalf("global opencode-rules install failed: %v", err)
+	}
+
+	outputFile := filepath.Join(globalDir, "rules", "test.mdc")
+	if _, err := os.Stat(outputFile); os.IsNotExist(err) {
+		t.Fatalf("Output file not created: %s", outputFile)
 	}
 }
 

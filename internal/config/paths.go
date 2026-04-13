@@ -16,6 +16,7 @@ const (
 	EnvUserAgents    = "CURSOR_AGENTS_DIR"   // user agents dir (default <user-dir>/agents)
 	EnvUserHooks     = "CURSOR_HOOKS_DIR"    // user hooks script dir (default <user-dir>/hooks)
 	EnvUserHooksJSON = "CURSOR_HOOKS_JSON"   // user hooks.json path (default <user-dir>/hooks.json)
+	EnvOpenCodeDir   = "OPENCODE_CONFIG_DIR"
 )
 
 // defaultCursorRulesBase returns ~/.cursor (or cwd/.cursor / ".cursor") for fallback.
@@ -110,6 +111,100 @@ func ProjectCursorHooksDir(projectRoot string) string {
 // ProjectCursorHooksJSON returns the project's .cursor/hooks.json path.
 func ProjectCursorHooksJSON(projectRoot string) string {
 	return filepath.Join(projectRoot, ".cursor", "hooks.json")
+}
+
+// DefaultOpenCodeConfigDir returns the global OpenCode config directory.
+// Precedence: OPENCODE_CONFIG_DIR > XDG_CONFIG_HOME/opencode > ~/.config/opencode.
+func DefaultOpenCodeConfigDir() string {
+	if v := strings.TrimSpace(os.Getenv(EnvOpenCodeDir)); v != "" {
+		return v
+	}
+	if v := strings.TrimSpace(os.Getenv("XDG_CONFIG_HOME")); v != "" {
+		return filepath.Join(v, "opencode")
+	}
+	home, err := os.UserHomeDir()
+	if err == nil && home != "" {
+		return filepath.Join(home, ".config", "opencode")
+	}
+	if env := os.Getenv("HOME"); env != "" {
+		return filepath.Join(env, ".config", "opencode")
+	}
+	if cwd, cwdErr := os.Getwd(); cwdErr == nil && cwd != "" {
+		return filepath.Join(cwd, ".config", "opencode")
+	}
+	return filepath.Join(".config", "opencode")
+}
+
+// ProjectOpenCodeRulesDir returns the project's .opencode/rules path.
+func ProjectOpenCodeRulesDir(projectRoot string) string {
+	return filepath.Join(projectRoot, ".opencode", "rules")
+}
+
+// ProjectOpenCodeCommandsDir returns the project's .opencode/commands path.
+func ProjectOpenCodeCommandsDir(projectRoot string) string {
+	return filepath.Join(projectRoot, ".opencode", "commands")
+}
+
+// ProjectOpenCodeSkillsDir returns the project's .opencode/skills path.
+func ProjectOpenCodeSkillsDir(projectRoot string) string {
+	return filepath.Join(projectRoot, ".opencode", "skills")
+}
+
+// ProjectOpenCodeAgentsDir returns the project's .opencode/agents path.
+func ProjectOpenCodeAgentsDir(projectRoot string) string {
+	return filepath.Join(projectRoot, ".opencode", "agents")
+}
+
+// UserOpenCodeRulesDir returns the global OpenCode rules dir.
+func UserOpenCodeRulesDir() string {
+	return filepath.Join(DefaultOpenCodeConfigDir(), "rules")
+}
+
+// UserOpenCodeCommandsDir returns the global OpenCode commands dir.
+func UserOpenCodeCommandsDir() string {
+	return filepath.Join(DefaultOpenCodeConfigDir(), "commands")
+}
+
+// UserOpenCodeSkillsDir returns the global OpenCode skills dir.
+func UserOpenCodeSkillsDir() string {
+	return filepath.Join(DefaultOpenCodeConfigDir(), "skills")
+}
+
+// UserOpenCodeAgentsDir returns the global OpenCode agents dir.
+func UserOpenCodeAgentsDir() string {
+	return filepath.Join(DefaultOpenCodeConfigDir(), "agents")
+}
+
+// EffectiveOpenCodeRulesDir returns the project or global OpenCode rules dir.
+func EffectiveOpenCodeRulesDir(projectRoot string, isUser bool) string {
+	if isUser {
+		return UserOpenCodeRulesDir()
+	}
+	return ProjectOpenCodeRulesDir(projectRoot)
+}
+
+// EffectiveOpenCodeCommandsDir returns the project or global OpenCode commands dir.
+func EffectiveOpenCodeCommandsDir(projectRoot string, isUser bool) string {
+	if isUser {
+		return UserOpenCodeCommandsDir()
+	}
+	return ProjectOpenCodeCommandsDir(projectRoot)
+}
+
+// EffectiveOpenCodeSkillsDir returns the project or global OpenCode skills dir.
+func EffectiveOpenCodeSkillsDir(projectRoot string, isUser bool) string {
+	if isUser {
+		return UserOpenCodeSkillsDir()
+	}
+	return ProjectOpenCodeSkillsDir(projectRoot)
+}
+
+// EffectiveOpenCodeAgentsDir returns the project or global OpenCode agents dir.
+func EffectiveOpenCodeAgentsDir(projectRoot string, isUser bool) string {
+	if isUser {
+		return UserOpenCodeAgentsDir()
+	}
+	return ProjectOpenCodeAgentsDir(projectRoot)
 }
 
 // DefaultUserCursorDir returns the default user/global Cursor base directory (~/.cursor).
